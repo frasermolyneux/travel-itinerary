@@ -141,15 +141,15 @@ else
                 <div class="timeline-item timeline-item--segment segment-type-@segmentType" data-timeline-item
                     data-item-type="entry" data-item-id="@block.Entry.EntryId">
                     <div class="timeline-item-body">
-                            <div class="timeline-item-heading">
-                                <span class="timeline-item-icon bi @block.Entry.ItemType.GetIconClass() segment-type-@segmentType"
-                                    aria-hidden="true"></span>
-                                <span class="timeline-item-title">@block.Entry</span>
-                                @if (entryBooking is not null)
-                                {
-                                    <span class="booking-indicator" title="Booking attached">&#128206;</span>
-                                }
-                            </div>
+                        <div class="timeline-item-heading">
+                            <span class="timeline-item-icon bi @block.Entry.ItemType.GetIconClass() segment-type-@segmentType"
+                                aria-hidden="true"></span>
+                            <span class="timeline-item-title">@block.Entry</span>
+                            @if (entryBooking is not null)
+                            {
+                                <span class="booking-indicator" title="Booking attached">&#128206;</span>
+                            }
+                        </div>
                         <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")
                         </div>
                     </div>

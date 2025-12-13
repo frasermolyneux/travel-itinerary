@@ -153,17 +153,23 @@ public sealed partial record ItineraryEntry
 {
     public override string ToString()
     {
-        var dateText = Date is null
-            ? null
-            : IsMultiDay && EndDate is { } endDate && endDate >= Date
-                ? $"{Date.Value.ToString("MMM d", CultureInfo.InvariantCulture)} → {endDate.ToString("MMM d", CultureInfo.InvariantCulture)}"
-                : Date.Value.ToString("MMM d", CultureInfo.InvariantCulture);
+        string? dateText = null;
+        if (IsMultiDay && Date is { } start)
+        {
+            if (EndDate is { } end && end >= start)
+            {
+                dateText = $"{start.ToString("MMM d", CultureInfo.InvariantCulture)} → {end.ToString("MMM d", CultureInfo.InvariantCulture)}";
+            }
+            else
+            {
+                dateText = start.ToString("MMM d", CultureInfo.InvariantCulture);
+            }
+        }
 
         var parts = new List<string?>
         {
             dateText,
-            string.IsNullOrWhiteSpace(Title) ? null : Title,
-            $"[{ItemType.GetDisplayName()}]"
+            string.IsNullOrWhiteSpace(Title) ? null : Title
         };
 
         var summary = string.Join(" • ", parts.Where(part => !string.IsNullOrWhiteSpace(part)));
