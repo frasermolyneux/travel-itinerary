@@ -7,14 +7,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
 
-builder.Services.AddAuthorization(options =>
-{
-    // Require authentication everywhere unless a page opts out with [AllowAnonymous].
-    options.FallbackPolicy = options.DefaultPolicy;
-});
+builder.Services.AddAuthorization();
 
 builder.Services
-    .AddRazorPages()
+    .AddRazorPages(options =>
+    {
+        // Require auth for all Razor Pages by default but keep the public landing and error pages anonymous.
+        options.Conventions.AuthorizeFolder("/");
+        options.Conventions.AllowAnonymousToPage("/Index");
+        options.Conventions.AllowAnonymousToPage("/Error");
+    })
     .AddMicrosoftIdentityUI();
 
 var app = builder.Build();
