@@ -1,10 +1,13 @@
 ﻿(() => {
+    let syncEntryBounds = () => { };
+
     document.addEventListener('DOMContentLoaded', () => {
         initTimelineSelection();
         initFabMenu();
         initEditButtons();
         initBookingButtons();
         initMultiDayToggle();
+        initEntryDateBounds();
         reopenOffcanvasOnValidation();
     });
 
@@ -146,6 +149,7 @@
             multiDayToggle.checked = multiDay;
         }
         updateEntryEndDateVisibility();
+        syncEntryBounds();
 
         const label = document.getElementById('entryFlyoutLabel');
         if (label) {
@@ -166,6 +170,7 @@
             multiDayToggle.checked = false;
         }
         updateEntryEndDateVisibility();
+        syncEntryBounds();
 
         const label = document.getElementById('entryFlyoutLabel');
         if (label) {
@@ -296,6 +301,61 @@
         }
 
         endDateGroup.classList.toggle('d-none', !checkbox.checked);
+    }
+
+    function initEntryDateBounds() {
+        const startInput = document.getElementById('EntryInput_Date');
+        const endInput = document.getElementById('EntryInput_EndDate');
+        if (!startInput || !endInput) {
+            return;
+        }
+
+        const tripStart = startInput.getAttribute('min') || '';
+        const tripEnd = startInput.getAttribute('max') || '';
+
+        syncEntryBounds = () => {
+            const currentStart = startInput.value || '';
+            const minForEnd = currentStart || tripStart;
+
+            if (minForEnd) {
+                endInput.min = minForEnd;
+            } else {
+                endInput.removeAttribute('min');
+            }
+
+            if (tripStart) {
+                startInput.min = tripStart;
+            } else {
+                startInput.removeAttribute('min');
+            }
+
+            if (startInput.value && tripStart && startInput.value < tripStart) {
+                startInput.value = tripStart;
+            }
+
+            if (tripEnd) {
+                startInput.max = tripEnd;
+                endInput.max = tripEnd;
+            } else {
+                startInput.removeAttribute('max');
+                endInput.removeAttribute('max');
+            }
+
+            if (endInput.value && endInput.min && endInput.value < endInput.min) {
+                endInput.value = endInput.min;
+            }
+
+            if (endInput.value && endInput.max && endInput.value > endInput.max) {
+                endInput.value = endInput.max;
+            }
+
+            if (startInput.value && startInput.max && startInput.value > startInput.max) {
+                startInput.value = startInput.max;
+            }
+        };
+
+        startInput.addEventListener('change', syncEntryBounds);
+        syncEntryBounds();
     }
 
     function setBookingDetail(panel, name, value) {

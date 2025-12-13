@@ -4,6 +4,8 @@
 @{
     ViewData["Title"] = "Trip Timeline";
     var trip = Model.TripDetails?.Trip;
+    var tripStartDateValue = trip?.StartDate?.ToString("yyyy-MM-dd");
+    var tripEndDateValue = trip?.EndDate?.ToString("yyyy-MM-dd");
 }
 
 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
@@ -215,7 +217,8 @@ else
 
             <div class="mb-3">
                 <label asp-for="EntryInput.Date" class="form-label"></label>
-                <input asp-for="EntryInput.Date" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}" />
+                <input asp-for="EntryInput.Date" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}"
+                    min="@tripStartDateValue" max="@tripEndDateValue" />
                 <span asp-validation-for="EntryInput.Date" class="text-danger"></span>
             </div>
 
@@ -233,7 +236,8 @@ else
 
             <div class="mb-3 d-none" data-entry-end-date>
                 <label asp-for="EntryInput.EndDate" class="form-label"></label>
-                <input asp-for="EntryInput.EndDate" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}" />
+                <input asp-for="EntryInput.EndDate" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}"
+                    min="@tripStartDateValue" max="@tripEndDateValue" />
                 <span asp-validation-for="EntryInput.EndDate" class="text-danger"></span>
             </div>
 

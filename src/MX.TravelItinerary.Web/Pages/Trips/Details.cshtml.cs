@@ -61,16 +61,16 @@ public sealed class DetailsModel : PageModel
             TripId = EntryInput.TripId;
         }
 
+        if (!await LoadTripAsync(cancellationToken))
+        {
+            return NotFound();
+        }
+
         ModelState.Clear();
         TryValidateModel(EntryInput, nameof(EntryInput));
         ValidateEntryInput();
         if (!ModelState.IsValid)
         {
-            if (!await LoadTripAsync(cancellationToken))
-            {
-                return NotFound();
-            }
-
             return Page();
         }
 
@@ -233,6 +233,38 @@ public sealed class DetailsModel : PageModel
         else if (EntryInput.EndDate is not null)
         {
             ModelState.AddModelError("EntryInput.EndDate", "Clear the end date for a single-day entry.");
+        }
+
+        var trip = TripDetails?.Trip;
+        if (trip is null)
+        {
+            return;
+        }
+
+        if (trip.StartDate is { } tripStart)
+        {
+            if (EntryInput.Date is { } entryStart && entryStart < tripStart)
+            {
+                ModelState.AddModelError("EntryInput.Date", $"Date must be on or after {tripStart:MMM dd, yyyy}.");
+            }
+
+            if (EntryInput.EndDate is { } entryEnd && entryEnd < tripStart)
+            {
+                ModelState.AddModelError("EntryInput.EndDate", $"End date must be on or after {tripStart:MMM dd, yyyy}.");
+            }
+        }
+
+        if (trip.EndDate is { } tripEnd)
+        {
+            if (EntryInput.Date is { } entryStart && entryStart > tripEnd)
+            {
+                ModelState.AddModelError("EntryInput.Date", $"Date must be on or before {tripEnd:MMM dd, yyyy}.");
+            }
+
+            if (EntryInput.EndDate is { } entryEnd && entryEnd > tripEnd)
+            {
+                ModelState.AddModelError("EntryInput.EndDate", $"End date must be on or before {tripEnd:MMM dd, yyyy}.");
+            }
         }
     }
 
