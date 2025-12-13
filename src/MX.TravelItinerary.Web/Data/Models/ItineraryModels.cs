@@ -51,24 +51,6 @@ public enum TimelineItemType
     Other = 13
 }
 
-public enum BookingType
-{
-    [Display(Name = "Flight")]
-    Flight = 0,
-
-    [Display(Name = "Hotel")]
-    Hotel = 1,
-
-    [Display(Name = "Transport / transfer")]
-    Transport = 2,
-
-    [Display(Name = "Activity / excursion")]
-    Activity = 3,
-
-    [Display(Name = "Other")]
-    Other = 4
-}
-
 public sealed record Trip(
     string TripId,
     string UserId,
@@ -130,7 +112,7 @@ public sealed record Booking(
     string TripId,
     string BookingId,
     string? EntryId,
-    BookingType BookingType,
+    TimelineItemType ItemType,
     string? Vendor,
     string? Reference,
     decimal? Cost,
@@ -141,7 +123,7 @@ public sealed record Booking(
 
 public sealed record BookingMutation(
     string? EntryId,
-    BookingType BookingType,
+    TimelineItemType ItemType,
     string? Vendor,
     string? Reference,
     decimal? Cost,
@@ -202,16 +184,6 @@ public static class ModelEnumExtensions
         return value.ToString();
     }
 
-    public static BookingType ToBookingType(this string? value)
-    {
-        if (!string.IsNullOrWhiteSpace(value) && Enum.TryParse<BookingType>(value, true, out var parsed))
-        {
-            return parsed;
-        }
-
-        return BookingType.Other;
-    }
-
     public static TimelineItemType ToTimelineItemType(this string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -234,9 +206,6 @@ public static class ModelEnumExtensions
             _ => TimelineItemType.Other
         };
     }
-
-    public static string ToStorageValue(this BookingType bookingType)
-        => bookingType.ToString().ToLowerInvariant();
 
     public static string ToStorageValue(this TimelineItemType itemType)
         => itemType.ToString().ToLowerInvariant();

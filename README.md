@@ -89,7 +89,7 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 | `PartitionKey`            | `TripId`                                                       | Scoped per trip.                                       |
 | `RowKey`                  | `BookingId`                                                    | GUID.                                                  |
 | `EntryId`                 | Reference to itinerary row                                     | Maintains linkage back to the day card.                |
-| `BookingType`             | `accommodation`, `transport`, `activity`, `insurance`, `other` | Enum for UI badges.                                    |
+| `ItemType`                | `flight`, `hotel`, `tour`, `dining`, `note`, `other`            | Snapshot of the linked itinerary category for UI cues. |
 | `Vendor`                  | `"British Airways"`                                            | Provider name.                                         |
 | `Reference`               | `"YQ695R"`                                                     | PNR/reservation number.                                |
 | `Cost` / `Currency`       | `631.81` / `GBP`                                               | Actual spend.                                          |

@@ -35,8 +35,6 @@ public sealed class DetailsModel : PageModel
     [BindProperty]
     public BookingForm BookingInput { get; set; } = new();
 
-    public IReadOnlyList<SelectListItem> BookingTypeOptions { get; } = BuildSelectList<BookingType>();
-
     public IReadOnlyList<SelectListItem> EntryTypeOptions { get; } = BuildSelectList<TimelineItemType>(TimelineItemGroupSelector);
 
     [TempData]
@@ -364,9 +362,6 @@ public sealed class DetailsModel : PageModel
 
         public string? EntryId { get; set; }
 
-        [Display(Name = "Booking type")]
-        public BookingType BookingType { get; set; } = BookingType.Other;
-
         [StringLength(200)]
         public string? Vendor { get; set; }
 
@@ -394,7 +389,7 @@ public sealed class DetailsModel : PageModel
         public BookingMutation ToMutation()
             => new(
                 Normalize(EntryId),
-                BookingType,
+                TimelineItemType.Other,
                 Normalize(Vendor),
                 Normalize(Reference),
                 Cost,

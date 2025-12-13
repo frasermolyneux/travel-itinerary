@@ -50,7 +50,7 @@ internal static class TableEntityMapper
             TripId: entity.PartitionKey,
             BookingId: entity.RowKey,
             EntryId: entity.GetString("EntryId"),
-            BookingType: entity.GetString("BookingType").ToBookingType(),
+            ItemType: GetBookingItemType(entity),
             Vendor: entity.GetString("Vendor"),
             Reference: entity.GetString("Reference"),
             Cost: entity.GetDecimal("Cost"),
@@ -73,4 +73,34 @@ internal static class TableEntityMapper
             IncludeCost: entity.GetBoolean("IncludeCost", defaultValue: true),
             Notes: entity.GetString("Notes"));
     }
+
+    private static TimelineItemType GetBookingItemType(TableEntity entity)
+    {
+        var itemType = entity.GetString("ItemType");
+        if (!string.IsNullOrWhiteSpace(itemType))
+        {
+            return itemType.ToTimelineItemType();
+        }
+
+        var legacyType = entity.GetString("BookingType");
+        if (!string.IsNullOrWhiteSpace(legacyType))
+        {
+            return MapLegacyBookingType(legacyType);
+        }
+
+        return TimelineItemType.Other;
+    }
+
+    private static TimelineItemType MapLegacyBookingType(string legacy)
+        => legacy.Trim().ToLowerInvariant() switch
+        {
+            "flight" => TimelineItemType.Flight,
+            "hotel" => TimelineItemType.Hotel,
+            "transport" => TimelineItemType.Taxi,
+            "transport / transfer" => TimelineItemType.Taxi,
+            "transportation" => TimelineItemType.Taxi,
+            "activity" => TimelineItemType.Tour,
+            "activity / excursion" => TimelineItemType.Tour,
+            _ => TimelineItemType.Other
+        };
 }

@@ -74,7 +74,7 @@
                     mode: 'create',
                     parentType: button.dataset.parentType,
                     entryId: button.dataset.entryId,
-                    bookingType: button.dataset.bookingType,
+                    categoryLabel: button.dataset.entryTypeLabel,
                     title: button.dataset.entryTitle || button.dataset.segmentTitle || ''
                 });
             });
@@ -100,7 +100,7 @@
                 bookingId: detailPane.dataset.bookingId,
                 parentType: detailPane.dataset.bookingParentType,
                 entryId: detailPane.dataset.bookingEntryId,
-                bookingType: detailPane.dataset.bookingType,
+                categoryLabel: detailPane.dataset.bookingTypeLabel,
                 vendor: detailPane.dataset.bookingVendor,
                 reference: detailPane.dataset.bookingReference,
                 cost: detailPane.dataset.bookingCost,
@@ -163,13 +163,13 @@
     function resetBookingForm() {
         setInputValue('BookingInput_BookingId', '');
         setInputValue('BookingInput_EntryId', '');
-        setInputValue('BookingInput_BookingType', 'Other');
         setInputValue('BookingInput_Vendor', '');
         setInputValue('BookingInput_Reference', '');
         setInputValue('BookingInput_Cost', '');
         setInputValue('BookingInput_Currency', '');
         setInputValue('BookingInput_CancellationPolicy', '');
         setInputValue('BookingInput_ConfirmationDetails', '');
+        setBookingCategoryDisplay('—');
 
         const refundable = document.getElementById('BookingInput_IsRefundable');
         if (refundable) {
@@ -203,15 +203,13 @@
 
         setInputValue('BookingInput_BookingId', options.bookingId ?? '');
         setInputValue('BookingInput_EntryId', options.entryId ?? '');
-        if (options.bookingType) {
-            setInputValue('BookingInput_BookingType', options.bookingType);
-        }
         setInputValue('BookingInput_Vendor', options.vendor ?? '');
         setInputValue('BookingInput_Reference', options.reference ?? '');
         setInputValue('BookingInput_Cost', options.cost ?? '');
         setInputValue('BookingInput_Currency', options.currency ?? '');
         setInputValue('BookingInput_CancellationPolicy', options.cancellation ?? '');
         setInputValue('BookingInput_ConfirmationDetails', options.details ?? '');
+        setBookingCategoryDisplay(options.categoryLabel || 'Linked itinerary entry');
 
         const refundable = document.getElementById('BookingInput_IsRefundable');
         if (refundable) {
@@ -371,6 +369,15 @@
         instance.show();
     }
 
+    function setBookingCategoryDisplay(label) {
+        const target = document.getElementById('bookingCategoryDisplay');
+        if (!target) {
+            return;
+        }
+
+        target.textContent = label && label.trim().length > 0 ? label : '—';
+    }
+
     function closeOffcanvas(id) {
         const element = document.getElementById(id);
         if (!element) {
@@ -388,6 +395,16 @@
         if (entryErrors) {
             openOffcanvas('entryFlyout');
         } else if (bookingErrors) {
+            const entryInput = document.getElementById('BookingInput_EntryId');
+            const entryId = entryInput?.value || '';
+            if (entryId) {
+                const addButton = document.querySelector(`[data-booking-action="add"][data-entry-id="${entryId}"]`);
+                const viewButton = document.querySelector(`[data-booking-action="view"][data-parent-entry="${entryId}"]`);
+                const label = addButton?.dataset.entryTypeLabel || viewButton?.dataset.bookingTypeLabel;
+                if (label) {
+                    setBookingCategoryDisplay(label);
+                }
+            }
             openOffcanvas('bookingFlyout');
         }
     }

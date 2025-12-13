@@ -207,12 +207,13 @@ public sealed class TableItineraryRepository : IItineraryRepository
         ArgumentNullException.ThrowIfNull(mutation);
 
         await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
-        await ValidateBookingLinkAsync(tripId, mutation, cancellationToken);
+        var itemType = await ResolveBookingItemTypeAsync(tripId, mutation, cancellationToken);
         if (await BookingExistsForLinkAsync(tripId, mutation, excludeBookingId: null, cancellationToken))
         {
             throw new InvalidOperationException("The selected item already has a booking linked.");
         }
 
+        mutation = mutation with { ItemType = itemType };
         var bookingId = Guid.NewGuid().ToString("N");
         var entity = new TableEntity(tripId, bookingId);
         ApplyBookingMutation(entity, mutation);
@@ -229,7 +230,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         ArgumentNullException.ThrowIfNull(mutation);
 
         await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
-        await ValidateBookingLinkAsync(tripId, mutation, cancellationToken);
+        var itemType = await ResolveBookingItemTypeAsync(tripId, mutation, cancellationToken);
         if (await BookingExistsForLinkAsync(tripId, mutation, bookingId, cancellationToken))
         {
             throw new InvalidOperationException("The selected item already has a booking linked.");
@@ -247,6 +248,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
             return null;
         }
 
+        mutation = mutation with { ItemType = itemType };
         ApplyBookingMutation(entity, mutation);
         await _tables.Bookings.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
 
@@ -281,7 +283,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
     }
 
-    private async Task ValidateBookingLinkAsync(string tripId, BookingMutation mutation, CancellationToken cancellationToken)
+    private async Task<TimelineItemType> ResolveBookingItemTypeAsync(string tripId, BookingMutation mutation, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(mutation.EntryId))
         {
@@ -293,6 +295,9 @@ public sealed class TableItineraryRepository : IItineraryRepository
         {
             throw new InvalidOperationException("The selected timeline entry no longer exists.");
         }
+
+        var itemType = entry.Value!.GetString("ItemType");
+        return itemType.ToTimelineItemType();
     }
 
     private async Task<bool> BookingExistsForLinkAsync(string tripId, BookingMutation mutation, string? excludeBookingId, CancellationToken cancellationToken)
@@ -356,7 +361,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
     private static void ApplyBookingMutation(TableEntity entity, BookingMutation mutation)
     {
         SetOrRemove(entity, "EntryId", mutation.EntryId);
-        entity["BookingType"] = mutation.BookingType.ToStorageValue();
+        entity["ItemType"] = mutation.ItemType.ToStorageValue();
         SetOrRemove(entity, "Vendor", mutation.Vendor);
         SetOrRemove(entity, "Reference", mutation.Reference);
         SetOrRemove(entity, "Cost", mutation.Cost);

@@ -96,15 +96,16 @@ else
                                 @if (entryBooking is null)
                                 {
                                     <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="add"
-                                        data-parent-type="entry" data-entry-id="@entry.EntryId" data-entry-title="@entry.Title">
+                                        data-parent-type="entry" data-entry-id="@entry.EntryId" data-entry-title="@entry.Title"
+                                        data-entry-type="@entry.ItemType" data-entry-type-label="@entry.ItemType.GetDisplayName()">
                                         Add booking
                                     </button>
                                 }
                                 else
                                 {
                                     <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="view"
-                                        data-booking-id="@entryBooking.BookingId" data-booking-type="@entryBooking.BookingType"
-                                        data-booking-type-label="@entryBooking.BookingType.GetDisplayName()"
+                                        data-booking-id="@entryBooking.BookingId" data-booking-type="@entryBooking.ItemType"
+                                        data-booking-type-label="@entryBooking.ItemType.GetDisplayName()"
                                         data-booking-vendor="@(entryBooking.Vendor ?? string.Empty)"
                                         data-booking-reference="@(entryBooking.Reference ?? string.Empty)"
                                         data-booking-cost="@(entryBooking.Cost?.ToString("0.##") ?? string.Empty)"
@@ -161,15 +162,17 @@ else
                         {
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="add"
                                 data-parent-type="entry" data-entry-id="@block.Entry.EntryId"
-                                data-entry-title="@(block.Entry.Title ?? block.Entry.ItemType.GetDisplayName())">
+                                data-entry-title="@(block.Entry.Title ?? block.Entry.ItemType.GetDisplayName())"
+                                data-entry-type="@block.Entry.ItemType"
+                                data-entry-type-label="@block.Entry.ItemType.GetDisplayName()">
                                 Add booking
                             </button>
                         }
                         else
                         {
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="view"
-                                data-booking-id="@entryBooking.BookingId" data-booking-type="@entryBooking.BookingType"
-                                data-booking-type-label="@entryBooking.BookingType.GetDisplayName()"
+                                data-booking-id="@entryBooking.BookingId" data-booking-type="@entryBooking.ItemType"
+                                data-booking-type-label="@entryBooking.ItemType.GetDisplayName()"
                                 data-booking-vendor="@(entryBooking.Vendor ?? string.Empty)"
                                 data-booking-reference="@(entryBooking.Reference ?? string.Empty)"
                                 data-booking-cost="@(entryBooking.Cost?.ToString("0.##") ?? string.Empty)"
@@ -266,10 +269,9 @@ else
             <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
             <div class="mb-3">
-                <label asp-for="BookingInput.BookingType" class="form-label"></label>
-                <select asp-for="BookingInput.BookingType" class="form-select"
-                    asp-items="Model.BookingTypeOptions"></select>
-                <span asp-validation-for="BookingInput.BookingType" class="text-danger"></span>
+                <label class="form-label">Category</label>
+                <div id="bookingCategoryDisplay" class="form-control-plaintext fw-semibold">—</div>
+                <div class="form-text">Bookings inherit their category from the linked itinerary entry.</div>
             </div>
 
             <div class="mb-3">
