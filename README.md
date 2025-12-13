@@ -64,23 +64,23 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 
 ### ItineraryEntries
 
-| Column                         | Type / Example                                                              | Notes                                                    |
-| ------------------------------ | --------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `PartitionKey`                 | `TripId`                                                                    | Scope per trip.                                          |
-| `RowKey`                       | `EntryId` (GUID)                                                            | Identifier referenced by bookings and UI mutations.      |
-| `Date`                         | `2026-01-18`                                                                | Local start date for the entry.                          |
-| `EndDate`                      | `2026-01-21`                                                                | Optional inclusive end for multi-day spans.              |
-| `IsMultiDay`                   | `true/false`                                                                | Paints a timeline lane across `Date` → `EndDate`.        |
+| Column                         | Type / Example                                                               | Notes                                                    |
+| ------------------------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `PartitionKey`                 | `TripId`                                                                     | Scope per trip.                                          |
+| `RowKey`                       | `EntryId` (GUID)                                                             | Identifier referenced by bookings and UI mutations.      |
+| `Date`                         | `2026-01-18`                                                                 | Local start date for the entry.                          |
+| `EndDate`                      | `2026-01-21`                                                                 | Optional inclusive end for multi-day spans.              |
+| `IsMultiDay`                   | `true/false`                                                                 | Paints a timeline lane across `Date` → `EndDate`.        |
 | `ItemType`                     | `travel`, `lodging`, `activity`, `dining`, `transportation`, `note`, `other` | Drives icons/colors on the timeline.                     |
-| `Title`                        | `"Hotel Taj Resorts"`                                                       | Primary text.                                            |
-| `Details`                      | Multiline text                                                              | Narrative for the slot (activities, instructions, etc.). |
-| `LocationName` / `LocationUrl` | Name + map link                                                             | Used for cards and Google Maps deep links.               |
-| `Latitude` / `Longitude`       | `28.592` / `77.250`                                                         | Map markers.                                             |
-| `CostEstimate` / `Currency`    | `42` / `GBP`                                                                | Budget plus paid badges.                                 |
-| `IsPaid`                       | `true/false`                                                                | Quick paid indicator.                                    |
-| `PaymentStatus`                | `unknown`, `planned`, `deposit`, `partial`, `paid`, `refunded`, `cancelled` | Enum reflecting lifecycle.                               |
-| `Provider`                     | `"Booking.com"`                                                             | Vendor summary.                                          |
-| `Tags`                         | `"hotel,luxury"`                                                            | Lightweight filtering.                                   |
+| `Title`                        | `"Hotel Taj Resorts"`                                                        | Primary text.                                            |
+| `Details`                      | Multiline text                                                               | Narrative for the slot (activities, instructions, etc.). |
+| `LocationName` / `LocationUrl` | Name + map link                                                              | Used for cards and Google Maps deep links.               |
+| `Latitude` / `Longitude`       | `28.592` / `77.250`                                                          | Map markers.                                             |
+| `CostEstimate` / `Currency`    | `42` / `GBP`                                                                 | Budget plus paid badges.                                 |
+| `IsPaid`                       | `true/false`                                                                 | Quick paid indicator.                                    |
+| `PaymentStatus`                | `unknown`, `planned`, `deposit`, `partial`, `paid`, `refunded`, `cancelled`  | Enum reflecting lifecycle.                               |
+| `Provider`                     | `"Booking.com"`                                                              | Vendor summary.                                          |
+| `Tags`                         | `"hotel,luxury"`                                                             | Lightweight filtering.                                   |
 
 ### Bookings
 

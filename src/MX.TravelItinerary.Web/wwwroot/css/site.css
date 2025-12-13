@@ -182,6 +182,7 @@ body {
   --segment-accent: rgba(102, 16, 242, 0.14);
   --segment-border: #6610f2;
 }
+
 .segment-type-dining {
   --segment-accent: rgba(255, 193, 7, 0.18);
   --segment-border: #fd7e14;
