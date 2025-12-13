@@ -16,6 +16,7 @@ builder.Services
         options.Conventions.AuthorizeFolder("/");
         options.Conventions.AllowAnonymousToPage("/Index");
         options.Conventions.AllowAnonymousToPage("/Error");
+        options.Conventions.AllowAnonymousToAreaFolder("MicrosoftIdentity", "/Account");
     })
     .AddMicrosoftIdentityUI();
 
