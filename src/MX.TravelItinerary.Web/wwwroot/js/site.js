@@ -120,6 +120,7 @@
                 return;
             }
 
+            closeOffcanvas('bookingDetailFlyout');
             openBookingForm({
                 mode: 'edit',
                 bookingId: detailPane.dataset.bookingId,
@@ -337,6 +338,16 @@
 
         const instance = bootstrap.Offcanvas.getOrCreateInstance(element);
         instance.show();
+    }
+
+    function closeOffcanvas(id) {
+        const element = document.getElementById(id);
+        if (!element) {
+            return;
+        }
+
+        const instance = bootstrap.Offcanvas.getInstance(element);
+        instance?.hide();
     }
 
     function reopenOffcanvasOnValidation() {
