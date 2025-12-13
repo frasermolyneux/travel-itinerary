@@ -212,4 +212,23 @@ public static class ModelEnumExtensions
 
     public static string ToCssToken(this TimelineItemType itemType)
         => itemType.ToStorageValue();
+
+    public static string GetIconClass(this TimelineItemType itemType)
+        => itemType switch
+        {
+            TimelineItemType.Flight => "bi-airplane-engines",
+            TimelineItemType.Train => "bi-train-front",
+            TimelineItemType.Coach => "bi-bus-front",
+            TimelineItemType.Ferry => "bi-tsunami",
+            TimelineItemType.Taxi => "bi-taxi-front",
+            TimelineItemType.Hotel => "bi-buildings",
+            TimelineItemType.Flat => "bi-building",
+            TimelineItemType.House => "bi-house-heart",
+            TimelineItemType.Tour => "bi-map",
+            TimelineItemType.Museum => "bi-bank",
+            TimelineItemType.Park => "bi-tree",
+            TimelineItemType.Dining => "bi-egg-fried",
+            TimelineItemType.Note => "bi-journal-text",
+            _ => "bi-stars"
+        };
 }

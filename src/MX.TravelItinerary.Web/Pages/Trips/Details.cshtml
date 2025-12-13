@@ -71,13 +71,18 @@ else
                     @foreach (var entry in day.Entries)
                     {
                         var entryBooking = Model.GetBookingForEntry(entry.EntryId);
+                        var entryTypeToken = entry.ItemType.ToCssToken();
                         <div class="timeline-item" data-timeline-item data-item-type="entry" data-item-id="@entry.EntryId">
                             <div class="timeline-item-body">
-                                <span>@entry</span>
-                                @if (entryBooking is not null)
-                                {
-                                    <span class="booking-indicator" title="Booking attached">&#128206;</span>
-                                }
+                                <div class="timeline-item-heading">
+                                    <span class="timeline-item-icon bi @entry.ItemType.GetIconClass() segment-type-@entryTypeToken"
+                                        aria-hidden="true"></span>
+                                    <span class="timeline-item-title">@entry</span>
+                                    @if (entryBooking is not null)
+                                    {
+                                        <span class="booking-indicator" title="Booking attached">&#128206;</span>
+                                    }
+                                </div>
                             </div>
                             <div class="timeline-actions">
                                 <button type="button" class="btn btn-sm btn-outline-primary me-2" data-edit-type="entry"
@@ -136,11 +141,15 @@ else
                 <div class="timeline-item timeline-item--segment segment-type-@segmentType" data-timeline-item
                     data-item-type="entry" data-item-id="@block.Entry.EntryId">
                     <div class="timeline-item-body">
-                        <span>@block.Entry</span>
-                        @if (entryBooking is not null)
-                        {
-                            <span class="booking-indicator" title="Booking attached">&#128206;</span>
-                        }
+                            <div class="timeline-item-heading">
+                                <span class="timeline-item-icon bi @block.Entry.ItemType.GetIconClass() segment-type-@segmentType"
+                                    aria-hidden="true"></span>
+                                <span class="timeline-item-title">@block.Entry</span>
+                                @if (entryBooking is not null)
+                                {
+                                    <span class="booking-indicator" title="Booking attached">&#128206;</span>
+                                }
+                            </div>
                         <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")
                         </div>
                     </div>
