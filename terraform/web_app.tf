@@ -15,10 +15,10 @@ resource "azurerm_linux_web_app" "app" {
 
   site_config {
     application_stack {
-      dotnet_version = "v9.0"
+      dotnet_version = "9.0"
     }
 
-    always_on           = false // Shared Plan
+    always_on           = true
     ftps_state          = "Disabled"
     minimum_tls_version = "1.2"
   }
