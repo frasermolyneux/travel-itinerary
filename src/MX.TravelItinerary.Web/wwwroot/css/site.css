@@ -123,12 +123,14 @@ body {
   margin-top: 0.5rem;
   opacity: 0;
   max-height: 0;
+  pointer-events: none;
   transition: opacity 0.2s ease, max-height 0.2s ease;
 }
 
 .timeline-item.is-selected .timeline-actions {
   opacity: 1;
   max-height: 200px;
+  pointer-events: auto;
 }
 
 .booking-indicator {
