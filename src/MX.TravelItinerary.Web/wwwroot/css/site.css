@@ -38,7 +38,7 @@ body {
 
 .timeline-grid {
   display: grid;
-  grid-template-columns: minmax(160px, 220px) minmax(140px, 220px) 1fr;
+  grid-template-columns: minmax(160px, 230px) minmax(320px, 460px) minmax(320px, 1fr);
   grid-auto-rows: minmax(140px, auto);
   gap: 1.5rem;
   position: relative;
@@ -184,22 +184,21 @@ body {
 }
 
 .metadata-list {
-  display: grid;
-  grid-template-columns: minmax(110px, 150px) 1fr;
-  gap: 0.2rem 0.75rem;
-  font-size: 0.9rem;
   margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
 }
 
 .metadata-list dt {
   text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--bs-secondary-color);
-  margin: 0;
+  margin-bottom: 0.15rem;
 }
 
 .metadata-list dd {
-  margin-bottom: 0.35rem;
+  margin: 0 0 0.75rem;
 }
 
 .booking-indicator {
@@ -211,12 +210,14 @@ body {
   grid-column: 2;
   pointer-events: none;
   position: relative;
-  --lane-gap: 0.75rem;
+  --lane-gap: 0.5rem;
   --lane-count: 1;
   --lane-index: 0;
   --lane-size: calc((100% - (var(--lane-count) - 1) * var(--lane-gap)) / var(--lane-count));
   width: var(--lane-size);
   margin-left: calc(var(--lane-index) * (var(--lane-size) + var(--lane-gap)));
+  justify-self: start;
+  max-width: 100%;
 }
 
 .timeline-segment .timeline-item {
