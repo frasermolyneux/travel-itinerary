@@ -15,7 +15,6 @@ locals {
   storage_account_name   = lower("st${local.storage_account_prefix}${var.environment}${random_id.storage.hex}")
   storage_table_names = {
     trips             = "Trips"
-    trip_segments     = "TripSegments"
     itinerary_entries = "ItineraryEntries"
     bookings          = "Bookings"
     share_links       = "ShareLinks"

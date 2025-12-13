@@ -36,7 +36,7 @@ dotnet user-secrets set "Storage:TableEndpoint" "https://<storage-account>.table
 
 Terraform now provisions a dedicated Storage Account plus Azure Table containers for the data model. The web app's system-assigned managed identity receives the `Storage Table Data Contributor` role, so the application code authenticates with managed identity (or `DefaultAzureCredential` locally) instead of connection strings.
 
-- Tables: `Trips`, `TripSegments`, `ItineraryEntries`, `Bookings`, `ShareLinks`.
+- Tables: `Trips`, `ItineraryEntries`, `Bookings`, `ShareLinks`.
 - Outputs: `storage_account_name` and `storage_table_names` expose deployment-time metadata.
 - App configuration: the web app expects `Storage:TableEndpoint` (and optionally overrides for table names) via configuration. In Azure these values are injected through App Service settings; locally configure them with `dotnet user-secrets` or environment variables.
 
@@ -47,6 +47,8 @@ The default callback path is `/signin-oidc`. Ensure your local HTTPS profile (fr
 ## Data Model
 
 Azure Table Storage backs the travel itinerary experience. Each entity keeps a `PartitionKey` and `RowKey` tuned for the most common queries (per-user trip listings, and per-trip timelines) while allowing flexible columns for planned vs. confirmed items and share links.
+
+Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `EndDate`), so there is no longer a separate `TripSegments` table to maintain.
 
 ### Trips
 
@@ -60,26 +62,16 @@ Azure Table Storage backs the travel itinerary experience. Each entity keeps a `
 | `HomeTimeZone`          | `"Europe/London"`           | Default time zone for itinerary rendering.  |
 | `DefaultCurrency`       | `"GBP"`                     | Applied when an entry omits currency.       |
 
-### TripSegments
-
-| Column                                | Type / Example                                          | Notes                                                            |
-| ------------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------- |
-| `PartitionKey`                        | `TripId`                                                | All legs scoped to the trip.                                     |
-| `RowKey`                              | `SegmentId`                                             | GUID or short identifier.                                        |
-| `SegmentType`                         | `flight`, `train`, `drive`, `ferry`, `stay`, `activity` | Drives icons/colors on the map.                                  |
-| `StartDateTimeUtc` / `EndDateTimeUtc` | `2026-01-16T18:40Z`                                     | Timing of the segment.                                           |
-| `StartLocation` / `EndLocation`       | `{ lat, lon, label }`                                   | Either JSON blobs or flattened columns for coordinates + labels. |
-| `Title`                               | `"LHR ➡️ DEL"`                                           | Map/list label.                                                  |
-| `Description`                         | `"BA0257 Heathrow to Delhi"`                            | Optional details.                                                |
-
 ### ItineraryEntries
 
 | Column                         | Type / Example                                                              | Notes                                                    |
 | ------------------------------ | --------------------------------------------------------------------------- | -------------------------------------------------------- |
 | `PartitionKey`                 | `TripId`                                                                    | Scope per trip.                                          |
-| `RowKey`                       | `yyyyMMdd-EntryId`                                                          | Keeps chronological ordering for day views.              |
-| `Date`                         | `2026-01-18`                                                                | Local date.                                              |
-| `Category`                     | `accommodation`, `transport`, `activity`, `foodDrink`, `admin`, `note`      | Enum covering CSV content.                               |
+| `RowKey`                       | `EntryId` (GUID)                                                            | Identifier referenced by bookings and UI mutations.      |
+| `Date`                         | `2026-01-18`                                                                | Local start date for the entry.                          |
+| `EndDate`                      | `2026-01-21`                                                                | Optional inclusive end for multi-day spans.              |
+| `IsMultiDay`                   | `true/false`                                                                | Paints a timeline lane across `Date` → `EndDate`.        |
+| `ItemType`                     | `travel`, `lodging`, `activity`, `dining`, `transportation`, `note`, `other` | Drives icons/colors on the timeline.                     |
 | `Title`                        | `"Hotel Taj Resorts"`                                                       | Primary text.                                            |
 | `Details`                      | Multiline text                                                              | Narrative for the slot (activities, instructions, etc.). |
 | `LocationName` / `LocationUrl` | Name + map link                                                             | Used for cards and Google Maps deep links.               |
@@ -89,7 +81,6 @@ Azure Table Storage backs the travel itinerary experience. Each entity keeps a `
 | `PaymentStatus`                | `unknown`, `planned`, `deposit`, `partial`, `paid`, `refunded`, `cancelled` | Enum reflecting lifecycle.                               |
 | `Provider`                     | `"Booking.com"`                                                             | Vendor summary.                                          |
 | `Tags`                         | `"hotel,luxury"`                                                            | Lightweight filtering.                                   |
-| `BookingId`                    | FK to `Bookings`                                                            | Null until confirmation exists.                          |
 
 ### Bookings
 

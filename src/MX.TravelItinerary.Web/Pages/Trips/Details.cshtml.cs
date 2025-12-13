@@ -30,26 +30,19 @@ public sealed class DetailsModel : PageModel
     public TimelineViewModel Timeline { get; private set; } = TimelineViewModel.Empty;
 
     [BindProperty]
-    public TripSegmentForm SegmentInput { get; set; } = new();
-
-    [BindProperty]
     public ItineraryEntryForm EntryInput { get; set; } = new();
 
     [BindProperty]
     public BookingForm BookingInput { get; set; } = new();
 
-    public IReadOnlyList<SelectListItem> SegmentTypeOptions { get; } = BuildSelectList<TripSegmentType>();
-
     public IReadOnlyList<SelectListItem> BookingTypeOptions { get; } = BuildSelectList<BookingType>();
 
-    public IReadOnlyList<SelectListItem> EntryCategoryOptions { get; } = BuildNullableSelectList<ItineraryEntryCategory>("Uncategorized");
+    public IReadOnlyList<SelectListItem> EntryTypeOptions { get; } = BuildSelectList<TimelineItemType>();
 
     [TempData]
     public string? StatusMessage { get; set; }
 
     public IReadOnlyDictionary<string, Booking> EntryBookings { get; private set; } = new Dictionary<string, Booking>(StringComparer.OrdinalIgnoreCase);
-
-    public IReadOnlyDictionary<string, Booking> SegmentBookings { get; private set; } = new Dictionary<string, Booking>(StringComparer.OrdinalIgnoreCase);
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -61,68 +54,6 @@ public sealed class DetailsModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostSaveSegmentAsync(CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(TripId) && !string.IsNullOrWhiteSpace(SegmentInput.TripId))
-        {
-            TripId = SegmentInput.TripId;
-        }
-
-        ModelState.Clear();
-        TryValidateModel(SegmentInput, nameof(SegmentInput));
-        ValidateSegmentInput();
-
-        if (!ModelState.IsValid)
-        {
-            if (!await LoadTripAsync(cancellationToken))
-            {
-                return NotFound();
-            }
-
-            return Page();
-        }
-
-        var userId = GetUserId();
-        var mutation = SegmentInput.ToMutation();
-
-        if (string.IsNullOrWhiteSpace(SegmentInput.SegmentId))
-        {
-            await _repository.CreateTripSegmentAsync(userId, TripId, mutation, cancellationToken);
-            StatusMessage = "Segment added.";
-        }
-        else
-        {
-            var updated = await _repository.UpdateTripSegmentAsync(userId, TripId, SegmentInput.SegmentId, mutation, cancellationToken);
-            if (updated is null)
-            {
-                ModelState.AddModelError(string.Empty, "Unable to find the selected segment.");
-                if (!await LoadTripAsync(cancellationToken))
-                {
-                    return NotFound();
-                }
-
-                return Page();
-            }
-
-            StatusMessage = "Segment updated.";
-        }
-
-        return RedirectToPage(new { tripId = TripId });
-    }
-
-    public async Task<IActionResult> OnPostDeleteSegmentAsync(string segmentId, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(segmentId))
-        {
-            return RedirectToPage(new { tripId = TripId });
-        }
-
-        var userId = GetUserId();
-        await _repository.DeleteTripSegmentAsync(userId, TripId, segmentId, cancellationToken);
-        StatusMessage = "Segment deleted.";
-        return RedirectToPage(new { tripId = TripId });
-    }
-
     public async Task<IActionResult> OnPostSaveEntryAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(TripId) && !string.IsNullOrWhiteSpace(EntryInput.TripId))
@@ -132,6 +63,7 @@ public sealed class DetailsModel : PageModel
 
         ModelState.Clear();
         TryValidateModel(EntryInput, nameof(EntryInput));
+        ValidateEntryInput();
         if (!ModelState.IsValid)
         {
             if (!await LoadTripAsync(cancellationToken))
@@ -274,36 +206,41 @@ public sealed class DetailsModel : PageModel
 
         TripDetails = details;
         Timeline = TimelineViewModel.From(details);
-        SegmentInput.TripId = details.Trip.TripId;
         EntryInput.TripId = details.Trip.TripId;
         BookingInput.TripId = details.Trip.TripId;
         EntryBookings = BuildBookingLookup(details.Bookings, booking => booking.EntryId);
-        SegmentBookings = BuildBookingLookup(details.Bookings, booking => booking.SegmentId);
         return true;
     }
 
-    private void ValidateSegmentInput()
+    private void ValidateEntryInput()
     {
-        if (SegmentInput.StartDateTimeUtc.HasValue && SegmentInput.EndDateTimeUtc.HasValue &&
-            SegmentInput.EndDateTimeUtc < SegmentInput.StartDateTimeUtc)
+        if (EntryInput.IsMultiDay)
         {
-            ModelState.AddModelError("SegmentInput.EndDateTimeUtc", "Segment end cannot be earlier than the start.");
+            if (EntryInput.Date is null)
+            {
+                ModelState.AddModelError("EntryInput.Date", "Select a start date for a multi-day entry.");
+            }
+
+            if (EntryInput.EndDate is null)
+            {
+                ModelState.AddModelError("EntryInput.EndDate", "Select an end date for a multi-day entry.");
+            }
+            else if (EntryInput.Date is { } start && EntryInput.EndDate < start)
+            {
+                ModelState.AddModelError("EntryInput.EndDate", "End date cannot be earlier than the start date.");
+            }
+        }
+        else if (EntryInput.EndDate is not null)
+        {
+            ModelState.AddModelError("EntryInput.EndDate", "Clear the end date for a single-day entry.");
         }
     }
 
     private void ValidateBookingInput()
     {
-        var hasEntry = !string.IsNullOrWhiteSpace(BookingInput.EntryId);
-        var hasSegment = !string.IsNullOrWhiteSpace(BookingInput.SegmentId);
-
-        if (!hasEntry && !hasSegment)
+        if (string.IsNullOrWhiteSpace(BookingInput.EntryId))
         {
-            ModelState.AddModelError("BookingInput.EntryId", "Link the booking to an itinerary entry or trip segment.");
-        }
-
-        if (hasEntry && hasSegment)
-        {
-            ModelState.AddModelError("BookingInput.EntryId", "A booking can only be linked to one item.");
+            ModelState.AddModelError("BookingInput.EntryId", "Link the booking to a timeline entry.");
         }
     }
 
@@ -330,9 +267,6 @@ public sealed class DetailsModel : PageModel
     public Booking? GetBookingForEntry(string entryId)
         => EntryBookings.TryGetValue(entryId, out var booking) ? booking : null;
 
-    public Booking? GetBookingForSegment(string segmentId)
-        => SegmentBookings.TryGetValue(segmentId, out var booking) ? booking : null;
-
     private string GetUserId()
     {
         var userId = User.GetObjectId();
@@ -343,53 +277,6 @@ public sealed class DetailsModel : PageModel
         }
 
         return userId;
-    }
-
-
-    public sealed class TripSegmentForm
-    {
-        [Required]
-        public string TripId { get; set; } = string.Empty;
-
-        public string? SegmentId { get; set; }
-
-        [Display(Name = "Segment type")]
-        public TripSegmentType SegmentType { get; set; } = TripSegmentType.Travel;
-
-        [StringLength(200)]
-        public string? Title { get; set; }
-
-        [DataType(DataType.DateTime)]
-        [Display(Name = "Start (local time)")]
-        public DateTime? StartDateTimeUtc { get; set; }
-
-        [DataType(DataType.DateTime)]
-        [Display(Name = "End (local time)")]
-        public DateTime? EndDateTimeUtc { get; set; }
-
-        [DataType(DataType.MultilineText)]
-        public string? Description { get; set; }
-
-        public TripSegmentMutation ToMutation()
-            => new(
-                SegmentType,
-                ToUtc(StartDateTimeUtc),
-                ToUtc(EndDateTimeUtc),
-                StartLocation: null,
-                EndLocation: null,
-                Title: string.IsNullOrWhiteSpace(Title) ? null : Title,
-                Description: string.IsNullOrWhiteSpace(Description) ? null : Description);
-
-        private static DateTimeOffset? ToUtc(DateTime? value)
-        {
-            if (value is null)
-            {
-                return null;
-            }
-
-            var local = DateTime.SpecifyKind(value.Value, DateTimeKind.Local);
-            return new DateTimeOffset(local).ToUniversalTime();
-        }
     }
 
     public sealed class ItineraryEntryForm
@@ -406,8 +293,15 @@ public sealed class DetailsModel : PageModel
         [DataType(DataType.Date)]
         public DateOnly? Date { get; set; }
 
-        [Display(Name = "Category")]
-        public ItineraryEntryCategory? Category { get; set; }
+        [DataType(DataType.Date)]
+        [Display(Name = "End date")]
+        public DateOnly? EndDate { get; set; }
+
+        [Display(Name = "Multi-day entry")]
+        public bool IsMultiDay { get; set; }
+
+        [Display(Name = "Type")]
+        public TimelineItemType ItemType { get; set; } = TimelineItemType.Activity;
 
         [DataType(DataType.MultilineText)]
         public string? Details { get; set; }
@@ -415,7 +309,9 @@ public sealed class DetailsModel : PageModel
         public ItineraryEntryMutation ToMutation()
             => new(
                 Date,
-                Category,
+                EndDate,
+                IsMultiDay,
+                ItemType,
                 string.IsNullOrWhiteSpace(Title) ? "Untitled entry" : Title.Trim(),
                 string.IsNullOrWhiteSpace(Details) ? null : Details,
                 Location: null,
@@ -435,8 +331,6 @@ public sealed class DetailsModel : PageModel
         public string? BookingId { get; set; }
 
         public string? EntryId { get; set; }
-
-        public string? SegmentId { get; set; }
 
         [Display(Name = "Booking type")]
         public BookingType BookingType { get; set; } = BookingType.Other;
@@ -468,7 +362,6 @@ public sealed class DetailsModel : PageModel
         public BookingMutation ToMutation()
             => new(
                 Normalize(EntryId),
-                Normalize(SegmentId),
                 BookingType,
                 Normalize(Vendor),
                 Normalize(Reference),
@@ -502,33 +395,39 @@ public sealed class DetailsModel : PageModel
     {
         public TimelineViewModel(
             IReadOnlyList<TimelineDay> days,
-            IReadOnlyList<TimelineSegmentBlock> segments,
-            IReadOnlyList<TripSegment> unscheduledSegments)
+            IReadOnlyList<TimelineSpanBlock> spans)
         {
             Days = days;
-            Segments = segments;
-            UnscheduledSegments = unscheduledSegments;
+            Spans = spans;
         }
 
         public IReadOnlyList<TimelineDay> Days { get; }
 
-        public IReadOnlyList<TimelineSegmentBlock> Segments { get; }
+        public IReadOnlyList<TimelineSpanBlock> Spans { get; }
 
-        public IReadOnlyList<TripSegment> UnscheduledSegments { get; }
-
-        public static TimelineViewModel Empty { get; } = new(Array.Empty<TimelineDay>(), Array.Empty<TimelineSegmentBlock>(), Array.Empty<TripSegment>());
+        public static TimelineViewModel Empty { get; } = new(Array.Empty<TimelineDay>(), Array.Empty<TimelineSpanBlock>());
 
         public static TimelineViewModel From(TripDetails details)
         {
             var dates = BuildTimelineDates(details);
-            var dayLookup = dates.Select((date, index) => new { date, index }).ToDictionary(item => item.date, item => item.index);
+            var dayLookup = dates
+                .Select((date, index) => new { date, index })
+                .ToDictionary(item => item.date, item => item.index);
+
+            var multiDayEntries = details.Entries
+                .Where(entry => entry.IsMultiDay && entry.Date is not null && entry.EndDate is not null)
+                .ToList();
+
+            var singleDayEntries = details.Entries
+                .Where(entry => !entry.IsMultiDay || entry.EndDate is null || entry.EndDate == entry.Date)
+                .ToList();
 
             var days = dates
                 .Select((date, index) =>
                 {
-                    var entries = details.Entries
+                    var entries = singleDayEntries
                         .Where(entry => entry.Date == date)
-                        .OrderBy(entry => entry.Category.HasValue ? (int)entry.Category.Value : int.MaxValue)
+                        .OrderBy(entry => (int)entry.ItemType)
                         .ThenBy(entry => entry.Title)
                         .ToList();
 
@@ -536,48 +435,9 @@ public sealed class DetailsModel : PageModel
                 })
                 .ToList();
 
-            var segments = new List<TimelineSegmentBlock>();
-            var unscheduledSegments = new List<TripSegment>();
-            if (dates.Count > 0)
-            {
-                var firstDate = dates.First();
-                var lastDate = dates.Last();
+            var spans = BuildSpanBlocks(multiDayEntries, dates, dayLookup);
 
-                foreach (var segment in details.Segments)
-                {
-                    if (segment.StartDateTimeUtc is null && segment.EndDateTimeUtc is null)
-                    {
-                        unscheduledSegments.Add(segment);
-                        continue;
-                    }
-
-                    var startDate = segment.StartDateTimeUtc is { } start
-                        ? DateOnly.FromDateTime(start.UtcDateTime)
-                        : firstDate;
-
-                    var endDate = segment.EndDateTimeUtc is { } end
-                        ? DateOnly.FromDateTime(end.UtcDateTime)
-                        : startDate;
-
-                    if (endDate < startDate)
-                    {
-                        (startDate, endDate) = (endDate, startDate);
-                    }
-
-                    startDate = startDate < firstDate ? firstDate : startDate;
-                    endDate = endDate > lastDate ? lastDate : endDate;
-
-                    var startIndex = dayLookup[startDate];
-                    var endIndex = dayLookup[endDate];
-                    segments.Add(new TimelineSegmentBlock(segment, startIndex + 1, endIndex + 2, startDate, endDate));
-                }
-            }
-
-            var laidOutSegments = segments.Count > 0
-                ? AssignSegmentLanes(segments)
-                : Array.Empty<TimelineSegmentBlock>();
-
-            return new TimelineViewModel(days, laidOutSegments, unscheduledSegments);
+            return new TimelineViewModel(days, spans);
         }
 
         private static IReadOnlyList<DateOnly> BuildTimelineDates(TripDetails details)
@@ -593,18 +453,16 @@ public sealed class DetailsModel : PageModel
                 candidates.Add(end);
             }
 
-            candidates.AddRange(details.Entries.Where(entry => entry.Date is not null).Select(entry => entry.Date!.Value));
-
-            foreach (var segment in details.Segments)
+            foreach (var entry in details.Entries)
             {
-                if (segment.StartDateTimeUtc is { } segStart)
+                if (entry.Date is { } entryDate)
                 {
-                    candidates.Add(DateOnly.FromDateTime(segStart.UtcDateTime));
+                    candidates.Add(entryDate);
                 }
 
-                if (segment.EndDateTimeUtc is { } segEnd)
+                if (entry.EndDate is { } entryEnd)
                 {
-                    candidates.Add(DateOnly.FromDateTime(segEnd.UtcDateTime));
+                    candidates.Add(entryEnd);
                 }
             }
 
@@ -631,21 +489,56 @@ public sealed class DetailsModel : PageModel
             return dates;
         }
 
+        private static IReadOnlyList<TimelineSpanBlock> BuildSpanBlocks(
+            IReadOnlyList<ItineraryEntry> entries,
+            IReadOnlyList<DateOnly> dates,
+            IReadOnlyDictionary<DateOnly, int> dayLookup)
+        {
+            if (entries.Count == 0 || dates.Count == 0)
+            {
+                return Array.Empty<TimelineSpanBlock>();
+            }
+
+            var firstDate = dates.First();
+            var lastDate = dates.Last();
+            var spans = new List<TimelineSpanBlock>();
+
+            foreach (var entry in entries)
+            {
+                var startDate = entry.Date!.Value;
+                var endDate = entry.EndDate!.Value;
+
+                if (endDate < startDate)
+                {
+                    (startDate, endDate) = (endDate, startDate);
+                }
+
+                startDate = startDate < firstDate ? firstDate : startDate;
+                endDate = endDate > lastDate ? lastDate : endDate;
+
+                var startIndex = dayLookup[startDate];
+                var endIndex = dayLookup[endDate];
+                spans.Add(new TimelineSpanBlock(entry, startIndex + 1, endIndex + 2, startDate, endDate));
+            }
+
+            return AssignSpanLanes(spans);
+        }
+
         public sealed record TimelineDay(int RowLine, DateOnly Date, IReadOnlyList<ItineraryEntry> Entries);
 
-        private static IReadOnlyList<TimelineSegmentBlock> AssignSegmentLanes(IReadOnlyList<TimelineSegmentBlock> segments)
+        private static IReadOnlyList<TimelineSpanBlock> AssignSpanLanes(IReadOnlyList<TimelineSpanBlock> spans)
         {
-            var ordered = segments
-                .OrderBy(segment => segment.RowStart)
-                .ThenByDescending(segment => segment.RowEnd - segment.RowStart)
+            var ordered = spans
+                .OrderBy(span => span.RowStart)
+                .ThenByDescending(span => span.RowEnd - span.RowStart)
                 .ToList();
 
-            var active = new List<(int lane, TimelineSegmentBlock block)>();
-            var laidOut = new List<TimelineSegmentBlock>(ordered.Count);
+            var active = new List<(int lane, TimelineSpanBlock block)>();
+            var laidOut = new List<TimelineSpanBlock>(ordered.Count);
 
-            foreach (var segment in ordered)
+            foreach (var span in ordered)
             {
-                active.RemoveAll(item => item.block.RowEnd <= segment.RowStart);
+                active.RemoveAll(item => item.block.RowEnd <= span.RowStart);
 
                 var lane = 0;
                 while (active.Any(item => item.lane == lane))
@@ -653,12 +546,12 @@ public sealed class DetailsModel : PageModel
                     lane++;
                 }
 
-                var updated = segment with { LaneIndex = lane };
+                var updated = span with { LaneIndex = lane };
                 active.Add((lane, updated));
                 laidOut.Add(updated);
             }
 
-            var finalized = new List<TimelineSegmentBlock>(laidOut.Count);
+            var finalized = new List<TimelineSpanBlock>(laidOut.Count);
             foreach (var block in laidOut)
             {
                 var laneCount = laidOut
@@ -676,11 +569,11 @@ public sealed class DetailsModel : PageModel
                 .ToList();
         }
 
-        private static bool Overlaps(TimelineSegmentBlock a, TimelineSegmentBlock b)
+        private static bool Overlaps(TimelineSpanBlock a, TimelineSpanBlock b)
             => a.RowStart < b.RowEnd && b.RowStart < a.RowEnd;
 
-        public sealed record TimelineSegmentBlock(
-            TripSegment Segment,
+        public sealed record TimelineSpanBlock(
+            ItineraryEntry Entry,
             int RowStart,
             int RowEnd,
             DateOnly StartDate,

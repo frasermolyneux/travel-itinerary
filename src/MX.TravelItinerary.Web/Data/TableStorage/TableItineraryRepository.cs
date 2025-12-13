@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using Azure;
 using Azure.Data.Tables;
 using MX.TravelItinerary.Web.Data.Models;
@@ -132,67 +131,6 @@ public sealed class TableItineraryRepository : IItineraryRepository
         try
         {
             await _tables.Trips.DeleteEntityAsync(userId, tripId, cancellationToken: cancellationToken);
-            return true;
-        }
-        catch (RequestFailedException ex) when (ex.Status == 404)
-        {
-            return false;
-        }
-    }
-
-    public async Task<TripSegment> CreateTripSegmentAsync(string userId, string tripId, TripSegmentMutation mutation, CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
-        ArgumentNullException.ThrowIfNull(mutation);
-
-        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
-
-        var segmentId = Guid.NewGuid().ToString("N");
-        var entity = new TableEntity(tripId, segmentId);
-        ApplySegmentMutation(entity, mutation);
-
-        await _tables.TripSegments.AddEntityAsync(entity, cancellationToken);
-        return TableEntityMapper.ToTripSegment(entity);
-    }
-
-    public async Task<TripSegment?> UpdateTripSegmentAsync(string userId, string tripId, string segmentId, TripSegmentMutation mutation, CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(segmentId);
-        ArgumentNullException.ThrowIfNull(mutation);
-
-        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
-
-        var existing = await _tables.TripSegments.GetEntityIfExistsAsync<TableEntity>(tripId, segmentId, cancellationToken: cancellationToken);
-        if (existing.HasValue is false)
-        {
-            return null;
-        }
-
-        var entity = existing.Value;
-        if (entity is null)
-        {
-            return null;
-        }
-        ApplySegmentMutation(entity, mutation);
-        await _tables.TripSegments.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
-
-        return TableEntityMapper.ToTripSegment(entity);
-    }
-
-    public async Task<bool> DeleteTripSegmentAsync(string userId, string tripId, string segmentId, CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(segmentId);
-
-        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
-
-        try
-        {
-            await _tables.TripSegments.DeleteEntityAsync(tripId, segmentId, cancellationToken: cancellationToken);
             return true;
         }
         catch (RequestFailedException ex) when (ex.Status == 404)
@@ -345,38 +283,26 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
     private async Task ValidateBookingLinkAsync(string tripId, BookingMutation mutation, CancellationToken cancellationToken)
     {
-        var hasEntry = !string.IsNullOrWhiteSpace(mutation.EntryId);
-        var hasSegment = !string.IsNullOrWhiteSpace(mutation.SegmentId);
-
-        if (hasEntry == hasSegment)
+        if (string.IsNullOrWhiteSpace(mutation.EntryId))
         {
-            throw new InvalidOperationException("Booking must be linked to exactly one itinerary entry or trip segment.");
+            throw new InvalidOperationException("Booking must be linked to a timeline entry.");
         }
 
-        if (hasEntry)
+        var entry = await _tables.ItineraryEntries.GetEntityIfExistsAsync<TableEntity>(tripId, mutation.EntryId!, cancellationToken: cancellationToken);
+        if (entry.HasValue is false)
         {
-            var entry = await _tables.ItineraryEntries.GetEntityIfExistsAsync<TableEntity>(tripId, mutation.EntryId!, cancellationToken: cancellationToken);
-            if (entry.HasValue is false)
-            {
-                throw new InvalidOperationException("The selected itinerary entry no longer exists.");
-            }
-        }
-
-        if (hasSegment)
-        {
-            var segment = await _tables.TripSegments.GetEntityIfExistsAsync<TableEntity>(tripId, mutation.SegmentId!, cancellationToken: cancellationToken);
-            if (segment.HasValue is false)
-            {
-                throw new InvalidOperationException("The selected trip segment no longer exists.");
-            }
+            throw new InvalidOperationException("The selected timeline entry no longer exists.");
         }
     }
 
     private async Task<bool> BookingExistsForLinkAsync(string tripId, BookingMutation mutation, string? excludeBookingId, CancellationToken cancellationToken)
     {
-        var filter = !string.IsNullOrWhiteSpace(mutation.EntryId)
-            ? TableClient.CreateQueryFilter($"PartitionKey eq {tripId} and EntryId eq {mutation.EntryId}")
-            : TableClient.CreateQueryFilter($"PartitionKey eq {tripId} and SegmentId eq {mutation.SegmentId}");
+        if (string.IsNullOrWhiteSpace(mutation.EntryId))
+        {
+            return false;
+        }
+
+        var filter = TableClient.CreateQueryFilter($"PartitionKey eq {tripId} and EntryId eq {mutation.EntryId}");
 
         await foreach (var entity in _tables.Bookings.QueryAsync<TableEntity>(filter: filter, maxPerPage: 5, cancellationToken: cancellationToken))
         {
@@ -389,17 +315,6 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
 
         return false;
-    }
-
-    private static void ApplySegmentMutation(TableEntity entity, TripSegmentMutation mutation)
-    {
-        entity["SegmentType"] = mutation.SegmentType.ToStorageValue();
-        SetOrRemove(entity, "Title", mutation.Title);
-        SetOrRemove(entity, "Description", mutation.Description);
-        SetOrRemove(entity, "StartDateTimeUtc", mutation.StartDateTimeUtc?.ToUniversalTime());
-        SetOrRemove(entity, "EndDateTimeUtc", mutation.EndDateTimeUtc?.ToUniversalTime());
-        SetLocationPayload(entity, "StartLocation", mutation.StartLocation);
-        SetLocationPayload(entity, "EndLocation", mutation.EndLocation);
     }
 
     private static void ApplyItineraryEntryMutation(TableEntity entity, ItineraryEntryMutation mutation)
@@ -416,14 +331,17 @@ public sealed class TableItineraryRepository : IItineraryRepository
             RemoveIfExists(entity, "Date");
         }
 
-        if (mutation.Category is null)
+        if (mutation.EndDate is { } endDate)
         {
-            RemoveIfExists(entity, "Category");
+            entity["EndDate"] = endDate.ToString(DateFormat);
         }
         else
         {
-            entity["Category"] = mutation.Category.Value.ToStorageValue();
+            RemoveIfExists(entity, "EndDate");
         }
+
+        entity["IsMultiDay"] = mutation.IsMultiDay;
+        entity["ItemType"] = mutation.ItemType.ToStorageValue();
         SetOrRemove(entity, "Details", mutation.Details);
         SetOrRemove(entity, "Currency", NormalizeCurrency(mutation.Currency));
         SetOrRemove(entity, "PaymentStatus", mutation.PaymentStatus);
@@ -438,7 +356,6 @@ public sealed class TableItineraryRepository : IItineraryRepository
     private static void ApplyBookingMutation(TableEntity entity, BookingMutation mutation)
     {
         SetOrRemove(entity, "EntryId", mutation.EntryId);
-        SetOrRemove(entity, "SegmentId", mutation.SegmentId);
         entity["BookingType"] = mutation.BookingType.ToStorageValue();
         SetOrRemove(entity, "Vendor", mutation.Vendor);
         SetOrRemove(entity, "Reference", mutation.Reference);
@@ -447,18 +364,6 @@ public sealed class TableItineraryRepository : IItineraryRepository
         SetOrRemove(entity, "IsRefundable", mutation.IsRefundable);
         SetOrRemove(entity, "CancellationPolicy", mutation.CancellationPolicy);
         SetOrRemove(entity, "ConfirmationDetailsJson", mutation.ConfirmationDetailsJson);
-    }
-
-    private static void SetLocationPayload(TableEntity entity, string propertyName, LocationInfo? location)
-    {
-        if (location is null)
-        {
-            RemoveIfExists(entity, propertyName);
-            return;
-        }
-
-        var payload = new LocationPayloadDto(location.Label, location.Latitude, location.Longitude, location.Url, location.Notes);
-        entity[propertyName] = JsonSerializer.Serialize(payload);
     }
 
     private static void SetItineraryLocation(TableEntity entity, LocationInfo? location)
@@ -488,13 +393,11 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
     private async Task<TripDetails> BuildTripDetailsAsync(Trip trip, ShareLink? shareLink, CancellationToken cancellationToken)
     {
-        var segmentsTask = QueryTripSegmentsAsync(trip.TripId, cancellationToken);
         var entriesTask = QueryItineraryEntriesAsync(trip.TripId, cancellationToken);
         var bookingsTask = QueryBookingsAsync(trip.TripId, cancellationToken);
 
-        await Task.WhenAll(segmentsTask, entriesTask, bookingsTask);
+        await Task.WhenAll(entriesTask, bookingsTask);
 
-        var segments = await segmentsTask;
         var entries = await entriesTask;
         var bookings = await bookingsTask;
 
@@ -509,20 +412,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
             bookings = new List<Booking>();
         }
 
-        return new TripDetails(trip, segments, entries, bookings, shareLink);
-    }
-
-    private async Task<IReadOnlyList<TripSegment>> QueryTripSegmentsAsync(string tripId, CancellationToken cancellationToken)
-    {
-        var segments = new List<TripSegment>();
-        await foreach (var entity in _tables.TripSegments.QueryAsync<TableEntity>(
-                   filter: CreatePartitionFilter(tripId),
-                   cancellationToken: cancellationToken))
-        {
-            segments.Add(TableEntityMapper.ToTripSegment(entity));
-        }
-
-        return segments;
+        return new TripDetails(trip, entries, bookings, shareLink);
     }
 
     private async Task<List<ItineraryEntry>> QueryItineraryEntriesAsync(string tripId, CancellationToken cancellationToken)
@@ -651,6 +541,4 @@ public sealed class TableItineraryRepository : IItineraryRepository
             entity.Remove(propertyName);
         }
     }
-
-    private sealed record LocationPayloadDto(string? Label, double? Latitude, double? Longitude, string? Url, string? Notes);
 }

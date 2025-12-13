@@ -4,6 +4,7 @@
         initFabMenu();
         initEditButtons();
         initBookingButtons();
+        initMultiDayToggle();
         reopenOffcanvasOnValidation();
     });
 
@@ -57,10 +58,7 @@
                 const formType = button.getAttribute('data-open-form');
                 fab.classList.remove('is-open');
 
-                if (formType === 'segment') {
-                    resetSegmentForm();
-                    openOffcanvas('segmentFlyout');
-                } else if (formType === 'entry') {
+                if (formType === 'entry') {
                     resetEntryForm();
                     openOffcanvas('entryFlyout');
                 }
@@ -69,14 +67,6 @@
     }
 
     function initEditButtons() {
-        document.querySelectorAll('[data-edit-type="segment"]').forEach((button) => {
-            button.addEventListener('click', (event) => {
-                event.stopPropagation();
-                populateSegmentForm(button.dataset);
-                openOffcanvas('segmentFlyout');
-            });
-        });
-
         document.querySelectorAll('[data-edit-type="entry"]').forEach((button) => {
             button.addEventListener('click', (event) => {
                 event.stopPropagation();
@@ -99,7 +89,6 @@
                     mode: 'create',
                     parentType: button.dataset.parentType,
                     entryId: button.dataset.entryId,
-                    segmentId: button.dataset.segmentId,
                     bookingType: button.dataset.bookingType,
                     title: button.dataset.entryTitle || button.dataset.segmentTitle || ''
                 });
@@ -126,7 +115,6 @@
                 bookingId: detailPane.dataset.bookingId,
                 parentType: detailPane.dataset.bookingParentType,
                 entryId: detailPane.dataset.bookingEntryId,
-                segmentId: detailPane.dataset.bookingSegmentId,
                 bookingType: detailPane.dataset.bookingType,
                 vendor: detailPane.dataset.bookingVendor,
                 reference: detailPane.dataset.bookingReference,
@@ -139,25 +127,6 @@
         });
     }
 
-    function populateSegmentForm(dataset) {
-        const form = document.getElementById('segment-form');
-        if (!form) {
-            return;
-        }
-
-        setInputValue('SegmentInput_SegmentId', dataset.segmentId ?? '');
-        setInputValue('SegmentInput_Title', dataset.segmentTitle ?? '');
-        setInputValue('SegmentInput_SegmentType', dataset.segmentType ?? 'Travel');
-        setInputValue('SegmentInput_StartDateTimeUtc', dataset.segmentStart ?? '');
-        setInputValue('SegmentInput_EndDateTimeUtc', dataset.segmentEnd ?? '');
-        setInputValue('SegmentInput_Description', dataset.segmentDescription ?? '');
-
-        const label = document.getElementById('segmentFlyoutLabel');
-        if (label) {
-            label.textContent = 'Edit trip segment';
-        }
-    }
-
     function populateEntryForm(dataset) {
         const form = document.getElementById('entry-form');
         if (!form) {
@@ -167,8 +136,16 @@
         setInputValue('EntryInput_EntryId', dataset.entryId ?? '');
         setInputValue('EntryInput_Title', dataset.entryTitle ?? '');
         setInputValue('EntryInput_Date', dataset.entryDate ?? '');
-        setInputValue('EntryInput_Category', dataset.entryCategory ?? '');
+        setInputValue('EntryInput_EndDate', dataset.entryEnd ?? '');
+        setInputValue('EntryInput_ItemType', dataset.entryType ?? 'Activity');
         setInputValue('EntryInput_Details', dataset.entryDetails ?? '');
+
+        const multiDay = dataset.entryIsMultiDay === 'true';
+        const multiDayToggle = document.getElementById('EntryInput_IsMultiDay');
+        if (multiDayToggle) {
+            multiDayToggle.checked = multiDay;
+        }
+        updateEntryEndDateVisibility();
 
         const label = document.getElementById('entryFlyoutLabel');
         if (label) {
@@ -176,26 +153,19 @@
         }
     }
 
-    function resetSegmentForm() {
-        setInputValue('SegmentInput_SegmentId', '');
-        setInputValue('SegmentInput_Title', '');
-        setInputValue('SegmentInput_SegmentType', 'Travel');
-        setInputValue('SegmentInput_StartDateTimeUtc', '');
-        setInputValue('SegmentInput_EndDateTimeUtc', '');
-        setInputValue('SegmentInput_Description', '');
-
-        const label = document.getElementById('segmentFlyoutLabel');
-        if (label) {
-            label.textContent = 'Add trip segment';
-        }
-    }
-
     function resetEntryForm() {
         setInputValue('EntryInput_EntryId', '');
         setInputValue('EntryInput_Title', '');
         setInputValue('EntryInput_Date', '');
-        setInputValue('EntryInput_Category', '');
+        setInputValue('EntryInput_EndDate', '');
+        setInputValue('EntryInput_ItemType', 'Activity');
         setInputValue('EntryInput_Details', '');
+
+        const multiDayToggle = document.getElementById('EntryInput_IsMultiDay');
+        if (multiDayToggle) {
+            multiDayToggle.checked = false;
+        }
+        updateEntryEndDateVisibility();
 
         const label = document.getElementById('entryFlyoutLabel');
         if (label) {
@@ -206,7 +176,6 @@
     function resetBookingForm() {
         setInputValue('BookingInput_BookingId', '');
         setInputValue('BookingInput_EntryId', '');
-        setInputValue('BookingInput_SegmentId', '');
         setInputValue('BookingInput_BookingType', 'Other');
         setInputValue('BookingInput_Vendor', '');
         setInputValue('BookingInput_Reference', '');
@@ -247,7 +216,6 @@
 
         setInputValue('BookingInput_BookingId', options.bookingId ?? '');
         setInputValue('BookingInput_EntryId', options.entryId ?? '');
-        setInputValue('BookingInput_SegmentId', options.segmentId ?? '');
         if (options.bookingType) {
             setInputValue('BookingInput_BookingType', options.bookingType);
         }
@@ -292,7 +260,6 @@
         panel.dataset.bookingParentType = dataset.bookingParentType ?? '';
         panel.dataset.bookingParentLabel = dataset.bookingParentLabel || '';
         panel.dataset.bookingEntryId = dataset.parentEntry ?? '';
-        panel.dataset.bookingSegmentId = dataset.parentSegment ?? '';
         panel.dataset.bookingType = dataset.bookingType ?? '';
         panel.dataset.bookingTypeLabel = dataset.bookingTypeLabel ?? '';
         panel.dataset.bookingVendor = dataset.bookingVendor ?? '';
@@ -309,6 +276,26 @@
         }
 
         openOffcanvas('bookingDetailFlyout');
+    }
+
+    function initMultiDayToggle() {
+        const checkbox = document.getElementById('EntryInput_IsMultiDay');
+        if (!checkbox) {
+            return;
+        }
+
+        checkbox.addEventListener('change', updateEntryEndDateVisibility);
+        updateEntryEndDateVisibility();
+    }
+
+    function updateEntryEndDateVisibility() {
+        const checkbox = document.getElementById('EntryInput_IsMultiDay');
+        const endDateGroup = document.querySelector('[data-entry-end-date]');
+        if (!checkbox || !endDateGroup) {
+            return;
+        }
+
+        endDateGroup.classList.toggle('d-none', !checkbox.checked);
     }
 
     function setBookingDetail(panel, name, value) {
@@ -353,13 +340,10 @@
     }
 
     function reopenOffcanvasOnValidation() {
-        const segmentErrors = document.querySelector('#segment-form .validation-summary-errors');
         const entryErrors = document.querySelector('#entry-form .validation-summary-errors');
         const bookingErrors = document.querySelector('#booking-form .validation-summary-errors');
 
-        if (segmentErrors) {
-            openOffcanvas('segmentFlyout');
-        } else if (entryErrors) {
+        if (entryErrors) {
             openOffcanvas('entryFlyout');
         } else if (bookingErrors) {
             openOffcanvas('bookingFlyout');

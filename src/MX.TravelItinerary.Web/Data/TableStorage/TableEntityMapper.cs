@@ -16,18 +16,6 @@ internal static class TableEntityMapper
             HomeTimeZone: entity.GetString("HomeTimeZone"),
             DefaultCurrency: entity.GetString("DefaultCurrency"));
 
-    public static TripSegment ToTripSegment(TableEntity entity)
-        => new(
-            TripId: entity.PartitionKey,
-            SegmentId: entity.RowKey,
-            SegmentType: entity.GetString("SegmentType").ToSegmentType(),
-            StartDateTimeUtc: entity.GetDateTimeOffset("StartDateTimeUtc"),
-            EndDateTimeUtc: entity.GetDateTimeOffset("EndDateTimeUtc"),
-            StartLocation: ParseLocation(entity, "StartLocation"),
-            EndLocation: ParseLocation(entity, "EndLocation"),
-            Title: entity.GetString("Title"),
-            Description: entity.GetString("Description"));
-
     public static ItineraryEntry ToItineraryEntry(TableEntity entity)
     {
         var locationName = entity.GetString("LocationName");
@@ -43,7 +31,9 @@ internal static class TableEntityMapper
             TripId: entity.PartitionKey,
             EntryId: entity.RowKey,
             Date: entity.GetDateOnly("Date"),
-            Category: entity.GetString("Category").ToEntryCategory(),
+            EndDate: entity.GetDateOnly("EndDate"),
+            IsMultiDay: entity.GetBoolean("IsMultiDay", defaultValue: false),
+            ItemType: entity.GetString("ItemType").ToTimelineItemType(),
             Title: entity.GetString("Title") ?? entity.RowKey,
             Details: entity.GetString("Details"),
             Location: location,
@@ -60,7 +50,6 @@ internal static class TableEntityMapper
             TripId: entity.PartitionKey,
             BookingId: entity.RowKey,
             EntryId: entity.GetString("EntryId"),
-            SegmentId: entity.GetString("SegmentId"),
             BookingType: entity.GetString("BookingType").ToBookingType(),
             Vendor: entity.GetString("Vendor"),
             Reference: entity.GetString("Reference"),
@@ -84,17 +73,4 @@ internal static class TableEntityMapper
             IncludeCost: entity.GetBoolean("IncludeCost", defaultValue: true),
             Notes: entity.GetString("Notes"));
     }
-
-    private static LocationInfo? ParseLocation(TableEntity entity, string propertyName)
-    {
-        var location = entity.GetJson<LocationPayload>(propertyName);
-        if (location is null)
-        {
-            return null;
-        }
-
-        return new LocationInfo(location.Label, location.Latitude, location.Longitude, location.Url, location.Notes);
-    }
-
-    private sealed record LocationPayload(string? Label, double? Latitude, double? Longitude, string? Url, string? Notes);
 }

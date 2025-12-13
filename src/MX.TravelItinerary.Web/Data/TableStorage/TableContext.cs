@@ -7,7 +7,6 @@ namespace MX.TravelItinerary.Web.Data.TableStorage;
 public interface ITableContext
 {
     TableClient Trips { get; }
-    TableClient TripSegments { get; }
     TableClient ItineraryEntries { get; }
     TableClient Bookings { get; }
     TableClient ShareLinks { get; }
@@ -20,15 +19,12 @@ internal sealed class TableContext : ITableContext
         var tableNames = options.Value.Tables ?? throw new InvalidOperationException("Storage:Tables is not configured.");
 
         Trips = tableServiceClient.GetTableClient(tableNames.Trips);
-        TripSegments = tableServiceClient.GetTableClient(tableNames.TripSegments);
         ItineraryEntries = tableServiceClient.GetTableClient(tableNames.ItineraryEntries);
         Bookings = tableServiceClient.GetTableClient(tableNames.Bookings);
         ShareLinks = tableServiceClient.GetTableClient(tableNames.ShareLinks);
     }
 
     public TableClient Trips { get; }
-
-    public TableClient TripSegments { get; }
 
     public TableClient ItineraryEntries { get; }
 

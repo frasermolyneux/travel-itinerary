@@ -13,8 +13,6 @@ public sealed class StorageTableNames
 {
     public string Trips { get; set; } = "Trips";
 
-    public string TripSegments { get; set; } = "TripSegments";
-
     public string ItineraryEntries { get; set; } = "ItineraryEntries";
 
     public string Bookings { get; set; } = "Bookings";

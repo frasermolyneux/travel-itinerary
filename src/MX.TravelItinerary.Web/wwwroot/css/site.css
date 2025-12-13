@@ -182,16 +182,19 @@ body {
   --segment-accent: rgba(102, 16, 242, 0.14);
   --segment-border: #6610f2;
 }
-
-.timeline-unscheduled {
-  border-radius: 1rem;
-  border: 1px solid #e5e5e5;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+.segment-type-dining {
+  --segment-accent: rgba(255, 193, 7, 0.18);
+  --segment-border: #fd7e14;
 }
 
-.timeline-unscheduled-list {
-  display: grid;
-  gap: 0.75rem;
+.segment-type-transportation {
+  --segment-accent: rgba(32, 201, 151, 0.2);
+  --segment-border: #20c997;
+}
+
+.segment-type-note {
+  --segment-accent: rgba(108, 117, 125, 0.18);
+  --segment-border: #6c757d;
 }
 
 .booking-detail-list dt {
