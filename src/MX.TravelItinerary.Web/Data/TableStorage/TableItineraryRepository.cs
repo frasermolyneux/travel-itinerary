@@ -393,7 +393,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
     private static void ApplySegmentMutation(TableEntity entity, TripSegmentMutation mutation)
     {
-        entity["SegmentType"] = string.IsNullOrWhiteSpace(mutation.SegmentType) ? "unknown" : mutation.SegmentType.Trim();
+        entity["SegmentType"] = mutation.SegmentType.ToStorageValue();
         SetOrRemove(entity, "Title", mutation.Title);
         SetOrRemove(entity, "Description", mutation.Description);
         SetOrRemove(entity, "StartDateTimeUtc", mutation.StartDateTimeUtc?.ToUniversalTime());
@@ -416,7 +416,14 @@ public sealed class TableItineraryRepository : IItineraryRepository
             RemoveIfExists(entity, "Date");
         }
 
-        SetOrRemove(entity, "Category", mutation.Category);
+        if (mutation.Category is null)
+        {
+            RemoveIfExists(entity, "Category");
+        }
+        else
+        {
+            entity["Category"] = mutation.Category.Value.ToStorageValue();
+        }
         SetOrRemove(entity, "Details", mutation.Details);
         SetOrRemove(entity, "Currency", NormalizeCurrency(mutation.Currency));
         SetOrRemove(entity, "PaymentStatus", mutation.PaymentStatus);
@@ -432,7 +439,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
     {
         SetOrRemove(entity, "EntryId", mutation.EntryId);
         SetOrRemove(entity, "SegmentId", mutation.SegmentId);
-        SetOrRemove(entity, "BookingType", mutation.BookingType);
+        entity["BookingType"] = mutation.BookingType.ToStorageValue();
         SetOrRemove(entity, "Vendor", mutation.Vendor);
         SetOrRemove(entity, "Reference", mutation.Reference);
         SetOrRemove(entity, "Cost", mutation.Cost);

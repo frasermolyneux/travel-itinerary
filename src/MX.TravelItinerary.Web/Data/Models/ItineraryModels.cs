@@ -1,8 +1,64 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 
 namespace MX.TravelItinerary.Web.Data.Models;
+
+public enum TripSegmentType
+{
+    [Display(Name = "Travel / transit")]
+    Travel = 0,
+
+    [Display(Name = "Lodging / stay")]
+    Lodging = 1,
+
+    [Display(Name = "Activity / event")]
+    Activity = 2,
+
+    [Display(Name = "Other")]
+    Other = 3
+}
+
+public enum BookingType
+{
+    [Display(Name = "Flight")]
+    Flight = 0,
+
+    [Display(Name = "Hotel")]
+    Hotel = 1,
+
+    [Display(Name = "Transport / transfer")]
+    Transport = 2,
+
+    [Display(Name = "Activity / excursion")]
+    Activity = 3,
+
+    [Display(Name = "Other")]
+    Other = 4
+}
+
+public enum ItineraryEntryCategory
+{
+    [Display(Name = "Activity / excursion")]
+    Activity = 0,
+
+    [Display(Name = "Dining / food")]
+    Dining = 1,
+
+    [Display(Name = "Transportation")]
+    Transportation = 2,
+
+    [Display(Name = "Lodging / stay")]
+    Lodging = 3,
+
+    [Display(Name = "Personal note")]
+    Note = 4,
+
+    [Display(Name = "Other")]
+    Other = 5
+}
 
 public sealed record Trip(
     string TripId,
@@ -25,7 +81,7 @@ public sealed record TripMutation(
 public sealed partial record TripSegment(
     string TripId,
     string SegmentId,
-    string SegmentType,
+    TripSegmentType SegmentType,
     DateTimeOffset? StartDateTimeUtc,
     DateTimeOffset? EndDateTimeUtc,
     LocationInfo? StartLocation,
@@ -34,7 +90,7 @@ public sealed partial record TripSegment(
     string? Description);
 
 public sealed record TripSegmentMutation(
-    string SegmentType,
+    TripSegmentType SegmentType,
     DateTimeOffset? StartDateTimeUtc,
     DateTimeOffset? EndDateTimeUtc,
     LocationInfo? StartLocation,
@@ -53,7 +109,7 @@ public sealed partial record ItineraryEntry(
     string TripId,
     string EntryId,
     DateOnly? Date,
-    string? Category,
+    ItineraryEntryCategory? Category,
     string Title,
     string? Details,
     LocationInfo? Location,
@@ -66,7 +122,7 @@ public sealed partial record ItineraryEntry(
 
 public sealed record ItineraryEntryMutation(
     DateOnly? Date,
-    string? Category,
+    ItineraryEntryCategory? Category,
     string Title,
     string? Details,
     LocationInfo? Location,
@@ -82,7 +138,7 @@ public sealed record Booking(
     string BookingId,
     string? EntryId,
     string? SegmentId,
-    string? BookingType,
+    BookingType BookingType,
     string? Vendor,
     string? Reference,
     decimal? Cost,
@@ -94,7 +150,7 @@ public sealed record Booking(
 public sealed record BookingMutation(
     string? EntryId,
     string? SegmentId,
-    string? BookingType,
+    BookingType BookingType,
     string? Vendor,
     string? Reference,
     decimal? Cost,
@@ -128,7 +184,7 @@ public sealed partial record TripSegment
         var parts = new List<string?>
         {
             string.IsNullOrWhiteSpace(Title) ? null : Title,
-            string.IsNullOrWhiteSpace(SegmentType) ? null : $"[{SegmentType}]",
+            $"[{SegmentType.GetDisplayName()}]",
             FormatWindow(StartDateTimeUtc, EndDateTimeUtc)
         };
 
@@ -158,10 +214,66 @@ public sealed partial record ItineraryEntry
         {
             Date?.ToString("MMM d", CultureInfo.InvariantCulture),
             string.IsNullOrWhiteSpace(Title) ? null : Title,
-            string.IsNullOrWhiteSpace(Category) ? null : $"[{Category}]"
+            Category is null ? null : $"[{Category.Value.GetDisplayName()}]"
         };
 
         var summary = string.Join(" • ", parts.Where(part => !string.IsNullOrWhiteSpace(part)));
         return string.IsNullOrWhiteSpace(summary) ? EntryId : summary;
     }
+}
+
+public static class ModelEnumExtensions
+{
+    public static string GetDisplayName(this Enum value)
+    {
+        var member = value.GetType().GetMember(value.ToString()).FirstOrDefault();
+        if (member is not null && member.GetCustomAttribute<DisplayAttribute>() is { } display)
+        {
+            return display.GetName() ?? value.ToString();
+        }
+
+        return value.ToString();
+    }
+
+    public static TripSegmentType ToSegmentType(this string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value) && Enum.TryParse<TripSegmentType>(value, true, out var parsed))
+        {
+            return parsed;
+        }
+
+        return TripSegmentType.Other;
+    }
+
+    public static BookingType ToBookingType(this string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value) && Enum.TryParse<BookingType>(value, true, out var parsed))
+        {
+            return parsed;
+        }
+
+        return BookingType.Other;
+    }
+
+    public static ItineraryEntryCategory? ToEntryCategory(this string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return Enum.TryParse<ItineraryEntryCategory>(value, true, out var parsed) ? parsed : null;
+    }
+
+    public static string ToStorageValue(this TripSegmentType segmentType)
+        => segmentType.ToString().ToLowerInvariant();
+
+    public static string ToStorageValue(this BookingType bookingType)
+        => bookingType.ToString().ToLowerInvariant();
+
+    public static string ToStorageValue(this ItineraryEntryCategory category)
+        => category.ToString().ToLowerInvariant();
+
+    public static string ToCssToken(this TripSegmentType segmentType)
+        => segmentType.ToStorageValue();
 }

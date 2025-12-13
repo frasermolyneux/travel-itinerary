@@ -147,7 +147,7 @@
 
         setInputValue('SegmentInput_SegmentId', dataset.segmentId ?? '');
         setInputValue('SegmentInput_Title', dataset.segmentTitle ?? '');
-        setInputValue('SegmentInput_SegmentType', dataset.segmentType ?? 'travel');
+        setInputValue('SegmentInput_SegmentType', dataset.segmentType ?? 'Travel');
         setInputValue('SegmentInput_StartDateTimeUtc', dataset.segmentStart ?? '');
         setInputValue('SegmentInput_EndDateTimeUtc', dataset.segmentEnd ?? '');
         setInputValue('SegmentInput_Description', dataset.segmentDescription ?? '');
@@ -179,7 +179,7 @@
     function resetSegmentForm() {
         setInputValue('SegmentInput_SegmentId', '');
         setInputValue('SegmentInput_Title', '');
-        setInputValue('SegmentInput_SegmentType', 'travel');
+        setInputValue('SegmentInput_SegmentType', 'Travel');
         setInputValue('SegmentInput_StartDateTimeUtc', '');
         setInputValue('SegmentInput_EndDateTimeUtc', '');
         setInputValue('SegmentInput_Description', '');
@@ -207,7 +207,7 @@
         setInputValue('BookingInput_BookingId', '');
         setInputValue('BookingInput_EntryId', '');
         setInputValue('BookingInput_SegmentId', '');
-        setInputValue('BookingInput_BookingType', 'confirmation');
+        setInputValue('BookingInput_BookingType', 'Other');
         setInputValue('BookingInput_Vendor', '');
         setInputValue('BookingInput_Reference', '');
         setInputValue('BookingInput_Cost', '');
@@ -274,7 +274,8 @@
 
         const costText = formatBookingCost(dataset.bookingCost, dataset.bookingCurrency);
         setBookingDetail(panel, 'parent', dataset.bookingParentLabel || 'Linked item');
-        setBookingDetail(panel, 'type', dataset.bookingType || '—');
+        const typeLabel = dataset.bookingTypeLabel || dataset.bookingType || '—';
+        setBookingDetail(panel, 'type', typeLabel);
         setBookingDetail(panel, 'vendor', dataset.bookingVendor || '—');
         setBookingDetail(panel, 'reference', dataset.bookingReference || '—');
         setBookingDetail(panel, 'cost', costText);
@@ -293,6 +294,7 @@
         panel.dataset.bookingEntryId = dataset.parentEntry ?? '';
         panel.dataset.bookingSegmentId = dataset.parentSegment ?? '';
         panel.dataset.bookingType = dataset.bookingType ?? '';
+        panel.dataset.bookingTypeLabel = dataset.bookingTypeLabel ?? '';
         panel.dataset.bookingVendor = dataset.bookingVendor ?? '';
         panel.dataset.bookingReference = dataset.bookingReference ?? '';
         panel.dataset.bookingCost = dataset.bookingCost ?? '';

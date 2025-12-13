@@ -14,9 +14,8 @@
             @if (trip?.StartDate is not null || trip?.EndDate is not null)
             {
                 <span>@trip?.StartDate?.ToString("MMM dd, yyyy")</span>
-                @if (trip?.EndDate is not null)
                 {
-                    <span> – @trip.EndDate?.ToString("MMM dd, yyyy")</span>
+                    <span> – @trip?.EndDate?.ToString("MMM dd, yyyy")</span>
                 }
             }
             else
@@ -78,7 +77,8 @@ else
                             </div>
                             <div class="timeline-actions">
                                 <button type="button" class="btn btn-sm btn-outline-primary me-2" data-edit-type="segment"
-                                    data-segment-id="@segment.SegmentId" data-segment-title="@(segment.Title ?? string.Empty)"
+                                    data-segment-id="@segment.SegmentId"
+                                    data-segment-title="@(segment.Title ?? segment.SegmentType.GetDisplayName())"
                                     data-segment-type="@segment.SegmentType" data-segment-start="" data-segment-end=""
                                     data-segment-description="@(segment.Description ?? string.Empty)">
                                     Edit
@@ -91,7 +91,7 @@ else
                                 {
                                     <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="add"
                                         data-parent-type="segment" data-segment-id="@segment.SegmentId"
-                                        data-segment-title="@(segment.Title ?? segment.SegmentType)">
+                                        data-segment-title="@(segment.Title ?? segment.SegmentType.GetDisplayName())">
                                         Add booking
                                     </button>
                                 }
@@ -99,7 +99,8 @@ else
                                 {
                                     <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="view"
                                         data-booking-id="@unscheduledBooking.BookingId"
-                                        data-booking-type="@(unscheduledBooking.BookingType ?? string.Empty)"
+                                        data-booking-type="@unscheduledBooking.BookingType"
+                                        data-booking-type-label="@unscheduledBooking.BookingType.GetDisplayName()"
                                         data-booking-vendor="@(unscheduledBooking.Vendor ?? string.Empty)"
                                         data-booking-reference="@(unscheduledBooking.Reference ?? string.Empty)"
                                         data-booking-cost="@(unscheduledBooking.Cost?.ToString("0.##") ?? string.Empty)"
@@ -152,7 +153,7 @@ else
                                 <button type="button" class="btn btn-sm btn-outline-primary me-2" data-edit-type="entry"
                                     data-entry-id="@entry.EntryId" data-entry-title="@entry.Title"
                                     data-entry-date="@(entry.Date?.ToString("yyyy-MM-dd") ?? string.Empty)"
-                                    data-entry-category="@(entry.Category ?? string.Empty)"
+                                    data-entry-category="@(entry.Category?.ToString() ?? string.Empty)"
                                     data-entry-details="@(entry.Details ?? string.Empty)">
                                     Edit
                                 </button>
@@ -170,8 +171,8 @@ else
                                 else
                                 {
                                     <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="view"
-                                        data-booking-id="@entryBooking.BookingId"
-                                        data-booking-type="@(entryBooking.BookingType ?? string.Empty)"
+                                        data-booking-id="@entryBooking.BookingId" data-booking-type="@entryBooking.BookingType"
+                                        data-booking-type-label="@entryBooking.BookingType.GetDisplayName()"
                                         data-booking-vendor="@(entryBooking.Vendor ?? string.Empty)"
                                         data-booking-reference="@(entryBooking.Reference ?? string.Empty)"
                                         data-booking-cost="@(entryBooking.Cost?.ToString("0.##") ?? string.Empty)"
@@ -193,7 +194,7 @@ else
 
         @foreach (var block in Model.Timeline.Segments)
         {
-            var segmentType = (block.Segment.SegmentType ?? "travel").ToLowerInvariant();
+            var segmentType = block.Segment.SegmentType.ToCssToken();
             var segmentBooking = Model.GetBookingForSegment(block.Segment.SegmentId);
             <div class="timeline-segment"
                 style="grid-row:@block.RowStart / @block.RowEnd; --lane-index:@block.LaneIndex; --lane-count:@block.LaneCount;"
@@ -213,7 +214,7 @@ else
                     <div class="timeline-actions">
                         <button type="button" class="btn btn-sm btn-outline-primary me-2" data-edit-type="segment"
                             data-segment-id="@block.Segment.SegmentId"
-                            data-segment-title="@(block.Segment.Title ?? string.Empty)"
+                            data-segment-title="@(block.Segment.Title ?? block.Segment.SegmentType.GetDisplayName())"
                             data-segment-type="@block.Segment.SegmentType"
                             data-segment-start="@(block.Segment.StartDateTimeUtc?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? string.Empty)"
                             data-segment-end="@(block.Segment.EndDateTimeUtc?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? string.Empty)"
@@ -228,15 +229,15 @@ else
                         {
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="add"
                                 data-parent-type="segment" data-segment-id="@block.Segment.SegmentId"
-                                data-segment-title="@(block.Segment.Title ?? block.Segment.SegmentType)">
+                                data-segment-title="@(block.Segment.Title ?? block.Segment.SegmentType.GetDisplayName())">
                                 Add booking
                             </button>
                         }
                         else
                         {
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="view"
-                                data-booking-id="@segmentBooking.BookingId"
-                                data-booking-type="@(segmentBooking.BookingType ?? string.Empty)"
+                                data-booking-id="@segmentBooking.BookingId" data-booking-type="@segmentBooking.BookingType"
+                                data-booking-type-label="@segmentBooking.BookingType.GetDisplayName()"
                                 data-booking-vendor="@(segmentBooking.Vendor ?? string.Empty)"
                                 data-booking-reference="@(segmentBooking.Reference ?? string.Empty)"
                                 data-booking-cost="@(segmentBooking.Cost?.ToString("0.##") ?? string.Empty)"
@@ -285,13 +286,8 @@ else
 
             <div class="mb-3">
                 <label asp-for="SegmentInput.SegmentType" class="form-label"></label>
-                <input asp-for="SegmentInput.SegmentType" class="form-control" list="segment-type-options" />
-                <datalist id="segment-type-options">
-                    <option value="travel"></option>
-                    <option value="lodging"></option>
-                    <option value="activity"></option>
-                    <option value="other"></option>
-                </datalist>
+                <select asp-for="SegmentInput.SegmentType" class="form-select"
+                    asp-items="Model.SegmentTypeOptions"></select>
                 <span asp-validation-for="SegmentInput.SegmentType" class="text-danger"></span>
             </div>
 
@@ -349,7 +345,8 @@ else
 
             <div class="mb-3">
                 <label asp-for="EntryInput.Category" class="form-label"></label>
-                <input asp-for="EntryInput.Category" class="form-control" />
+                <select asp-for="EntryInput.Category" class="form-select"
+                    asp-items="Model.EntryCategoryOptions"></select>
                 <span asp-validation-for="EntryInput.Category" class="text-danger"></span>
             </div>
 
@@ -382,13 +379,8 @@ else
 
             <div class="mb-3">
                 <label asp-for="BookingInput.BookingType" class="form-label"></label>
-                <input asp-for="BookingInput.BookingType" class="form-control" list="booking-type-options" />
-                <datalist id="booking-type-options">
-                    <option value="flight"></option>
-                    <option value="hotel"></option>
-                    <option value="transport"></option>
-                    <option value="activity"></option>
-                </datalist>
+                <select asp-for="BookingInput.BookingType" class="form-select"
+                    asp-items="Model.BookingTypeOptions"></select>
                 <span asp-validation-for="BookingInput.BookingType" class="text-danger"></span>
             </div>
 

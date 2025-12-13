@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Identity.Web;
 using MX.TravelItinerary.Web.Data;
 using MX.TravelItinerary.Web.Data.Models;
@@ -36,6 +37,12 @@ public sealed class DetailsModel : PageModel
 
     [BindProperty]
     public BookingForm BookingInput { get; set; } = new();
+
+    public IReadOnlyList<SelectListItem> SegmentTypeOptions { get; } = BuildSelectList<TripSegmentType>();
+
+    public IReadOnlyList<SelectListItem> BookingTypeOptions { get; } = BuildSelectList<BookingType>();
+
+    public IReadOnlyList<SelectListItem> EntryCategoryOptions { get; } = BuildNullableSelectList<ItineraryEntryCategory>("Uncategorized");
 
     [TempData]
     public string? StatusMessage { get; set; }
@@ -346,9 +353,8 @@ public sealed class DetailsModel : PageModel
 
         public string? SegmentId { get; set; }
 
-        [Required]
         [Display(Name = "Segment type")]
-        public string SegmentType { get; set; } = "travel";
+        public TripSegmentType SegmentType { get; set; } = TripSegmentType.Travel;
 
         [StringLength(200)]
         public string? Title { get; set; }
@@ -366,7 +372,7 @@ public sealed class DetailsModel : PageModel
 
         public TripSegmentMutation ToMutation()
             => new(
-                string.IsNullOrWhiteSpace(SegmentType) ? "travel" : SegmentType.Trim(),
+                SegmentType,
                 ToUtc(StartDateTimeUtc),
                 ToUtc(EndDateTimeUtc),
                 StartLocation: null,
@@ -400,8 +406,8 @@ public sealed class DetailsModel : PageModel
         [DataType(DataType.Date)]
         public DateOnly? Date { get; set; }
 
-        [StringLength(100)]
-        public string? Category { get; set; }
+        [Display(Name = "Category")]
+        public ItineraryEntryCategory? Category { get; set; }
 
         [DataType(DataType.MultilineText)]
         public string? Details { get; set; }
@@ -409,7 +415,7 @@ public sealed class DetailsModel : PageModel
         public ItineraryEntryMutation ToMutation()
             => new(
                 Date,
-                Normalize(Category),
+                Category,
                 string.IsNullOrWhiteSpace(Title) ? "Untitled entry" : Title.Trim(),
                 string.IsNullOrWhiteSpace(Details) ? null : Details,
                 Location: null,
@@ -419,9 +425,6 @@ public sealed class DetailsModel : PageModel
                 PaymentStatus: null,
                 Provider: null,
                 Tags: null);
-
-        private static string? Normalize(string? value)
-            => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     public sealed class BookingForm
@@ -435,9 +438,8 @@ public sealed class DetailsModel : PageModel
 
         public string? SegmentId { get; set; }
 
-        [Required]
         [Display(Name = "Booking type")]
-        public string BookingType { get; set; } = "confirmation";
+        public BookingType BookingType { get; set; } = BookingType.Other;
 
         [StringLength(200)]
         public string? Vendor { get; set; }
@@ -467,7 +469,7 @@ public sealed class DetailsModel : PageModel
             => new(
                 Normalize(EntryId),
                 Normalize(SegmentId),
-                Normalize(BookingType),
+                BookingType,
                 Normalize(Vendor),
                 Normalize(Reference),
                 Cost,
@@ -478,6 +480,22 @@ public sealed class DetailsModel : PageModel
 
         private static string? Normalize(string? value)
             => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static IReadOnlyList<SelectListItem> BuildSelectList<TEnum>() where TEnum : struct, Enum
+        => Enum.GetValues<TEnum>()
+            .Select(value => new SelectListItem(value.GetDisplayName(), value.ToString()))
+            .ToList();
+
+    private static IReadOnlyList<SelectListItem> BuildNullableSelectList<TEnum>(string placeholder) where TEnum : struct, Enum
+    {
+        var items = new List<SelectListItem>
+        {
+            new(placeholder, string.Empty)
+        };
+
+        items.AddRange(BuildSelectList<TEnum>());
+        return items;
     }
 
     public sealed class TimelineViewModel
@@ -510,7 +528,7 @@ public sealed class DetailsModel : PageModel
                 {
                     var entries = details.Entries
                         .Where(entry => entry.Date == date)
-                        .OrderBy(entry => entry.Category)
+                        .OrderBy(entry => entry.Category.HasValue ? (int)entry.Category.Value : int.MaxValue)
                         .ThenBy(entry => entry.Title)
                         .ToList();
 
