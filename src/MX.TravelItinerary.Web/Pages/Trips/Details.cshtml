@@ -45,7 +45,7 @@
 else
 {
     var hasPlannedContent = Model.Timeline.Spans.Any()
-        || Model.Timeline.Days.Any(day => day.Entries.Count > 0);
+    || Model.Timeline.Days.Any(day => day.Entries.Count > 0);
     var laneMultiplier = Math.Max(1, Model.Timeline.MaxSegmentLaneCount);
     if (!hasPlannedContent)
     {
@@ -273,16 +273,16 @@ else
             </div>
 
             <div class="mb-3">
+                <label asp-for="EntryInput.ItemType" class="form-label"></label>
+                <select asp-for="EntryInput.ItemType" class="form-select" asp-items="Model.EntryTypeOptions"></select>
+                <span asp-validation-for="EntryInput.ItemType" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
                 <label asp-for="EntryInput.Date" class="form-label"></label>
                 <input asp-for="EntryInput.Date" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}"
                     min="@tripStartDateValue" max="@tripEndDateValue" />
                 <span asp-validation-for="EntryInput.Date" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="EntryInput.ItemType" class="form-label"></label>
-                <select asp-for="EntryInput.ItemType" class="form-select" asp-items="Model.EntryTypeOptions"></select>
-                <span asp-validation-for="EntryInput.ItemType" class="text-danger"></span>
             </div>
 
             <div class="form-check form-switch mb-3">
