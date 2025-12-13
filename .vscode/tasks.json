@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "dotnet: build solution",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/MX.TravelItinerary.sln"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "dotnet: run web",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "run",
+                "--project",
+                "${workspaceFolder}/src/MX.TravelItinerary.Web/MX.TravelItinerary.Web.csproj"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "dependsOn": "dotnet: build solution",
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        }
+    ]
+}
