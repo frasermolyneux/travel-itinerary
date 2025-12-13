@@ -87,9 +87,7 @@ public sealed partial record FlightMetadata(
     string? DepartureAirport,
     string? DepartureTime,
     string? ArrivalAirport,
-    string? ArrivalTime,
-    string? Seat,
-    string? ConfirmationNumber);
+    string? ArrivalTime);
 
 public sealed partial record StayMetadata(
     string? PropertyName,
@@ -97,8 +95,7 @@ public sealed partial record StayMetadata(
     string? CheckInTime,
     string? CheckOutTime,
     string? RoomType,
-    string? ConfirmationNumber,
-    string? ContactInfo);
+    string? ConfirmationNumber);
 
 public sealed partial record ItineraryEntry(
     string TripId,
@@ -275,9 +272,7 @@ public sealed partial record FlightMetadata
         || !string.IsNullOrWhiteSpace(DepartureAirport)
         || !string.IsNullOrWhiteSpace(DepartureTime)
         || !string.IsNullOrWhiteSpace(ArrivalAirport)
-        || !string.IsNullOrWhiteSpace(ArrivalTime)
-        || !string.IsNullOrWhiteSpace(Seat)
-        || !string.IsNullOrWhiteSpace(ConfirmationNumber);
+        || !string.IsNullOrWhiteSpace(ArrivalTime);
 }
 
 public sealed partial record StayMetadata
@@ -287,6 +282,5 @@ public sealed partial record StayMetadata
         || !string.IsNullOrWhiteSpace(CheckInTime)
         || !string.IsNullOrWhiteSpace(CheckOutTime)
         || !string.IsNullOrWhiteSpace(RoomType)
-        || !string.IsNullOrWhiteSpace(ConfirmationNumber)
-        || !string.IsNullOrWhiteSpace(ContactInfo);
+        || !string.IsNullOrWhiteSpace(ConfirmationNumber);
 }

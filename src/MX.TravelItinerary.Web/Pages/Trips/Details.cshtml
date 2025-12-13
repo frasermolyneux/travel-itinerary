@@ -105,15 +105,12 @@ else
                                     data-entry-flight-departure-time="@(entry.Metadata?.Flight?.DepartureTime ?? string.Empty)"
                                     data-entry-flight-arrival-airport="@(entry.Metadata?.Flight?.ArrivalAirport ?? string.Empty)"
                                     data-entry-flight-arrival-time="@(entry.Metadata?.Flight?.ArrivalTime ?? string.Empty)"
-                                    data-entry-flight-seat="@(entry.Metadata?.Flight?.Seat ?? string.Empty)"
-                                    data-entry-flight-confirmation="@(entry.Metadata?.Flight?.ConfirmationNumber ?? string.Empty)"
                                     data-entry-stay-property="@(entry.Metadata?.Stay?.PropertyName ?? string.Empty)"
                                     data-entry-stay-address="@(entry.Metadata?.Stay?.Address ?? string.Empty)"
                                     data-entry-stay-check-in="@(entry.Metadata?.Stay?.CheckInTime ?? string.Empty)"
                                     data-entry-stay-check-out="@(entry.Metadata?.Stay?.CheckOutTime ?? string.Empty)"
                                     data-entry-stay-room="@(entry.Metadata?.Stay?.RoomType ?? string.Empty)"
-                                    data-entry-stay-confirmation="@(entry.Metadata?.Stay?.ConfirmationNumber ?? string.Empty)"
-                                    data-entry-stay-contact="@(entry.Metadata?.Stay?.ContactInfo ?? string.Empty)">
+                                    data-entry-stay-confirmation="@(entry.Metadata?.Stay?.ConfirmationNumber ?? string.Empty)">
                                     Edit
                                 </button>
                                 <form method="post" asp-page-handler="DeleteEntry" class="d-inline">
@@ -197,15 +194,12 @@ else
                             data-entry-flight-departure-time="@(block.Entry.Metadata?.Flight?.DepartureTime ?? string.Empty)"
                             data-entry-flight-arrival-airport="@(block.Entry.Metadata?.Flight?.ArrivalAirport ?? string.Empty)"
                             data-entry-flight-arrival-time="@(block.Entry.Metadata?.Flight?.ArrivalTime ?? string.Empty)"
-                            data-entry-flight-seat="@(block.Entry.Metadata?.Flight?.Seat ?? string.Empty)"
-                            data-entry-flight-confirmation="@(block.Entry.Metadata?.Flight?.ConfirmationNumber ?? string.Empty)"
                             data-entry-stay-property="@(block.Entry.Metadata?.Stay?.PropertyName ?? string.Empty)"
                             data-entry-stay-address="@(block.Entry.Metadata?.Stay?.Address ?? string.Empty)"
                             data-entry-stay-check-in="@(block.Entry.Metadata?.Stay?.CheckInTime ?? string.Empty)"
                             data-entry-stay-check-out="@(block.Entry.Metadata?.Stay?.CheckOutTime ?? string.Empty)"
                             data-entry-stay-room="@(block.Entry.Metadata?.Stay?.RoomType ?? string.Empty)"
-                            data-entry-stay-confirmation="@(block.Entry.Metadata?.Stay?.ConfirmationNumber ?? string.Empty)"
-                            data-entry-stay-contact="@(block.Entry.Metadata?.Stay?.ContactInfo ?? string.Empty)">
+                            data-entry-stay-confirmation="@(block.Entry.Metadata?.Stay?.ConfirmationNumber ?? string.Empty)">
                             Edit
                         </button>
                         <form method="post" asp-page-handler="DeleteEntry" class="d-inline">
@@ -345,17 +339,6 @@ else
                             placeholder="e.g. 18:20 local" />
                         <span asp-validation-for="EntryInput.FlightMetadata.ArrivalTime" class="text-danger"></span>
                     </div>
-                    <div class="col-md-6">
-                        <label asp-for="EntryInput.FlightMetadata.Seat" class="form-label"></label>
-                        <input asp-for="EntryInput.FlightMetadata.Seat" class="form-control" />
-                        <span asp-validation-for="EntryInput.FlightMetadata.Seat" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="EntryInput.FlightMetadata.ConfirmationNumber" class="form-label"></label>
-                        <input asp-for="EntryInput.FlightMetadata.ConfirmationNumber" class="form-control" />
-                        <span asp-validation-for="EntryInput.FlightMetadata.ConfirmationNumber"
-                            class="text-danger"></span>
-                    </div>
                 </div>
             </div>
 
@@ -394,12 +377,6 @@ else
                         <input asp-for="EntryInput.StayMetadata.ConfirmationNumber" class="form-control" />
                         <span asp-validation-for="EntryInput.StayMetadata.ConfirmationNumber"
                             class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="EntryInput.StayMetadata.ContactInfo" class="form-label"></label>
-                        <input asp-for="EntryInput.StayMetadata.ContactInfo" class="form-control"
-                            placeholder="Front desk / concierge" />
-                        <span asp-validation-for="EntryInput.StayMetadata.ContactInfo" class="text-danger"></span>
                     </div>
                 </div>
             </div>

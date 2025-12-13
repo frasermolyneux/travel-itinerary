@@ -212,8 +212,6 @@
         setInputValue('EntryInput_FlightMetadata_DepartureTime', dataset.entryFlightDepartureTime ?? '');
         setInputValue('EntryInput_FlightMetadata_ArrivalAirport', dataset.entryFlightArrivalAirport ?? '');
         setInputValue('EntryInput_FlightMetadata_ArrivalTime', dataset.entryFlightArrivalTime ?? '');
-        setInputValue('EntryInput_FlightMetadata_Seat', dataset.entryFlightSeat ?? '');
-        setInputValue('EntryInput_FlightMetadata_ConfirmationNumber', dataset.entryFlightConfirmation ?? '');
 
         setInputValue('EntryInput_StayMetadata_PropertyName', dataset.entryStayProperty ?? '');
         setInputValue('EntryInput_StayMetadata_Address', dataset.entryStayAddress ?? '');
@@ -221,7 +219,6 @@
         setInputValue('EntryInput_StayMetadata_CheckOutTime', dataset.entryStayCheckOut ?? '');
         setInputValue('EntryInput_StayMetadata_RoomType', dataset.entryStayRoom ?? '');
         setInputValue('EntryInput_StayMetadata_ConfirmationNumber', dataset.entryStayConfirmation ?? '');
-        setInputValue('EntryInput_StayMetadata_ContactInfo', dataset.entryStayContact ?? '');
     }
 
     function openBookingForm(options) {

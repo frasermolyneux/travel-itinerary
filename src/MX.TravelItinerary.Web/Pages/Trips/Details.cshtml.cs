@@ -387,12 +387,6 @@ public sealed class DetailsModel : PageModel
             [Display(Name = "Arrival time")]
             public string? ArrivalTime { get; set; }
 
-            [Display(Name = "Seat / cabin")]
-            public string? Seat { get; set; }
-
-            [Display(Name = "Confirmation number")]
-            public string? ConfirmationNumber { get; set; }
-
             public FlightMetadata? ToDomain()
             {
                 var metadata = new FlightMetadata(
@@ -401,9 +395,7 @@ public sealed class DetailsModel : PageModel
                     Normalize(DepartureAirport),
                     Normalize(DepartureTime),
                     Normalize(ArrivalAirport),
-                    Normalize(ArrivalTime),
-                    Normalize(Seat),
-                    Normalize(ConfirmationNumber));
+                    Normalize(ArrivalTime));
 
                 return metadata.HasContent ? metadata : null;
             }
@@ -429,9 +421,6 @@ public sealed class DetailsModel : PageModel
             [Display(Name = "Confirmation number")]
             public string? ConfirmationNumber { get; set; }
 
-            [Display(Name = "Contact / concierge")]
-            public string? ContactInfo { get; set; }
-
             public StayMetadata? ToDomain()
             {
                 var metadata = new StayMetadata(
@@ -440,8 +429,7 @@ public sealed class DetailsModel : PageModel
                     Normalize(CheckInTime),
                     Normalize(CheckOutTime),
                     Normalize(RoomType),
-                    Normalize(ConfirmationNumber),
-                    Normalize(ContactInfo));
+                    Normalize(ConfirmationNumber));
 
                 return metadata.HasContent ? metadata : null;
             }

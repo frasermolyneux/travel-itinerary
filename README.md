@@ -79,7 +79,7 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 | `Tags`                         | `"hotel,luxury"`                                                             | Lightweight filtering.                                   |
 | `MetadataJson`                 | `{ "flight": { ... } }`                                                      | Category-specific metadata (flight or stay snapshots).   |
 
-`MetadataJson` currently captures either `FlightMetadata` (airline, route, seat, confirmation, timing) or `StayMetadata` (property, room, check-in/out, contacts). The JSON is optional and only emitted when the entry type supports that schema.
+`MetadataJson` currently captures either `FlightMetadata` (airline, route, timing) or `StayMetadata` (property, room, check-in/out details). The JSON is optional and only emitted when the entry type supports that schema.
 
 ### Bookings
 
@@ -95,7 +95,7 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 | `IsRefundable`        | `true/false`                                         | Highlight cancellable bookings.                        |
 | `IsPaid`              | `true/false`                                         | Whether the organiser already settled the bill.        |
 | `CancellationPolicy`  | Text                                                 | Free-form summary.                                     |
-| `ConfirmationDetails` | `{ "seat": "12A" }`                                  | Sensitive structured data (tickets, passengers, etc.). |
+| `ConfirmationDetails` | `{ "notes": "Call desk on arrival" }`                 | Sensitive structured data (tickets, passengers, etc.). |
 | `ConfirmationUrl`     | `https://manage.booking.com/reservation/123`         | Direct link back to the booking portal.                |
 
 ### ShareLinks

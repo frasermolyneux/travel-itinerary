@@ -61,16 +61,6 @@
                     }
                 </dd>
             }
-            @if (!string.IsNullOrWhiteSpace(flight.Seat))
-            {
-                <dt>Seat</dt>
-                <dd>@flight.Seat</dd>
-            }
-            @if (!string.IsNullOrWhiteSpace(flight.ConfirmationNumber))
-            {
-                <dt>Confirmation</dt>
-                <dd>@flight.ConfirmationNumber</dd>
-            }
         </dl>
     </div>
 }
@@ -113,11 +103,6 @@
             {
                 <dt>Confirmation</dt>
                 <dd>@stay.ConfirmationNumber</dd>
-            }
-            @if (!string.IsNullOrWhiteSpace(stay.ContactInfo))
-            {
-                <dt>Contact</dt>
-                <dd>@stay.ContactInfo</dd>
             }
         </dl>
     </div>
