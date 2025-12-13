@@ -80,20 +80,20 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 
 ### Bookings
 
-| Column                    | Type / Example                                       | Notes                                                  |
-| ------------------------- | ---------------------------------------------------- | ------------------------------------------------------ |
-| `PartitionKey`            | `TripId`                                             | Scoped per trip.                                       |
-| `RowKey`                  | `BookingId`                                          | GUID.                                                  |
-| `EntryId`                 | Reference to itinerary row                           | Maintains linkage back to the day card.                |
-| `ItemType`                | `flight`, `hotel`, `tour`, `dining`, `note`, `other` | Snapshot of the linked itinerary category for UI cues. |
-| `Vendor`                  | `"British Airways"`                                  | Provider name.                                         |
-| `Reference`               | `"YQ695R"`                                           | PNR/reservation number.                                |
-| `Cost` / `Currency`       | `631.81` / `GBP`                                     | Actual spend.                                          |
-| `IsRefundable`            | `true/false`                                         | Highlight cancellable bookings.                        |
-| `IsPaid`                  | `true/false`                                         | Whether the organiser already settled the bill.       |
-| `CancellationPolicy`      | Text                                                 | Free-form summary.                                     |
+| Column                | Type / Example                                       | Notes                                                  |
+| --------------------- | ---------------------------------------------------- | ------------------------------------------------------ |
+| `PartitionKey`        | `TripId`                                             | Scoped per trip.                                       |
+| `RowKey`              | `BookingId`                                          | GUID.                                                  |
+| `EntryId`             | Reference to itinerary row                           | Maintains linkage back to the day card.                |
+| `ItemType`            | `flight`, `hotel`, `tour`, `dining`, `note`, `other` | Snapshot of the linked itinerary category for UI cues. |
+| `Vendor`              | `"British Airways"`                                  | Provider name.                                         |
+| `Reference`           | `"YQ695R"`                                           | PNR/reservation number.                                |
+| `Cost` / `Currency`   | `631.81` / `GBP`                                     | Actual spend.                                          |
+| `IsRefundable`        | `true/false`                                         | Highlight cancellable bookings.                        |
+| `IsPaid`              | `true/false`                                         | Whether the organiser already settled the bill.        |
+| `CancellationPolicy`  | Text                                                 | Free-form summary.                                     |
 | `ConfirmationDetails` | `{ "seat": "12A" }`                                  | Sensitive structured data (tickets, passengers, etc.). |
-| `ConfirmationUrl`         | `https://manage.booking.com/reservation/123`         | Direct link back to the booking portal.               |
+| `ConfirmationUrl`     | `https://manage.booking.com/reservation/123`         | Direct link back to the booking portal.                |
 
 ### ShareLinks
 
