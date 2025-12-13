@@ -262,6 +262,78 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
     }
 
+    public async Task<Booking> CreateBookingAsync(string userId, string tripId, BookingMutation mutation, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+        ArgumentNullException.ThrowIfNull(mutation);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+        await ValidateBookingLinkAsync(tripId, mutation, cancellationToken);
+        if (await BookingExistsForLinkAsync(tripId, mutation, excludeBookingId: null, cancellationToken))
+        {
+            throw new InvalidOperationException("The selected item already has a booking linked.");
+        }
+
+        var bookingId = Guid.NewGuid().ToString("N");
+        var entity = new TableEntity(tripId, bookingId);
+        ApplyBookingMutation(entity, mutation);
+
+        await _tables.Bookings.AddEntityAsync(entity, cancellationToken);
+        return TableEntityMapper.ToBooking(entity);
+    }
+
+    public async Task<Booking?> UpdateBookingAsync(string userId, string tripId, string bookingId, BookingMutation mutation, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(bookingId);
+        ArgumentNullException.ThrowIfNull(mutation);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+        await ValidateBookingLinkAsync(tripId, mutation, cancellationToken);
+        if (await BookingExistsForLinkAsync(tripId, mutation, bookingId, cancellationToken))
+        {
+            throw new InvalidOperationException("The selected item already has a booking linked.");
+        }
+
+        var existing = await _tables.Bookings.GetEntityIfExistsAsync<TableEntity>(tripId, bookingId, cancellationToken: cancellationToken);
+        if (existing.HasValue is false)
+        {
+            return null;
+        }
+
+        var entity = existing.Value;
+        if (entity is null)
+        {
+            return null;
+        }
+
+        ApplyBookingMutation(entity, mutation);
+        await _tables.Bookings.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
+
+        return TableEntityMapper.ToBooking(entity);
+    }
+
+    public async Task<bool> DeleteBookingAsync(string userId, string tripId, string bookingId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(bookingId);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+
+        try
+        {
+            await _tables.Bookings.DeleteEntityAsync(tripId, bookingId, cancellationToken: cancellationToken);
+            return true;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return false;
+        }
+    }
+
     private async Task EnsureTripOwnershipAsync(string userId, string tripId, CancellationToken cancellationToken)
     {
         var tripEntity = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(userId, tripId, cancellationToken: cancellationToken);
@@ -269,6 +341,54 @@ public sealed class TableItineraryRepository : IItineraryRepository
         {
             throw new InvalidOperationException($"Trip '{tripId}' is not available for the current user.");
         }
+    }
+
+    private async Task ValidateBookingLinkAsync(string tripId, BookingMutation mutation, CancellationToken cancellationToken)
+    {
+        var hasEntry = !string.IsNullOrWhiteSpace(mutation.EntryId);
+        var hasSegment = !string.IsNullOrWhiteSpace(mutation.SegmentId);
+
+        if (hasEntry == hasSegment)
+        {
+            throw new InvalidOperationException("Booking must be linked to exactly one itinerary entry or trip segment.");
+        }
+
+        if (hasEntry)
+        {
+            var entry = await _tables.ItineraryEntries.GetEntityIfExistsAsync<TableEntity>(tripId, mutation.EntryId!, cancellationToken: cancellationToken);
+            if (entry.HasValue is false)
+            {
+                throw new InvalidOperationException("The selected itinerary entry no longer exists.");
+            }
+        }
+
+        if (hasSegment)
+        {
+            var segment = await _tables.TripSegments.GetEntityIfExistsAsync<TableEntity>(tripId, mutation.SegmentId!, cancellationToken: cancellationToken);
+            if (segment.HasValue is false)
+            {
+                throw new InvalidOperationException("The selected trip segment no longer exists.");
+            }
+        }
+    }
+
+    private async Task<bool> BookingExistsForLinkAsync(string tripId, BookingMutation mutation, string? excludeBookingId, CancellationToken cancellationToken)
+    {
+        var filter = !string.IsNullOrWhiteSpace(mutation.EntryId)
+            ? TableClient.CreateQueryFilter($"PartitionKey eq {tripId} and EntryId eq {mutation.EntryId}")
+            : TableClient.CreateQueryFilter($"PartitionKey eq {tripId} and SegmentId eq {mutation.SegmentId}");
+
+        await foreach (var entity in _tables.Bookings.QueryAsync<TableEntity>(filter: filter, maxPerPage: 5, cancellationToken: cancellationToken))
+        {
+            if (!string.IsNullOrWhiteSpace(excludeBookingId) && entity.RowKey.Equals(excludeBookingId, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     private static void ApplySegmentMutation(TableEntity entity, TripSegmentMutation mutation)
@@ -306,6 +426,20 @@ public sealed class TableItineraryRepository : IItineraryRepository
         SetOrRemove(entity, "IsPaid", mutation.IsPaid);
 
         SetItineraryLocation(entity, mutation.Location);
+    }
+
+    private static void ApplyBookingMutation(TableEntity entity, BookingMutation mutation)
+    {
+        SetOrRemove(entity, "EntryId", mutation.EntryId);
+        SetOrRemove(entity, "SegmentId", mutation.SegmentId);
+        SetOrRemove(entity, "BookingType", mutation.BookingType);
+        SetOrRemove(entity, "Vendor", mutation.Vendor);
+        SetOrRemove(entity, "Reference", mutation.Reference);
+        SetOrRemove(entity, "Cost", mutation.Cost);
+        SetOrRemove(entity, "Currency", NormalizeCurrency(mutation.Currency));
+        SetOrRemove(entity, "IsRefundable", mutation.IsRefundable);
+        SetOrRemove(entity, "CancellationPolicy", mutation.CancellationPolicy);
+        SetOrRemove(entity, "ConfirmationDetailsJson", mutation.ConfirmationDetailsJson);
     }
 
     private static void SetLocationPayload(TableEntity entity, string propertyName, LocationInfo? location)

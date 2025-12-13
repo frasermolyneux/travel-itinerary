@@ -81,6 +81,19 @@ public sealed record Booking(
     string TripId,
     string BookingId,
     string? EntryId,
+    string? SegmentId,
+    string? BookingType,
+    string? Vendor,
+    string? Reference,
+    decimal? Cost,
+    string? Currency,
+    bool? IsRefundable,
+    string? CancellationPolicy,
+    string? ConfirmationDetailsJson);
+
+public sealed record BookingMutation(
+    string? EntryId,
+    string? SegmentId,
     string? BookingType,
     string? Vendor,
     string? Reference,

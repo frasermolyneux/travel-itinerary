@@ -131,6 +131,11 @@ body {
   max-height: 200px;
 }
 
+.booking-indicator {
+  font-size: 1rem;
+  margin-left: 0.35rem;
+}
+
 .timeline-segment {
   grid-column: 2;
   pointer-events: none;
@@ -187,6 +192,17 @@ body {
 .timeline-unscheduled-list {
   display: grid;
   gap: 0.75rem;
+}
+
+.booking-detail-list dt {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}
+
+.booking-detail-notes {
+  white-space: pre-line;
+  min-height: 1.5rem;
 }
 
 .fab-container {

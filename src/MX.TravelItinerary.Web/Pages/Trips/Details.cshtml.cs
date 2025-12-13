@@ -34,8 +34,15 @@ public sealed class DetailsModel : PageModel
     [BindProperty]
     public ItineraryEntryForm EntryInput { get; set; } = new();
 
+    [BindProperty]
+    public BookingForm BookingInput { get; set; } = new();
+
     [TempData]
     public string? StatusMessage { get; set; }
+
+    public IReadOnlyDictionary<string, Booking> EntryBookings { get; private set; } = new Dictionary<string, Booking>(StringComparer.OrdinalIgnoreCase);
+
+    public IReadOnlyDictionary<string, Booking> SegmentBookings { get; private set; } = new Dictionary<string, Booking>(StringComparer.OrdinalIgnoreCase);
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -169,6 +176,81 @@ public sealed class DetailsModel : PageModel
         return RedirectToPage(new { tripId = TripId });
     }
 
+    public async Task<IActionResult> OnPostSaveBookingAsync(CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(TripId) && !string.IsNullOrWhiteSpace(BookingInput.TripId))
+        {
+            TripId = BookingInput.TripId;
+        }
+
+        ModelState.Clear();
+        TryValidateModel(BookingInput, nameof(BookingInput));
+        ValidateBookingInput();
+
+        if (!ModelState.IsValid)
+        {
+            if (!await LoadTripAsync(cancellationToken))
+            {
+                return NotFound();
+            }
+
+            return Page();
+        }
+
+        var userId = GetUserId();
+        var mutation = BookingInput.ToMutation();
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(BookingInput.BookingId))
+            {
+                await _repository.CreateBookingAsync(userId, TripId, mutation, cancellationToken);
+                StatusMessage = "Booking confirmation added.";
+            }
+            else
+            {
+                var updated = await _repository.UpdateBookingAsync(userId, TripId, BookingInput.BookingId, mutation, cancellationToken);
+                if (updated is null)
+                {
+                    ModelState.AddModelError(string.Empty, "Unable to find the selected booking.");
+                    if (!await LoadTripAsync(cancellationToken))
+                    {
+                        return NotFound();
+                    }
+
+                    return Page();
+                }
+
+                StatusMessage = "Booking confirmation updated.";
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            if (!await LoadTripAsync(cancellationToken))
+            {
+                return NotFound();
+            }
+
+            return Page();
+        }
+
+        return RedirectToPage(new { tripId = TripId });
+    }
+
+    public async Task<IActionResult> OnPostDeleteBookingAsync(string bookingId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(bookingId))
+        {
+            return RedirectToPage(new { tripId = TripId });
+        }
+
+        var userId = GetUserId();
+        await _repository.DeleteBookingAsync(userId, TripId, bookingId, cancellationToken);
+        StatusMessage = "Booking confirmation deleted.";
+        return RedirectToPage(new { tripId = TripId });
+    }
+
     private async Task<bool> LoadTripAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(TripId))
@@ -187,6 +269,9 @@ public sealed class DetailsModel : PageModel
         Timeline = TimelineViewModel.From(details);
         SegmentInput.TripId = details.Trip.TripId;
         EntryInput.TripId = details.Trip.TripId;
+        BookingInput.TripId = details.Trip.TripId;
+        EntryBookings = BuildBookingLookup(details.Bookings, booking => booking.EntryId);
+        SegmentBookings = BuildBookingLookup(details.Bookings, booking => booking.SegmentId);
         return true;
     }
 
@@ -198,6 +283,48 @@ public sealed class DetailsModel : PageModel
             ModelState.AddModelError("SegmentInput.EndDateTimeUtc", "Segment end cannot be earlier than the start.");
         }
     }
+
+    private void ValidateBookingInput()
+    {
+        var hasEntry = !string.IsNullOrWhiteSpace(BookingInput.EntryId);
+        var hasSegment = !string.IsNullOrWhiteSpace(BookingInput.SegmentId);
+
+        if (!hasEntry && !hasSegment)
+        {
+            ModelState.AddModelError("BookingInput.EntryId", "Link the booking to an itinerary entry or trip segment.");
+        }
+
+        if (hasEntry && hasSegment)
+        {
+            ModelState.AddModelError("BookingInput.EntryId", "A booking can only be linked to one item.");
+        }
+    }
+
+    private static IReadOnlyDictionary<string, Booking> BuildBookingLookup(IEnumerable<Booking> bookings, Func<Booking, string?> keySelector)
+    {
+        var lookup = new Dictionary<string, Booking>(StringComparer.OrdinalIgnoreCase);
+        foreach (var booking in bookings)
+        {
+            var key = keySelector(booking);
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                continue;
+            }
+
+            if (!lookup.ContainsKey(key))
+            {
+                lookup[key] = booking;
+            }
+        }
+
+        return lookup;
+    }
+
+    public Booking? GetBookingForEntry(string entryId)
+        => EntryBookings.TryGetValue(entryId, out var booking) ? booking : null;
+
+    public Booking? GetBookingForSegment(string segmentId)
+        => SegmentBookings.TryGetValue(segmentId, out var booking) ? booking : null;
 
     private string GetUserId()
     {
@@ -292,6 +419,62 @@ public sealed class DetailsModel : PageModel
                 PaymentStatus: null,
                 Provider: null,
                 Tags: null);
+
+        private static string? Normalize(string? value)
+            => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    public sealed class BookingForm
+    {
+        [Required]
+        public string TripId { get; set; } = string.Empty;
+
+        public string? BookingId { get; set; }
+
+        public string? EntryId { get; set; }
+
+        public string? SegmentId { get; set; }
+
+        [Required]
+        [Display(Name = "Booking type")]
+        public string BookingType { get; set; } = "confirmation";
+
+        [StringLength(200)]
+        public string? Vendor { get; set; }
+
+        [StringLength(100)]
+        [Display(Name = "Confirmation number")]
+        public string? Reference { get; set; }
+
+        [DataType(DataType.Currency)]
+        public decimal? Cost { get; set; }
+
+        [StringLength(3)]
+        [Display(Name = "Currency (ISO)")]
+        public string? Currency { get; set; }
+
+        [Display(Name = "Refundable booking")]
+        public bool IsRefundable { get; set; }
+
+        [StringLength(500)]
+        public string? CancellationPolicy { get; set; }
+
+        [Display(Name = "Confirmation details")]
+        [DataType(DataType.MultilineText)]
+        public string? ConfirmationDetails { get; set; }
+
+        public BookingMutation ToMutation()
+            => new(
+                Normalize(EntryId),
+                Normalize(SegmentId),
+                Normalize(BookingType),
+                Normalize(Vendor),
+                Normalize(Reference),
+                Cost,
+                Normalize(Currency)?.ToUpperInvariant(),
+                IsRefundable,
+                Normalize(CancellationPolicy),
+                string.IsNullOrWhiteSpace(ConfirmationDetails) ? null : ConfirmationDetails.Trim());
 
         private static string? Normalize(string? value)
             => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

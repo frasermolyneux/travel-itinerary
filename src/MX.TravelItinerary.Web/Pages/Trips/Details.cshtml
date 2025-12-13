@@ -65,10 +65,15 @@ else
                 <div class="timeline-unscheduled-list mt-3">
                     @foreach (var segment in Model.Timeline.UnscheduledSegments)
                     {
+                        var unscheduledBooking = Model.GetBookingForSegment(segment.SegmentId);
                         <div class="timeline-item timeline-item--segment" data-timeline-item data-item-type="segment"
                             data-item-id="@segment.SegmentId">
                             <div class="timeline-item-body">
-                                @segment
+                                <span>@segment</span>
+                                @if (unscheduledBooking is not null)
+                                {
+                                    <span class="booking-indicator" title="Booking attached">&#128206;</span>
+                                }
                                 <div class="small text-muted">No dates provided</div>
                             </div>
                             <div class="timeline-actions">
@@ -82,6 +87,31 @@ else
                                     <input type="hidden" name="segmentId" value="@segment.SegmentId" />
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                 </form>
+                                @if (unscheduledBooking is null)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="add"
+                                        data-parent-type="segment" data-segment-id="@segment.SegmentId"
+                                        data-segment-title="@(segment.Title ?? segment.SegmentType)">
+                                        Add booking
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="view"
+                                        data-booking-id="@unscheduledBooking.BookingId"
+                                        data-booking-type="@(unscheduledBooking.BookingType ?? string.Empty)"
+                                        data-booking-vendor="@(unscheduledBooking.Vendor ?? string.Empty)"
+                                        data-booking-reference="@(unscheduledBooking.Reference ?? string.Empty)"
+                                        data-booking-cost="@(unscheduledBooking.Cost?.ToString("0.##") ?? string.Empty)"
+                                        data-booking-currency="@(unscheduledBooking.Currency ?? string.Empty)"
+                                        data-booking-refundable="@(unscheduledBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
+                                        data-booking-cancellation="@(unscheduledBooking.CancellationPolicy ?? string.Empty)"
+                                        data-booking-details="@(unscheduledBooking.ConfirmationDetailsJson ?? string.Empty)"
+                                        data-booking-parent-label="@segment" data-booking-parent-type="segment"
+                                        data-parent-segment="@segment.SegmentId">
+                                        View booking
+                                    </button>
+                                }
                             </div>
                         </div>
                     }
@@ -109,9 +139,14 @@ else
                 {
                     @foreach (var entry in day.Entries)
                     {
+                        var entryBooking = Model.GetBookingForEntry(entry.EntryId);
                         <div class="timeline-item" data-timeline-item data-item-type="entry" data-item-id="@entry.EntryId">
                             <div class="timeline-item-body">
-                                @entry
+                                <span>@entry</span>
+                                @if (entryBooking is not null)
+                                {
+                                    <span class="booking-indicator" title="Booking attached">&#128206;</span>
+                                }
                             </div>
                             <div class="timeline-actions">
                                 <button type="button" class="btn btn-sm btn-outline-primary me-2" data-edit-type="entry"
@@ -125,6 +160,30 @@ else
                                     <input type="hidden" name="entryId" value="@entry.EntryId" />
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                 </form>
+                                @if (entryBooking is null)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="add"
+                                        data-parent-type="entry" data-entry-id="@entry.EntryId" data-entry-title="@entry.Title">
+                                        Add booking
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="view"
+                                        data-booking-id="@entryBooking.BookingId"
+                                        data-booking-type="@(entryBooking.BookingType ?? string.Empty)"
+                                        data-booking-vendor="@(entryBooking.Vendor ?? string.Empty)"
+                                        data-booking-reference="@(entryBooking.Reference ?? string.Empty)"
+                                        data-booking-cost="@(entryBooking.Cost?.ToString("0.##") ?? string.Empty)"
+                                        data-booking-currency="@(entryBooking.Currency ?? string.Empty)"
+                                        data-booking-refundable="@(entryBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
+                                        data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
+                                        data-booking-details="@(entryBooking.ConfirmationDetailsJson ?? string.Empty)"
+                                        data-booking-parent-label="@entry" data-booking-parent-type="entry"
+                                        data-parent-entry="@entry.EntryId">
+                                        View booking
+                                    </button>
+                                }
                             </div>
                         </div>
                     }
@@ -135,6 +194,7 @@ else
         @foreach (var block in Model.Timeline.Segments)
         {
             var segmentType = (block.Segment.SegmentType ?? "travel").ToLowerInvariant();
+            var segmentBooking = Model.GetBookingForSegment(block.Segment.SegmentId);
             <div class="timeline-segment"
                 style="grid-row:@block.RowStart / @block.RowEnd; --lane-index:@block.LaneIndex; --lane-count:@block.LaneCount;"
                 data-segment-type="@segmentType">
@@ -142,7 +202,11 @@ else
                 <div class="timeline-item timeline-item--segment segment-type-@segmentType" data-timeline-item
                     data-item-type="segment" data-item-id="@block.Segment.SegmentId">
                     <div class="timeline-item-body">
-                        @block.Segment
+                        <span>@block.Segment</span>
+                        @if (segmentBooking is not null)
+                        {
+                            <span class="booking-indicator" title="Booking attached">&#128206;</span>
+                        }
                         <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")
                         </div>
                     </div>
@@ -160,6 +224,31 @@ else
                             <input type="hidden" name="segmentId" value="@block.Segment.SegmentId" />
                             <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                         </form>
+                        @if (segmentBooking is null)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="add"
+                                data-parent-type="segment" data-segment-id="@block.Segment.SegmentId"
+                                data-segment-title="@(block.Segment.Title ?? block.Segment.SegmentType)">
+                                Add booking
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="view"
+                                data-booking-id="@segmentBooking.BookingId"
+                                data-booking-type="@(segmentBooking.BookingType ?? string.Empty)"
+                                data-booking-vendor="@(segmentBooking.Vendor ?? string.Empty)"
+                                data-booking-reference="@(segmentBooking.Reference ?? string.Empty)"
+                                data-booking-cost="@(segmentBooking.Cost?.ToString("0.##") ?? string.Empty)"
+                                data-booking-currency="@(segmentBooking.Currency ?? string.Empty)"
+                                data-booking-refundable="@(segmentBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
+                                data-booking-cancellation="@(segmentBooking.CancellationPolicy ?? string.Empty)"
+                                data-booking-details="@(segmentBooking.ConfirmationDetailsJson ?? string.Empty)"
+                                data-booking-parent-label="@block.Segment" data-booking-parent-type="segment"
+                                data-parent-segment="@block.Segment.SegmentId">
+                                View booking
+                            </button>
+                        }
                     </div>
                 </div>
             </div>
@@ -275,6 +364,121 @@ else
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancel</button>
             </div>
         </form>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="bookingFlyout" aria-labelledby="bookingFlyoutLabel">
+    <div class="offcanvas-header">
+        <h5 id="bookingFlyoutLabel" class="offcanvas-title">Add booking confirmation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form method="post" asp-page-handler="SaveBooking" id="booking-form">
+            <input asp-for="BookingInput.TripId" type="hidden" />
+            <input asp-for="BookingInput.BookingId" type="hidden" />
+            <input asp-for="BookingInput.EntryId" type="hidden" />
+            <input asp-for="BookingInput.SegmentId" type="hidden" />
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="BookingInput.BookingType" class="form-label"></label>
+                <input asp-for="BookingInput.BookingType" class="form-control" list="booking-type-options" />
+                <datalist id="booking-type-options">
+                    <option value="flight"></option>
+                    <option value="hotel"></option>
+                    <option value="transport"></option>
+                    <option value="activity"></option>
+                </datalist>
+                <span asp-validation-for="BookingInput.BookingType" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="BookingInput.Vendor" class="form-label"></label>
+                <input asp-for="BookingInput.Vendor" class="form-control" />
+                <span asp-validation-for="BookingInput.Vendor" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="BookingInput.Reference" class="form-label"></label>
+                <input asp-for="BookingInput.Reference" class="form-control" />
+                <span asp-validation-for="BookingInput.Reference" class="text-danger"></span>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="BookingInput.Cost" class="form-label"></label>
+                    <input asp-for="BookingInput.Cost" class="form-control" type="number" step="0.01" />
+                    <span asp-validation-for="BookingInput.Cost" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="BookingInput.Currency" class="form-label"></label>
+                    <input asp-for="BookingInput.Currency" class="form-control" maxlength="3"
+                        style="text-transform:uppercase;" />
+                    <span asp-validation-for="BookingInput.Currency" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-check mb-3 mt-2">
+                <input asp-for="BookingInput.IsRefundable" class="form-check-input" type="checkbox" value="true" />
+                <label asp-for="BookingInput.IsRefundable" class="form-check-label"></label>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="BookingInput.CancellationPolicy" class="form-label"></label>
+                <textarea asp-for="BookingInput.CancellationPolicy" class="form-control" rows="2"></textarea>
+                <span asp-validation-for="BookingInput.CancellationPolicy" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="BookingInput.ConfirmationDetails" class="form-label"></label>
+                <textarea asp-for="BookingInput.ConfirmationDetails" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="BookingInput.ConfirmationDetails" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save booking</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="bookingDetailFlyout" aria-labelledby="bookingDetailFlyoutLabel">
+    <div class="offcanvas-header">
+        <h5 id="bookingDetailFlyoutLabel" class="offcanvas-title">Booking details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="mb-3">
+            <div class="text-muted text-uppercase small">Linked to</div>
+            <div class="fw-semibold" data-booking-detail="parent">—</div>
+        </div>
+        <dl class="row booking-detail-list">
+            <dt class="col-sm-4">Type</dt>
+            <dd class="col-sm-8" data-booking-detail="type">—</dd>
+            <dt class="col-sm-4">Vendor</dt>
+            <dd class="col-sm-8" data-booking-detail="vendor">—</dd>
+            <dt class="col-sm-4">Confirmation #</dt>
+            <dd class="col-sm-8" data-booking-detail="reference">—</dd>
+            <dt class="col-sm-4">Cost</dt>
+            <dd class="col-sm-8" data-booking-detail="cost">—</dd>
+            <dt class="col-sm-4">Refundable</dt>
+            <dd class="col-sm-8" data-booking-detail="refundable">—</dd>
+            <dt class="col-sm-4">Cancellation</dt>
+            <dd class="col-sm-8" data-booking-detail="cancellation">—</dd>
+        </dl>
+        <div class="mb-4">
+            <div class="text-muted text-uppercase small">Confirmation details</div>
+            <div class="booking-detail-notes" data-booking-detail="notes">—</div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary" id="bookingDetailEditButton">Edit booking</button>
+            <form method="post" asp-page-handler="DeleteBooking" id="bookingDetailDeleteForm" class="d-inline">
+                <input type="hidden" name="tripId" value="@Model.TripDetails?.Trip.TripId" />
+                <input type="hidden" name="bookingId" value="" />
+                <button type="submit" class="btn btn-outline-danger">Delete booking</button>
+            </form>
+        </div>
     </div>
 </div>
 

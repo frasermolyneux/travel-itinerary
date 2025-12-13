@@ -60,6 +60,7 @@ internal static class TableEntityMapper
             TripId: entity.PartitionKey,
             BookingId: entity.RowKey,
             EntryId: entity.GetString("EntryId"),
+            SegmentId: entity.GetString("SegmentId"),
             BookingType: entity.GetString("BookingType"),
             Vendor: entity.GetString("Vendor"),
             Reference: entity.GetString("Reference"),
