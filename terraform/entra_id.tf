@@ -27,7 +27,7 @@ resource "azuread_service_principal" "web" {
 }
 
 resource "azuread_application_password" "web" {
-  application_id = azuread_application.web.application_id
+  application_id = azuread_application.web.id
 
   rotate_when_changed = {
     rotation = time_rotating.thirty_days.id
