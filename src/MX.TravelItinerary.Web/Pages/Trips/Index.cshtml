@@ -1,0 +1,148 @@
+@page
+@model MX.TravelItinerary.Web.Pages.Trips.IndexModel
+@{
+    ViewData["Title"] = "Trips";
+}
+
+<h1 class="mb-4">Trips</h1>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="alert">
+        @Model.StatusMessage
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-12 col-lg-5">
+        <div class="card h-100">
+            <div class="card-header">
+                @(Model.IsEditing ? "Edit Trip" : "Create Trip")
+            </div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="Save">
+                    <input asp-for="Input.TripId" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Name" class="form-label"></label>
+                        <input asp-for="Input.Name" class="form-control" />
+                        <span asp-validation-for="Input.Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Slug" class="form-label"></label>
+                        <input asp-for="Input.Slug" class="form-control" />
+                        <div class="form-text">Leave blank to auto-generate from the trip name.</div>
+                        <span asp-validation-for="Input.Slug" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <label asp-for="Input.StartDate" class="form-label"></label>
+                                <input asp-for="Input.StartDate" class="form-control" />
+                                <span asp-validation-for="Input.StartDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label asp-for="Input.EndDate" class="form-label"></label>
+                                <input asp-for="Input.EndDate" class="form-control" />
+                                <span asp-validation-for="Input.EndDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.HomeTimeZone" class="form-label"></label>
+                        <input asp-for="Input.HomeTimeZone" class="form-control" />
+                        <span asp-validation-for="Input.HomeTimeZone" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.DefaultCurrency" class="form-label"></label>
+                        <input asp-for="Input.DefaultCurrency" class="form-control" />
+                        <span asp-validation-for="Input.DefaultCurrency" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save Changes" : "Create             Trip")</button>
+                        @if (Model.IsEditing)
+                        {
+                            <a class="btn btn-outline-secondary" asp-page="./Index">Cancel</a>
+                        }
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-7">
+        <div class="card h-100">
+            <div class="card-header">Your Trips</div>
+            <div class="card-body">
+                @if (Model.Trips.Count == 0)
+                {
+                    <p class="text-muted mb-0">No trips yet. Create your first itinerary using the form.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Dates</th>
+                                    <th scope="col">Timezone</th>
+                                    <th scope="col" class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var trip in Model.Trips.OrderBy(t => t.StartDate ?? DateOnly.MaxValue))
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@trip.Name</div>
+                                            <div class="text-muted small">@trip.Slug</div>
+                                        </td>
+                                        <td>
+                                            @if (trip.StartDate is not null || trip.EndDate is not null)
+                                            {
+                                                <div>
+                                                    @trip.StartDate?.ToString("yyyy-MM-dd")
+                                                    @if (trip.EndDate is not null)
+                                                    {
+                                                        <text> – @trip.EndDate?.ToString("yyyy-MM-dd")</text>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">TBD</span>
+                                            }
+                                        </td>
+                                        <td>@trip.HomeTimeZone</td>
+                                        <td class="text-end">
+                                            <a class="btn btn-sm btn-link" asp-page="./Index"
+                                                asp-route-edit="@trip.TripId">Edit</a>
+                                            <form method="post" asp-page-handler="Delete" asp-route-tripId="@trip.TripId"
+                                                class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-link text-danger"
+                                                    onclick="return confirm('Delete this trip?');">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

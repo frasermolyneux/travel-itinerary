@@ -8,6 +8,7 @@ namespace MX.TravelItinerary.Web.Data.TableStorage;
 public sealed class TableItineraryRepository : IItineraryRepository
 {
     private readonly ITableContext _tables;
+    private const string DateFormat = "yyyy-MM-dd";
 
     public TableItineraryRepository(ITableContext tables)
     {
@@ -40,7 +41,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
             return null;
         }
 
-        var trip = TableEntityMapper.ToTrip(tripEntity.Value);
+        var trip = TableEntityMapper.ToTrip(tripEntity.Value!);
         return await BuildTripDetailsAsync(trip, shareLink: null, cancellationToken);
     }
 
@@ -80,8 +81,60 @@ public sealed class TableItineraryRepository : IItineraryRepository
             return null;
         }
 
-        var trip = TableEntityMapper.ToTrip(tripEntity.Value);
+        var trip = TableEntityMapper.ToTrip(tripEntity.Value!);
         return await BuildTripDetailsAsync(trip, shareLink, cancellationToken);
+    }
+
+    public async Task<Trip> CreateTripAsync(string userId, TripMutation mutation, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentNullException.ThrowIfNull(mutation);
+
+        var tripId = Guid.NewGuid().ToString("N");
+        var entity = new TableEntity(userId, tripId);
+        ApplyTripMutation(entity, mutation);
+
+        await _tables.Trips.AddEntityAsync(entity, cancellationToken);
+        return TableEntityMapper.ToTrip(entity);
+    }
+
+    public async Task<Trip?> UpdateTripAsync(string userId, string tripId, TripMutation mutation, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+        ArgumentNullException.ThrowIfNull(mutation);
+
+        var existing = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(userId, tripId, cancellationToken: cancellationToken);
+        if (existing.HasValue is false)
+        {
+            return null;
+        }
+
+        var entity = existing.Value;
+        if (entity is null)
+        {
+            return null;
+        }
+        ApplyTripMutation(entity, mutation);
+        await _tables.Trips.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
+
+        return TableEntityMapper.ToTrip(entity);
+    }
+
+    public async Task<bool> DeleteTripAsync(string userId, string tripId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+
+        try
+        {
+            await _tables.Trips.DeleteEntityAsync(userId, tripId, cancellationToken: cancellationToken);
+            return true;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return false;
+        }
     }
 
     private async Task<TripDetails> BuildTripDetailsAsync(Trip trip, ShareLink? shareLink, CancellationToken cancellationToken)
@@ -154,4 +207,51 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
     private static string CreateRowFilter(string rowKey)
         => TableClient.CreateQueryFilter($"RowKey eq {rowKey}");
+
+    private static void ApplyTripMutation(TableEntity entity, TripMutation mutation)
+    {
+        entity["Name"] = mutation.Name;
+        entity["Slug"] = mutation.Slug;
+
+        if (mutation.StartDate is not null)
+        {
+            entity["StartDate"] = mutation.StartDate.Value.ToString(DateFormat);
+        }
+        else
+        {
+            RemoveIfExists(entity, "StartDate");
+        }
+
+        if (mutation.EndDate is not null)
+        {
+            entity["EndDate"] = mutation.EndDate.Value.ToString(DateFormat);
+        }
+        else
+        {
+            RemoveIfExists(entity, "EndDate");
+        }
+
+        SetOrRemove(entity, "HomeTimeZone", mutation.HomeTimeZone);
+        SetOrRemove(entity, "DefaultCurrency", mutation.DefaultCurrency);
+    }
+
+    private static void SetOrRemove(TableEntity entity, string propertyName, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            RemoveIfExists(entity, propertyName);
+        }
+        else
+        {
+            entity[propertyName] = value;
+        }
+    }
+
+    private static void RemoveIfExists(TableEntity entity, string propertyName)
+    {
+        if (entity.ContainsKey(propertyName))
+        {
+            entity.Remove(propertyName);
+        }
+    }
 }

@@ -9,4 +9,10 @@ public interface IItineraryRepository
     Task<TripDetails?> GetTripAsync(string userId, string tripId, CancellationToken cancellationToken = default);
 
     Task<TripDetails?> GetTripByShareCodeAsync(string shareCode, CancellationToken cancellationToken = default);
+
+    Task<Trip> CreateTripAsync(string userId, TripMutation mutation, CancellationToken cancellationToken = default);
+
+    Task<Trip?> UpdateTripAsync(string userId, string tripId, TripMutation mutation, CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteTripAsync(string userId, string tripId, CancellationToken cancellationToken = default);
 }

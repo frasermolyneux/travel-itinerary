@@ -10,6 +10,14 @@ public sealed record Trip(
     string? HomeTimeZone,
     string? DefaultCurrency);
 
+public sealed record TripMutation(
+    string Name,
+    string Slug,
+    DateOnly? StartDate,
+    DateOnly? EndDate,
+    string? HomeTimeZone,
+    string? DefaultCurrency);
+
 public sealed record TripSegment(
     string TripId,
     string SegmentId,
