@@ -1,4 +1,4 @@
-resource "azurerm_linux_web_app" "app" {
+resource "azurerm_windows_web_app" "app" {
   name = local.web_app_name
   tags = var.tags
 
@@ -18,6 +18,7 @@ resource "azurerm_linux_web_app" "app" {
       dotnet_version = "9.0"
     }
 
+    always_on           = false // Shared Plan
     ftps_state          = "Disabled"
     minimum_tls_version = "1.2"
   }
