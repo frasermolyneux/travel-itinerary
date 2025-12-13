@@ -48,8 +48,21 @@ resource "azurerm_app_service_custom_hostname_binding" "primary" {
   ]
 }
 
+resource "time_sleep" "wait_for_hostname_binding" {
+  create_duration = "60s"
+
+  depends_on = [
+    azurerm_app_service_custom_hostname_binding.primary
+  ]
+}
+
 resource "azurerm_app_service_managed_certificate" "primary" {
   custom_hostname_binding_id = azurerm_app_service_custom_hostname_binding.primary.id
+
+  depends_on = [
+    time_sleep.wait_for_hostname_binding,
+    azurerm_dns_cname_record.web_app
+  ]
 }
 
 resource "azurerm_app_service_certificate_binding" "primary" {
