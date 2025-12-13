@@ -10,7 +10,7 @@ resource "azuread_application" "web" {
 
     implicit_grant {
       access_token_issuance_enabled = false
-      id_token_issuance_enabled     = false
+      id_token_issuance_enabled     = true
     }
   }
 
