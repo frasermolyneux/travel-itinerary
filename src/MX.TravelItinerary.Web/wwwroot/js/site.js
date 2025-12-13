@@ -106,8 +106,10 @@
                 cost: detailPane.dataset.bookingCost,
                 currency: detailPane.dataset.bookingCurrency,
                 refundable: detailPane.dataset.bookingRefundable,
+                paid: detailPane.dataset.bookingPaid,
                 cancellation: detailPane.dataset.bookingCancellation,
-                details: detailPane.dataset.bookingDetails
+                details: detailPane.dataset.bookingDetails,
+                confirmationUrl: detailPane.dataset.bookingConfirmationUrl
             });
         });
     }
@@ -169,11 +171,17 @@
         setInputValue('BookingInput_Currency', '');
         setInputValue('BookingInput_CancellationPolicy', '');
         setInputValue('BookingInput_ConfirmationDetails', '');
+        setInputValue('BookingInput_ConfirmationUrl', '');
         setBookingCategoryDisplay('—');
 
         const refundable = document.getElementById('BookingInput_IsRefundable');
         if (refundable) {
             refundable.checked = false;
+        }
+
+        const paid = document.getElementById('BookingInput_IsPaid');
+        if (paid) {
+            paid.checked = false;
         }
 
         const label = document.getElementById('bookingFlyoutLabel');
@@ -209,11 +217,17 @@
         setInputValue('BookingInput_Currency', options.currency ?? '');
         setInputValue('BookingInput_CancellationPolicy', options.cancellation ?? '');
         setInputValue('BookingInput_ConfirmationDetails', options.details ?? '');
+        setInputValue('BookingInput_ConfirmationUrl', options.confirmationUrl ?? '');
         setBookingCategoryDisplay(options.categoryLabel || 'Linked itinerary entry');
 
         const refundable = document.getElementById('BookingInput_IsRefundable');
         if (refundable) {
             refundable.checked = options.refundable === 'true';
+        }
+
+        const paid = document.getElementById('BookingInput_IsPaid');
+        if (paid) {
+            paid.checked = options.paid === 'true';
         }
 
         openOffcanvas('bookingFlyout');
@@ -232,14 +246,11 @@
         setBookingDetail(panel, 'vendor', dataset.bookingVendor || '—');
         setBookingDetail(panel, 'reference', dataset.bookingReference || '—');
         setBookingDetail(panel, 'cost', costText);
-        const refundableText = dataset.bookingRefundable === 'true'
-            ? 'Yes'
-            : dataset.bookingRefundable === 'false'
-                ? 'No'
-                : '—';
-        setBookingDetail(panel, 'refundable', refundableText);
+        setBookingDetail(panel, 'refundable', formatBooleanFlag(dataset.bookingRefundable));
+        setBookingDetail(panel, 'paid', formatBooleanFlag(dataset.bookingPaid));
         setBookingDetail(panel, 'cancellation', dataset.bookingCancellation || '—');
         setBookingDetail(panel, 'notes', dataset.bookingDetails || '—');
+        setBookingLink(panel, dataset.bookingConfirmationUrl);
 
         panel.dataset.bookingId = dataset.bookingId ?? '';
         panel.dataset.bookingParentType = dataset.bookingParentType ?? '';
@@ -252,8 +263,10 @@
         panel.dataset.bookingCost = dataset.bookingCost ?? '';
         panel.dataset.bookingCurrency = dataset.bookingCurrency ?? '';
         panel.dataset.bookingRefundable = dataset.bookingRefundable ?? '';
+        panel.dataset.bookingPaid = dataset.bookingPaid ?? '';
         panel.dataset.bookingCancellation = dataset.bookingCancellation ?? '';
         panel.dataset.bookingDetails = dataset.bookingDetails ?? '';
+        panel.dataset.bookingConfirmationUrl = dataset.bookingConfirmationUrl ?? '';
 
         const deleteInput = document.querySelector('#bookingDetailDeleteForm input[name="bookingId"]');
         if (deleteInput) {
@@ -347,6 +360,27 @@
         target.textContent = value && value.trim().length > 0 ? value : '—';
     }
 
+    function setBookingLink(panel, url) {
+        const link = panel.querySelector('[data-booking-link]');
+        const placeholder = panel.querySelector('[data-booking-link-placeholder]');
+        if (!link || !placeholder) {
+            return;
+        }
+
+        if (url && url.trim().length > 0) {
+            link.href = url;
+            link.textContent = url;
+            link.classList.remove('d-none');
+            placeholder.classList.add('d-none');
+        } else {
+            link.href = '#';
+            link.textContent = '';
+            link.classList.add('d-none');
+            placeholder.classList.remove('d-none');
+            placeholder.textContent = '—';
+        }
+    }
+
     function formatBookingCost(amount, currency) {
         if (!amount || amount.trim().length === 0) {
             return '—';
@@ -357,6 +391,18 @@
         }
 
         return amount;
+    }
+
+    function formatBooleanFlag(value) {
+        if (value === 'true') {
+            return 'Yes';
+        }
+
+        if (value === 'false') {
+            return 'No';
+        }
+
+        return '—';
     }
 
     function openOffcanvas(id) {

@@ -345,11 +345,6 @@ public sealed class DetailsModel : PageModel
                 string.IsNullOrWhiteSpace(Title) ? "Untitled entry" : Title.Trim(),
                 string.IsNullOrWhiteSpace(Details) ? null : Details,
                 Location: null,
-                CostEstimate: null,
-                Currency: null,
-                IsPaid: null,
-                PaymentStatus: null,
-                Provider: null,
                 Tags: null);
     }
 
@@ -379,12 +374,20 @@ public sealed class DetailsModel : PageModel
         [Display(Name = "Refundable booking")]
         public bool IsRefundable { get; set; }
 
+        [Display(Name = "Paid in full")]
+        public bool IsPaid { get; set; }
+
         [StringLength(500)]
         public string? CancellationPolicy { get; set; }
 
         [Display(Name = "Confirmation details")]
         [DataType(DataType.MultilineText)]
         public string? ConfirmationDetails { get; set; }
+
+        [Display(Name = "Manage booking URL")]
+        [DataType(DataType.Url)]
+        [Url]
+        public string? ConfirmationUrl { get; set; }
 
         public BookingMutation ToMutation()
             => new(
@@ -395,11 +398,23 @@ public sealed class DetailsModel : PageModel
                 Cost,
                 Normalize(Currency)?.ToUpperInvariant(),
                 IsRefundable,
+                IsPaid,
                 Normalize(CancellationPolicy),
-                string.IsNullOrWhiteSpace(ConfirmationDetails) ? null : ConfirmationDetails.Trim());
+                string.IsNullOrWhiteSpace(ConfirmationDetails) ? null : ConfirmationDetails.Trim(),
+                ParseUri(ConfirmationUrl));
 
         private static string? Normalize(string? value)
             => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+        private static Uri? ParseUri(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            return Uri.TryCreate(value.Trim(), UriKind.Absolute, out var uri) ? uri : null;
+        }
     }
 
     private static IReadOnlyDictionary<TimelineItemType, SelectListGroup> TimelineItemGroups { get; } = CreateTimelineItemGroups();

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -86,11 +87,6 @@ public sealed partial record ItineraryEntry(
     string Title,
     string? Details,
     LocationInfo? Location,
-    decimal? CostEstimate,
-    string? Currency,
-    bool? IsPaid,
-    string? PaymentStatus,
-    string? Provider,
     string? Tags);
 
 public sealed record ItineraryEntryMutation(
@@ -101,11 +97,6 @@ public sealed record ItineraryEntryMutation(
     string Title,
     string? Details,
     LocationInfo? Location,
-    decimal? CostEstimate,
-    string? Currency,
-    bool? IsPaid,
-    string? PaymentStatus,
-    string? Provider,
     string? Tags);
 
 public sealed record Booking(
@@ -118,8 +109,10 @@ public sealed record Booking(
     decimal? Cost,
     string? Currency,
     bool? IsRefundable,
+    bool? IsPaid,
     string? CancellationPolicy,
-    string? ConfirmationDetailsJson);
+    string? ConfirmationDetails,
+    Uri? ConfirmationUrl);
 
 public sealed record BookingMutation(
     string? EntryId,
@@ -129,8 +122,10 @@ public sealed record BookingMutation(
     decimal? Cost,
     string? Currency,
     bool? IsRefundable,
+    bool? IsPaid,
     string? CancellationPolicy,
-    string? ConfirmationDetailsJson);
+    string? ConfirmationDetails,
+    Uri? ConfirmationUrl);
 
 public sealed record ShareLink(
     string TripId,

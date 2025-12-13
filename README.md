@@ -76,10 +76,6 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 | `Details`                      | Multiline text                                                               | Narrative for the slot (activities, instructions, etc.). |
 | `LocationName` / `LocationUrl` | Name + map link                                                              | Used for cards and Google Maps deep links.               |
 | `Latitude` / `Longitude`       | `28.592` / `77.250`                                                          | Map markers.                                             |
-| `CostEstimate` / `Currency`    | `42` / `GBP`                                                                 | Budget plus paid badges.                                 |
-| `IsPaid`                       | `true/false`                                                                 | Quick paid indicator.                                    |
-| `PaymentStatus`                | `unknown`, `planned`, `deposit`, `partial`, `paid`, `refunded`, `cancelled`  | Enum reflecting lifecycle.                               |
-| `Provider`                     | `"Booking.com"`                                                              | Vendor summary.                                          |
 | `Tags`                         | `"hotel,luxury"`                                                             | Lightweight filtering.                                   |
 
 ### Bookings
@@ -94,8 +90,10 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 | `Reference`               | `"YQ695R"`                                           | PNR/reservation number.                                |
 | `Cost` / `Currency`       | `631.81` / `GBP`                                     | Actual spend.                                          |
 | `IsRefundable`            | `true/false`                                         | Highlight cancellable bookings.                        |
+| `IsPaid`                  | `true/false`                                         | Whether the organiser already settled the bill.       |
 | `CancellationPolicy`      | Text                                                 | Free-form summary.                                     |
-| `ConfirmationDetailsJson` | `{ "seat": "12A" }`                                  | Sensitive structured data (tickets, passengers, etc.). |
+| `ConfirmationDetails` | `{ "seat": "12A" }`                                  | Sensitive structured data (tickets, passengers, etc.). |
+| `ConfirmationUrl`         | `https://manage.booking.com/reservation/123`         | Direct link back to the booking portal.               |
 
 ### ShareLinks
 

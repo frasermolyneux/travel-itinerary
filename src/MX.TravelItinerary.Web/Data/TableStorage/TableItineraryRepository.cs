@@ -348,12 +348,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         entity["IsMultiDay"] = mutation.IsMultiDay;
         entity["ItemType"] = mutation.ItemType.ToStorageValue();
         SetOrRemove(entity, "Details", mutation.Details);
-        SetOrRemove(entity, "Currency", NormalizeCurrency(mutation.Currency));
-        SetOrRemove(entity, "PaymentStatus", mutation.PaymentStatus);
-        SetOrRemove(entity, "Provider", mutation.Provider);
         SetOrRemove(entity, "Tags", mutation.Tags);
-        SetOrRemove(entity, "CostEstimate", mutation.CostEstimate);
-        SetOrRemove(entity, "IsPaid", mutation.IsPaid);
 
         SetItineraryLocation(entity, mutation.Location);
     }
@@ -367,8 +362,10 @@ public sealed class TableItineraryRepository : IItineraryRepository
         SetOrRemove(entity, "Cost", mutation.Cost);
         SetOrRemove(entity, "Currency", NormalizeCurrency(mutation.Currency));
         SetOrRemove(entity, "IsRefundable", mutation.IsRefundable);
+        SetOrRemove(entity, "IsPaid", mutation.IsPaid);
         SetOrRemove(entity, "CancellationPolicy", mutation.CancellationPolicy);
-        SetOrRemove(entity, "ConfirmationDetailsJson", mutation.ConfirmationDetailsJson);
+        SetOrRemove(entity, "ConfirmationDetails", mutation.ConfirmationDetails);
+        SetOrRemove(entity, "ConfirmationUrl", mutation.ConfirmationUrl?.ToString());
     }
 
     private static void SetItineraryLocation(TableEntity entity, LocationInfo? location)
@@ -408,8 +405,9 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
         if (shareLink?.IncludeCost == false)
         {
-            entries = entries.Select(entry => entry with { CostEstimate = null, Currency = null }).ToList();
-            bookings = bookings.Select(booking => booking with { Cost = null, Currency = null }).ToList();
+            bookings = bookings
+                .Select(booking => booking with { Cost = null, Currency = null, IsPaid = null, ConfirmationUrl = null })
+                .ToList();
         }
 
         if (shareLink?.MaskBookings == true)

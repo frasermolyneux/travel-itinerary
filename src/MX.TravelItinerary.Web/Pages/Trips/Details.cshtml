@@ -116,8 +116,10 @@ else
                                         data-booking-cost="@(entryBooking.Cost?.ToString("0.##") ?? string.Empty)"
                                         data-booking-currency="@(entryBooking.Currency ?? string.Empty)"
                                         data-booking-refundable="@(entryBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
+                                        data-booking-paid="@(entryBooking.IsPaid?.ToString().ToLowerInvariant() ?? string.Empty)"
                                         data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
-                                        data-booking-details="@(entryBooking.ConfirmationDetailsJson ?? string.Empty)"
+                                        data-booking-details="@(entryBooking.ConfirmationDetails ?? string.Empty)"
+                                        data-booking-confirmation-url="@(entryBooking.ConfirmationUrl?.ToString() ?? string.Empty)"
                                         data-booking-parent-label="@entry" data-booking-parent-type="entry"
                                         data-parent-entry="@entry.EntryId">
                                         View booking
@@ -187,8 +189,10 @@ else
                                 data-booking-cost="@(entryBooking.Cost?.ToString("0.##") ?? string.Empty)"
                                 data-booking-currency="@(entryBooking.Currency ?? string.Empty)"
                                 data-booking-refundable="@(entryBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
+                                data-booking-paid="@(entryBooking.IsPaid?.ToString().ToLowerInvariant() ?? string.Empty)"
                                 data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
-                                data-booking-details="@(entryBooking.ConfirmationDetailsJson ?? string.Empty)"
+                                data-booking-details="@(entryBooking.ConfirmationDetails ?? string.Empty)"
+                                data-booking-confirmation-url="@(entryBooking.ConfirmationUrl?.ToString() ?? string.Empty)"
                                 data-booking-parent-label="@block.Entry" data-booking-parent-type="entry"
                                 data-parent-entry="@block.Entry.EntryId">
                                 View booking
@@ -314,10 +318,21 @@ else
                 <label asp-for="BookingInput.IsRefundable" class="form-check-label"></label>
             </div>
 
+            <div class="form-check mb-3">
+                <input asp-for="BookingInput.IsPaid" class="form-check-input" type="checkbox" value="true" />
+                <label asp-for="BookingInput.IsPaid" class="form-check-label"></label>
+            </div>
+
             <div class="mb-3">
                 <label asp-for="BookingInput.CancellationPolicy" class="form-label"></label>
                 <textarea asp-for="BookingInput.CancellationPolicy" class="form-control" rows="2"></textarea>
                 <span asp-validation-for="BookingInput.CancellationPolicy" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="BookingInput.ConfirmationUrl" class="form-label"></label>
+                <input asp-for="BookingInput.ConfirmationUrl" class="form-control" type="url" placeholder="https://" />
+                <span asp-validation-for="BookingInput.ConfirmationUrl" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
@@ -355,8 +370,15 @@ else
             <dd class="col-sm-8" data-booking-detail="cost">—</dd>
             <dt class="col-sm-4">Refundable</dt>
             <dd class="col-sm-8" data-booking-detail="refundable">—</dd>
+            <dt class="col-sm-4">Paid</dt>
+            <dd class="col-sm-8" data-booking-detail="paid">—</dd>
             <dt class="col-sm-4">Cancellation</dt>
             <dd class="col-sm-8" data-booking-detail="cancellation">—</dd>
+            <dt class="col-sm-4">Manage booking</dt>
+            <dd class="col-sm-8">
+                <a href="#" class="booking-link d-none" target="_blank" rel="noopener" data-booking-link>Open booking link</a>
+                <span data-booking-link-placeholder>—</span>
+            </dd>
         </dl>
         <div class="mb-4">
             <div class="text-muted text-uppercase small">Confirmation details</div>

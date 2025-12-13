@@ -1,3 +1,4 @@
+using System;
 using Azure.Data.Tables;
 using MX.TravelItinerary.Web.Data.Models;
 
@@ -37,11 +38,6 @@ internal static class TableEntityMapper
             Title: entity.GetString("Title") ?? entity.RowKey,
             Details: entity.GetString("Details"),
             Location: location,
-            CostEstimate: entity.GetDecimal("CostEstimate"),
-            Currency: entity.GetString("Currency"),
-            IsPaid: entity.GetBoolean("IsPaid", defaultValue: false),
-            PaymentStatus: entity.GetString("PaymentStatus"),
-            Provider: entity.GetString("Provider"),
             Tags: entity.GetString("Tags"));
     }
 
@@ -56,8 +52,10 @@ internal static class TableEntityMapper
             Cost: entity.GetDecimal("Cost"),
             Currency: entity.GetString("Currency"),
             IsRefundable: entity.GetBoolean("IsRefundable", defaultValue: false),
+            IsPaid: entity.GetBoolean("IsPaid", defaultValue: false),
             CancellationPolicy: entity.GetString("CancellationPolicy"),
-            ConfirmationDetailsJson: entity.GetString("ConfirmationDetailsJson"));
+            ConfirmationDetails: entity.GetString("ConfirmationDetails"),
+            ConfirmationUrl: TryGetUri(entity.GetString("ConfirmationUrl")));
 
     public static ShareLink ToShareLink(TableEntity entity)
     {
@@ -76,4 +74,14 @@ internal static class TableEntityMapper
 
     private static TimelineItemType GetBookingItemType(TableEntity entity)
         => entity.GetString("ItemType").ToTimelineItemType();
+
+    private static Uri? TryGetUri(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return Uri.TryCreate(value.Trim(), UriKind.Absolute, out var uri) ? uri : null;
+    }
 }
