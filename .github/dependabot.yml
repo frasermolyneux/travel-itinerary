@@ -1,0 +1,22 @@
+# Please see the documentation for all configuration options:
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    assignees: ["frasermolyneux"]
+    directory: "/src"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "terraform"
+    assignees: ["frasermolyneux"]
+    directory: "/terraform"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "github-actions"
+    assignees: ["frasermolyneux"]
+    directory: "/"
+    schedule:
+      interval: "daily"

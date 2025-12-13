@@ -1,0 +1,26 @@
+name: Destroy Development
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # This is required for Az CLI Login
+  
+jobs:
+  terraform-destroy-dev:
+    environment: Development
+    runs-on: ubuntu-latest
+
+    concurrency: # # This is required to prevent multiple GitHub Actions invocations against stateful resources. e.g. Terraform state file / Database / Deployed Apps
+      group: ${{ github.repository }}-dev
+
+    steps:
+    - uses: frasermolyneux/actions/terraform-destroy@main
+      with:
+        terraform-folder: "terraform"
+        terraform-var-file: "tfvars/dev.tfvars"
+        terraform-backend-file: "backends/dev.backend.hcl"
+        AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+        AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
