@@ -3,7 +3,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         initTimelineSelection();
-        initFabMenu();
+        initFabButton();
         initEditButtons();
         initBookingButtons();
         initMultiDayToggle();
@@ -39,33 +39,15 @@
         });
     }
 
-    function initFabMenu() {
-        const fab = document.querySelector('[data-fab]');
-        if (!fab) {
+    function initFabButton() {
+        const button = document.querySelector('[data-fab-open-entry]');
+        if (!button) {
             return;
         }
 
-        const toggle = fab.querySelector('[data-fab-toggle]');
-        toggle?.addEventListener('click', () => {
-            fab.classList.toggle('is-open');
-        });
-
-        document.addEventListener('click', (event) => {
-            if (!fab.contains(event.target)) {
-                fab.classList.remove('is-open');
-            }
-        });
-
-        fab.querySelectorAll('[data-open-form]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const formType = button.getAttribute('data-open-form');
-                fab.classList.remove('is-open');
-
-                if (formType === 'entry') {
-                    resetEntryForm();
-                    openOffcanvas('entryFlyout');
-                }
-            });
+        button.addEventListener('click', () => {
+            resetEntryForm();
+            openOffcanvas('entryFlyout');
         });
     }
 
