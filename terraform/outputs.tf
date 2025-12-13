@@ -3,7 +3,7 @@ output "resource_group_name" {
 }
 
 output "web_app_name" {
-  value = azurerm_windows_web_app.app.name
+  value = azurerm_linux_web_app.app.name
 }
 
 output "entra_application_client_id" {

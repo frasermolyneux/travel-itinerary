@@ -1,4 +1,4 @@
-resource "azurerm_windows_web_app" "app" {
+resource "azurerm_linux_web_app" "app" {
   name = local.web_app_name
   tags = var.tags
 
@@ -39,11 +39,21 @@ resource "azurerm_windows_web_app" "app" {
 
 resource "azurerm_app_service_custom_hostname_binding" "primary" {
   hostname            = local.public_hostname
-  app_service_name    = azurerm_windows_web_app.app.name
+  app_service_name    = azurerm_linux_web_app.app.name
   resource_group_name = data.azurerm_resource_group.rg.name
 
   depends_on = [
     azurerm_dns_txt_record.app_service_verification,
     azurerm_dns_cname_record.web_app
   ]
+}
+
+resource "azurerm_app_service_managed_certificate" "primary" {
+  custom_hostname_binding_id = azurerm_app_service_custom_hostname_binding.primary.id
+}
+
+resource "azurerm_app_service_certificate_binding" "primary" {
+  hostname_binding_id = azurerm_app_service_custom_hostname_binding.primary.id
+  certificate_id      = azurerm_app_service_managed_certificate.primary.id
+  ssl_state           = "SniEnabled"
 }

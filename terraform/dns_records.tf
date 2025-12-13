@@ -7,7 +7,7 @@ resource "azurerm_dns_txt_record" "app_service_verification" {
   ttl                 = 300
 
   record {
-    value = azurerm_windows_web_app.app.custom_domain_verification_id
+    value = azurerm_linux_web_app.app.custom_domain_verification_id
   }
 }
 
@@ -18,7 +18,7 @@ resource "azurerm_dns_cname_record" "web_app" {
   zone_name           = data.azurerm_dns_zone.primary.name
   resource_group_name = data.azurerm_dns_zone.primary.resource_group_name
   ttl                 = 300
-  record              = "${azurerm_windows_web_app.app.name}.azurewebsites.net"
+  record              = "${azurerm_linux_web_app.app.name}.azurewebsites.net"
 
   depends_on = [
     azurerm_dns_txt_record.app_service_verification
