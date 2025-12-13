@@ -102,8 +102,9 @@ body {
 }
 
 .timeline-item--segment {
-  border-color: #c4d6ff;
-  background: linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(13, 110, 253, 0.02));
+  border-color: rgba(196, 214, 255, 0.9);
+  border-left-color: var(--segment-border, #0d6efd);
+  background: linear-gradient(135deg, var(--segment-accent, rgba(13, 110, 253, 0.08)), #fff);
 }
 
 .timeline-item.is-selected {
@@ -133,10 +134,48 @@ body {
 .timeline-segment {
   grid-column: 2;
   pointer-events: none;
+  position: relative;
+  --lane-gap: 0.75rem;
+  --lane-count: 1;
+  --lane-index: 0;
+  --lane-size: calc((100% - (var(--lane-count) - 1) * var(--lane-gap)) / var(--lane-count));
+  width: var(--lane-size);
+  margin-left: calc(var(--lane-index) * (var(--lane-size) + var(--lane-gap)));
 }
 
 .timeline-segment .timeline-item {
   pointer-events: auto;
+  position: relative;
+  z-index: 2;
+}
+
+.timeline-segment-span {
+  position: absolute;
+  inset: 0.35rem 0;
+  border-radius: 1rem;
+  background: var(--segment-accent, rgba(13, 110, 253, 0.1));
+  opacity: 0.55;
+  z-index: 1;
+}
+
+.segment-type-travel {
+  --segment-accent: rgba(13, 110, 253, 0.16);
+  --segment-border: #0d6efd;
+}
+
+.segment-type-lodging {
+  --segment-accent: rgba(220, 53, 69, 0.14);
+  --segment-border: #dc3545;
+}
+
+.segment-type-activity {
+  --segment-accent: rgba(25, 135, 84, 0.18);
+  --segment-border: #198754;
+}
+
+.segment-type-other {
+  --segment-accent: rgba(102, 16, 242, 0.14);
+  --segment-border: #6610f2;
 }
 
 .timeline-unscheduled {
@@ -228,6 +267,9 @@ body {
 
   .timeline-segment {
     grid-column: 1;
+    width: 100%;
+    margin-left: 0;
+    --lane-gap: 0;
   }
 
   .fab-container {

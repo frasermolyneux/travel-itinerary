@@ -372,7 +372,11 @@ public sealed class DetailsModel : PageModel
                 }
             }
 
-            return new TimelineViewModel(days, segments, unscheduledSegments);
+            var laidOutSegments = segments.Count > 0
+                ? AssignSegmentLanes(segments)
+                : Array.Empty<TimelineSegmentBlock>();
+
+            return new TimelineViewModel(days, laidOutSegments, unscheduledSegments);
         }
 
         private static IReadOnlyList<DateOnly> BuildTimelineDates(TripDetails details)
@@ -428,6 +432,59 @@ public sealed class DetailsModel : PageModel
 
         public sealed record TimelineDay(int RowLine, DateOnly Date, IReadOnlyList<ItineraryEntry> Entries);
 
-        public sealed record TimelineSegmentBlock(TripSegment Segment, int RowStart, int RowEnd, DateOnly StartDate, DateOnly EndDate);
+        private static IReadOnlyList<TimelineSegmentBlock> AssignSegmentLanes(IReadOnlyList<TimelineSegmentBlock> segments)
+        {
+            var ordered = segments
+                .OrderBy(segment => segment.RowStart)
+                .ThenByDescending(segment => segment.RowEnd - segment.RowStart)
+                .ToList();
+
+            var active = new List<(int lane, TimelineSegmentBlock block)>();
+            var laidOut = new List<TimelineSegmentBlock>(ordered.Count);
+
+            foreach (var segment in ordered)
+            {
+                active.RemoveAll(item => item.block.RowEnd <= segment.RowStart);
+
+                var lane = 0;
+                while (active.Any(item => item.lane == lane))
+                {
+                    lane++;
+                }
+
+                var updated = segment with { LaneIndex = lane };
+                active.Add((lane, updated));
+                laidOut.Add(updated);
+            }
+
+            var finalized = new List<TimelineSegmentBlock>(laidOut.Count);
+            foreach (var block in laidOut)
+            {
+                var laneCount = laidOut
+                    .Where(other => Overlaps(block, other))
+                    .Select(other => other.LaneIndex)
+                    .DefaultIfEmpty(block.LaneIndex)
+                    .Max() + 1;
+
+                finalized.Add(block with { LaneCount = laneCount });
+            }
+
+            return finalized
+                .OrderBy(block => block.RowStart)
+                .ThenBy(block => block.LaneIndex)
+                .ToList();
+        }
+
+        private static bool Overlaps(TimelineSegmentBlock a, TimelineSegmentBlock b)
+            => a.RowStart < b.RowEnd && b.RowStart < a.RowEnd;
+
+        public sealed record TimelineSegmentBlock(
+            TripSegment Segment,
+            int RowStart,
+            int RowEnd,
+            DateOnly StartDate,
+            DateOnly EndDate,
+            int LaneIndex = 0,
+            int LaneCount = 1);
     }
 }

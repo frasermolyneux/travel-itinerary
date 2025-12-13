@@ -44,8 +44,8 @@
 else
 {
     var hasPlannedContent = Model.Timeline.Segments.Any()
-        || Model.Timeline.UnscheduledSegments.Any()
-        || Model.Timeline.Days.Any(day => day.Entries.Count > 0);
+    || Model.Timeline.UnscheduledSegments.Any()
+    || Model.Timeline.Days.Any(day => day.Entries.Count > 0);
     if (!hasPlannedContent)
     {
         <div class="alert alert-info">No itinerary entries yet. Use the quick actions to start planning this trip.</div>
@@ -65,20 +65,17 @@ else
                 <div class="timeline-unscheduled-list mt-3">
                     @foreach (var segment in Model.Timeline.UnscheduledSegments)
                     {
-                        <div class="timeline-item timeline-item--segment" data-timeline-item data-item-type="segment" data-item-id="@segment.SegmentId">
+                        <div class="timeline-item timeline-item--segment" data-timeline-item data-item-type="segment"
+                            data-item-id="@segment.SegmentId">
                             <div class="timeline-item-body">
                                 @segment
                                 <div class="small text-muted">No dates provided</div>
                             </div>
                             <div class="timeline-actions">
-                                <button type="button" class="btn btn-sm btn-outline-primary me-2"
-                                        data-edit-type="segment"
-                                        data-segment-id="@segment.SegmentId"
-                                        data-segment-title="@(segment.Title ?? string.Empty)"
-                                        data-segment-type="@segment.SegmentType"
-                                        data-segment-start=""
-                                        data-segment-end=""
-                                        data-segment-description="@(segment.Description ?? string.Empty)">
+                                <button type="button" class="btn btn-sm btn-outline-primary me-2" data-edit-type="segment"
+                                    data-segment-id="@segment.SegmentId" data-segment-title="@(segment.Title ?? string.Empty)"
+                                    data-segment-type="@segment.SegmentType" data-segment-start="" data-segment-end=""
+                                    data-segment-description="@(segment.Description ?? string.Empty)">
                                     Edit
                                 </button>
                                 <form method="post" asp-page-handler="DeleteSegment" class="d-inline">
@@ -117,13 +114,11 @@ else
                                 @entry
                             </div>
                             <div class="timeline-actions">
-                                <button type="button" class="btn btn-sm btn-outline-primary me-2"
-                                        data-edit-type="entry"
-                                        data-entry-id="@entry.EntryId"
-                                        data-entry-title="@entry.Title"
-                                        data-entry-date="@(entry.Date?.ToString("yyyy-MM-dd") ?? string.Empty)"
-                                        data-entry-category="@(entry.Category ?? string.Empty)"
-                                        data-entry-details="@(entry.Details ?? string.Empty)">
+                                <button type="button" class="btn btn-sm btn-outline-primary me-2" data-edit-type="entry"
+                                    data-entry-id="@entry.EntryId" data-entry-title="@entry.Title"
+                                    data-entry-date="@(entry.Date?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                                    data-entry-category="@(entry.Category ?? string.Empty)"
+                                    data-entry-details="@(entry.Details ?? string.Empty)">
                                     Edit
                                 </button>
                                 <form method="post" asp-page-handler="DeleteEntry" class="d-inline">
@@ -137,27 +132,32 @@ else
             </div>
         }
 
-        @foreach (var segment in Model.Timeline.Segments)
+        @foreach (var block in Model.Timeline.Segments)
         {
-            <div class="timeline-segment" style="grid-row:@segment.RowStart / @segment.RowEnd;">
-                <div class="timeline-item timeline-item--segment" data-timeline-item data-item-type="segment" data-item-id="@segment.Segment.SegmentId">
+            var segmentType = (block.Segment.SegmentType ?? "travel").ToLowerInvariant();
+            <div class="timeline-segment"
+                style="grid-row:@block.RowStart / @block.RowEnd; --lane-index:@block.LaneIndex; --lane-count:@block.LaneCount;"
+                data-segment-type="@segmentType">
+                <div class="timeline-segment-span" aria-hidden="true"></div>
+                <div class="timeline-item timeline-item--segment segment-type-@segmentType" data-timeline-item
+                    data-item-type="segment" data-item-id="@block.Segment.SegmentId">
                     <div class="timeline-item-body">
-                        @segment.Segment
-                        <div class="small text-muted">@segment.StartDate.ToString("MMM dd") – @segment.EndDate.ToString("MMM dd")</div>
+                        @block.Segment
+                        <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")
+                        </div>
                     </div>
                     <div class="timeline-actions">
-                        <button type="button" class="btn btn-sm btn-outline-primary me-2"
-                                data-edit-type="segment"
-                                data-segment-id="@segment.Segment.SegmentId"
-                                data-segment-title="@(segment.Segment.Title ?? string.Empty)"
-                                data-segment-type="@segment.Segment.SegmentType"
-                                data-segment-start="@(segment.Segment.StartDateTimeUtc?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? string.Empty)"
-                                data-segment-end="@(segment.Segment.EndDateTimeUtc?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? string.Empty)"
-                                data-segment-description="@(segment.Segment.Description ?? string.Empty)">
+                        <button type="button" class="btn btn-sm btn-outline-primary me-2" data-edit-type="segment"
+                            data-segment-id="@block.Segment.SegmentId"
+                            data-segment-title="@(block.Segment.Title ?? string.Empty)"
+                            data-segment-type="@block.Segment.SegmentType"
+                            data-segment-start="@(block.Segment.StartDateTimeUtc?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? string.Empty)"
+                            data-segment-end="@(block.Segment.EndDateTimeUtc?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? string.Empty)"
+                            data-segment-description="@(block.Segment.Description ?? string.Empty)">
                             Edit
                         </button>
                         <form method="post" asp-page-handler="DeleteSegment" class="d-inline">
-                            <input type="hidden" name="segmentId" value="@segment.Segment.SegmentId" />
+                            <input type="hidden" name="segmentId" value="@block.Segment.SegmentId" />
                             <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                         </form>
                     </div>
@@ -209,12 +209,14 @@ else
             <div class="row g-3">
                 <div class="col-md-6">
                     <label asp-for="SegmentInput.StartDateTimeUtc" class="form-label"></label>
-                    <input asp-for="SegmentInput.StartDateTimeUtc" class="form-control" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                    <input asp-for="SegmentInput.StartDateTimeUtc" class="form-control" type="datetime-local"
+                        asp-format="{0:yyyy-MM-ddTHH:mm}" />
                     <span asp-validation-for="SegmentInput.StartDateTimeUtc" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="SegmentInput.EndDateTimeUtc" class="form-label"></label>
-                    <input asp-for="SegmentInput.EndDateTimeUtc" class="form-control" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                    <input asp-for="SegmentInput.EndDateTimeUtc" class="form-control" type="datetime-local"
+                        asp-format="{0:yyyy-MM-ddTHH:mm}" />
                     <span asp-validation-for="SegmentInput.EndDateTimeUtc" class="text-danger"></span>
                 </div>
             </div>
