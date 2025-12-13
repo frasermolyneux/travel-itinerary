@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 4.56.0"
     }
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.50.0"
+    }
   }
 
   backend "azurerm" {}
@@ -22,3 +26,15 @@ provider "azurerm" {
 
   storage_use_azuread = true
 }
+
+provider "azurerm" {
+  alias           = "dns"
+  subscription_id = var.dns.subscription_id
+
+  features {}
+
+  storage_use_azuread = true
+}
+
+
+provider "azuread" {}

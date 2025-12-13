@@ -19,6 +19,8 @@ dns = {
   subdomain           = "travel-itinerary.dev"
 }
 
+tenant_domain = "molyneux.io"
+
 tags = {
   Environment = "dev"
   Workload    = "travel-itinerary"

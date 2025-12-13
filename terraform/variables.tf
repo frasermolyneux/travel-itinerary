@@ -31,6 +31,12 @@ variable "dns" {
   })
 }
 
+variable "tenant_domain" {
+  description = "Primary Microsoft Entra domain (for example molyneux.io)."
+  type        = string
+  default     = "molyneux.io"
+}
+
 variable "tags" {
   default = {}
 }
