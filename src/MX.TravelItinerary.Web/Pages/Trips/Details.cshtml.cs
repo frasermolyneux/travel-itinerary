@@ -582,17 +582,21 @@ public sealed class DetailsModel : PageModel
     {
         public TimelineViewModel(
             IReadOnlyList<TimelineDay> days,
-            IReadOnlyList<TimelineSpanBlock> spans)
+            IReadOnlyList<TimelineSpanBlock> spans,
+            int maxSegmentLaneCount)
         {
             Days = days;
             Spans = spans;
+            MaxSegmentLaneCount = Math.Max(1, maxSegmentLaneCount);
         }
 
         public IReadOnlyList<TimelineDay> Days { get; }
 
         public IReadOnlyList<TimelineSpanBlock> Spans { get; }
 
-        public static TimelineViewModel Empty { get; } = new(Array.Empty<TimelineDay>(), Array.Empty<TimelineSpanBlock>());
+        public int MaxSegmentLaneCount { get; }
+
+        public static TimelineViewModel Empty { get; } = new(Array.Empty<TimelineDay>(), Array.Empty<TimelineSpanBlock>(), 1);
 
         public static TimelineViewModel From(TripDetails details)
         {
@@ -623,8 +627,9 @@ public sealed class DetailsModel : PageModel
                 .ToList();
 
             var spans = BuildSpanBlocks(multiDayEntries, dates, dayLookup);
+            var maxSegmentLanes = spans.Count == 0 ? 1 : spans.Max(span => span.LaneCount);
 
-            return new TimelineViewModel(days, spans);
+            return new TimelineViewModel(days, spans, maxSegmentLanes);
         }
 
         private static IReadOnlyList<DateOnly> BuildTimelineDates(TripDetails details)

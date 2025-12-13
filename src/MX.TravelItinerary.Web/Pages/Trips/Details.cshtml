@@ -45,13 +45,14 @@
 else
 {
     var hasPlannedContent = Model.Timeline.Spans.Any()
-    || Model.Timeline.Days.Any(day => day.Entries.Count > 0);
+        || Model.Timeline.Days.Any(day => day.Entries.Count > 0);
+    var laneMultiplier = Math.Max(1, Model.Timeline.MaxSegmentLaneCount);
     if (!hasPlannedContent)
     {
         <div class="alert alert-info">No itinerary entries yet. Use the quick actions to start planning this trip.</div>
     }
 
-    <div class="timeline-grid">
+    <div class="timeline-grid" style="--segment-lane-multiplier:@laneMultiplier;">
         @foreach (var day in Model.Timeline.Days)
         {
             <div class="timeline-axis" style="grid-row:@day.RowLine;">

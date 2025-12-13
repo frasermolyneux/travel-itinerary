@@ -37,8 +37,9 @@ body {
 }
 
 .timeline-grid {
+  --segment-lane-multiplier: 1;
   display: grid;
-  grid-template-columns: minmax(160px, 230px) minmax(320px, 460px) minmax(320px, 1fr);
+  grid-template-columns: minmax(160px, 230px) minmax(calc(160px * var(--segment-lane-multiplier, 1)), calc(230px * var(--segment-lane-multiplier, 1))) minmax(320px, 1fr);
   grid-auto-rows: minmax(140px, auto);
   gap: 1.5rem;
   position: relative;
