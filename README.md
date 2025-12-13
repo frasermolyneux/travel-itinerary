@@ -77,6 +77,9 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 | `LocationName` / `LocationUrl` | Name + map link                                                              | Used for cards and Google Maps deep links.               |
 | `Latitude` / `Longitude`       | `28.592` / `77.250`                                                          | Map markers.                                             |
 | `Tags`                         | `"hotel,luxury"`                                                             | Lightweight filtering.                                   |
+| `MetadataJson`                 | `{ "flight": { ... } }`                                                      | Category-specific metadata (flight or stay snapshots).   |
+
+`MetadataJson` currently captures either `FlightMetadata` (airline, route, seat, confirmation, timing) or `StayMetadata` (property, room, check-in/out, contacts). The JSON is optional and only emitted when the entry type supports that schema.
 
 ### Bookings
 

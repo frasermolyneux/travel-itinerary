@@ -1,5 +1,6 @@
 ﻿(() => {
     let syncEntryBounds = () => { };
+    let syncEntryMetadata = () => { };
 
     document.addEventListener('DOMContentLoaded', () => {
         initTimelineSelection();
@@ -8,6 +9,7 @@
         initBookingButtons();
         initMultiDayToggle();
         initEntryDateBounds();
+        initMetadataSections();
         reopenOffcanvasOnValidation();
     });
 
@@ -124,8 +126,9 @@
         setInputValue('EntryInput_Title', dataset.entryTitle ?? '');
         setInputValue('EntryInput_Date', dataset.entryDate ?? '');
         setInputValue('EntryInput_EndDate', dataset.entryEnd ?? '');
-        setInputValue('EntryInput_ItemType', dataset.entryType ?? 'Activity');
+        setInputValue('EntryInput_ItemType', dataset.entryType ?? 'Tour');
         setInputValue('EntryInput_Details', dataset.entryDetails ?? '');
+        setEntryMetadataFields(dataset);
 
         const multiDay = dataset.entryIsMultiDay === 'true';
         const multiDayToggle = document.getElementById('EntryInput_IsMultiDay');
@@ -134,6 +137,7 @@
         }
         updateEntryEndDateVisibility();
         syncEntryBounds();
+        syncEntryMetadata();
 
         const label = document.getElementById('entryFlyoutLabel');
         if (label) {
@@ -146,8 +150,9 @@
         setInputValue('EntryInput_Title', '');
         setInputValue('EntryInput_Date', '');
         setInputValue('EntryInput_EndDate', '');
-        setInputValue('EntryInput_ItemType', 'Activity');
+        setInputValue('EntryInput_ItemType', 'Tour');
         setInputValue('EntryInput_Details', '');
+        setEntryMetadataFields({});
 
         const multiDayToggle = document.getElementById('EntryInput_IsMultiDay');
         if (multiDayToggle) {
@@ -155,6 +160,7 @@
         }
         updateEntryEndDateVisibility();
         syncEntryBounds();
+        syncEntryMetadata();
 
         const label = document.getElementById('entryFlyoutLabel');
         if (label) {
@@ -197,6 +203,25 @@
         }
 
         input.value = value ?? '';
+    }
+
+    function setEntryMetadataFields(dataset) {
+        setInputValue('EntryInput_FlightMetadata_Airline', dataset.entryFlightAirline ?? '');
+        setInputValue('EntryInput_FlightMetadata_FlightNumber', dataset.entryFlightNumber ?? '');
+        setInputValue('EntryInput_FlightMetadata_DepartureAirport', dataset.entryFlightDepartureAirport ?? '');
+        setInputValue('EntryInput_FlightMetadata_DepartureTime', dataset.entryFlightDepartureTime ?? '');
+        setInputValue('EntryInput_FlightMetadata_ArrivalAirport', dataset.entryFlightArrivalAirport ?? '');
+        setInputValue('EntryInput_FlightMetadata_ArrivalTime', dataset.entryFlightArrivalTime ?? '');
+        setInputValue('EntryInput_FlightMetadata_Seat', dataset.entryFlightSeat ?? '');
+        setInputValue('EntryInput_FlightMetadata_ConfirmationNumber', dataset.entryFlightConfirmation ?? '');
+
+        setInputValue('EntryInput_StayMetadata_PropertyName', dataset.entryStayProperty ?? '');
+        setInputValue('EntryInput_StayMetadata_Address', dataset.entryStayAddress ?? '');
+        setInputValue('EntryInput_StayMetadata_CheckInTime', dataset.entryStayCheckIn ?? '');
+        setInputValue('EntryInput_StayMetadata_CheckOutTime', dataset.entryStayCheckOut ?? '');
+        setInputValue('EntryInput_StayMetadata_RoomType', dataset.entryStayRoom ?? '');
+        setInputValue('EntryInput_StayMetadata_ConfirmationNumber', dataset.entryStayConfirmation ?? '');
+        setInputValue('EntryInput_StayMetadata_ContactInfo', dataset.entryStayContact ?? '');
     }
 
     function openBookingForm(options) {
@@ -349,6 +374,28 @@
 
         startInput.addEventListener('change', syncEntryBounds);
         syncEntryBounds();
+    }
+
+    function initMetadataSections() {
+        const typeSelect = document.getElementById('EntryInput_ItemType');
+        const sections = document.querySelectorAll('[data-entry-metadata-section]');
+        if (!typeSelect || sections.length === 0) {
+            return;
+        }
+
+        const stayTypes = ['Hotel', 'Flat', 'House'];
+        syncEntryMetadata = () => {
+            const currentType = typeSelect.value || '';
+            sections.forEach((section) => {
+                const target = section.dataset.entryMetadataSection;
+                const showFlight = target === 'flight' && currentType === 'Flight';
+                const showStay = target === 'stay' && stayTypes.includes(currentType);
+                section.classList.toggle('d-none', !(showFlight || showStay));
+            });
+        };
+
+        typeSelect.addEventListener('change', syncEntryMetadata);
+        syncEntryMetadata();
     }
 
     function setBookingDetail(panel, name, value) {

@@ -4,6 +4,7 @@ using System.Linq;
 using Azure;
 using Azure.Data.Tables;
 using MX.TravelItinerary.Web.Data.Models;
+using System.Text.Json;
 
 namespace MX.TravelItinerary.Web.Data.TableStorage;
 
@@ -351,6 +352,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         SetOrRemove(entity, "Tags", mutation.Tags);
 
         SetItineraryLocation(entity, mutation.Location);
+        SetMetadata(entity, mutation.Metadata);
     }
 
     private static void ApplyBookingMutation(TableEntity entity, BookingMutation mutation)
@@ -388,6 +390,17 @@ public sealed class TableItineraryRepository : IItineraryRepository
         RemoveIfExists(entity, "LocationUrl");
         RemoveIfExists(entity, "Latitude");
         RemoveIfExists(entity, "Longitude");
+    }
+
+    private static void SetMetadata(TableEntity entity, TravelMetadata? metadata)
+    {
+        if (metadata is null || metadata.HasContent is false)
+        {
+            RemoveIfExists(entity, "MetadataJson");
+            return;
+        }
+
+        entity["MetadataJson"] = JsonSerializer.Serialize(metadata, TableStorageJsonOptions.Metadata);
     }
 
     private static string? NormalizeCurrency(string? value)

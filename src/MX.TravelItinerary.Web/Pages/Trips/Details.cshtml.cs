@@ -336,6 +336,10 @@ public sealed class DetailsModel : PageModel
         [DataType(DataType.MultilineText)]
         public string? Details { get; set; }
 
+        public FlightMetadataInput FlightMetadata { get; set; } = new();
+
+        public StayMetadataInput StayMetadata { get; set; } = new();
+
         public ItineraryEntryMutation ToMutation()
             => new(
                 Date,
@@ -345,7 +349,106 @@ public sealed class DetailsModel : PageModel
                 string.IsNullOrWhiteSpace(Title) ? "Untitled entry" : Title.Trim(),
                 string.IsNullOrWhiteSpace(Details) ? null : Details,
                 Location: null,
-                Tags: null);
+                Tags: null,
+                Metadata: BuildMetadata());
+
+        private TravelMetadata? BuildMetadata()
+        {
+            FlightMetadata? flight = ItemType == TimelineItemType.Flight ? FlightMetadata.ToDomain() : null;
+            StayMetadata? stay = ItemType is TimelineItemType.Hotel or TimelineItemType.Flat or TimelineItemType.House
+                ? StayMetadata.ToDomain()
+                : null;
+
+            if (flight is null && stay is null)
+            {
+                return null;
+            }
+
+            return new TravelMetadata(flight, stay);
+        }
+
+        public sealed class FlightMetadataInput
+        {
+            [Display(Name = "Airline / carrier")]
+            public string? Airline { get; set; }
+
+            [Display(Name = "Flight number")]
+            public string? FlightNumber { get; set; }
+
+            [Display(Name = "Departure airport")]
+            public string? DepartureAirport { get; set; }
+
+            [Display(Name = "Departure time")]
+            public string? DepartureTime { get; set; }
+
+            [Display(Name = "Arrival airport")]
+            public string? ArrivalAirport { get; set; }
+
+            [Display(Name = "Arrival time")]
+            public string? ArrivalTime { get; set; }
+
+            [Display(Name = "Seat / cabin")]
+            public string? Seat { get; set; }
+
+            [Display(Name = "Confirmation number")]
+            public string? ConfirmationNumber { get; set; }
+
+            public FlightMetadata? ToDomain()
+            {
+                var metadata = new FlightMetadata(
+                    Normalize(Airline),
+                    Normalize(FlightNumber),
+                    Normalize(DepartureAirport),
+                    Normalize(DepartureTime),
+                    Normalize(ArrivalAirport),
+                    Normalize(ArrivalTime),
+                    Normalize(Seat),
+                    Normalize(ConfirmationNumber));
+
+                return metadata.HasContent ? metadata : null;
+            }
+        }
+
+        public sealed class StayMetadataInput
+        {
+            [Display(Name = "Property name")]
+            public string? PropertyName { get; set; }
+
+            [Display(Name = "Address / neighborhood")]
+            public string? Address { get; set; }
+
+            [Display(Name = "Check-in time")]
+            public string? CheckInTime { get; set; }
+
+            [Display(Name = "Check-out time")]
+            public string? CheckOutTime { get; set; }
+
+            [Display(Name = "Room type / notes")]
+            public string? RoomType { get; set; }
+
+            [Display(Name = "Confirmation number")]
+            public string? ConfirmationNumber { get; set; }
+
+            [Display(Name = "Contact / concierge")]
+            public string? ContactInfo { get; set; }
+
+            public StayMetadata? ToDomain()
+            {
+                var metadata = new StayMetadata(
+                    Normalize(PropertyName),
+                    Normalize(Address),
+                    Normalize(CheckInTime),
+                    Normalize(CheckOutTime),
+                    Normalize(RoomType),
+                    Normalize(ConfirmationNumber),
+                    Normalize(ContactInfo));
+
+                return metadata.HasContent ? metadata : null;
+            }
+        }
+
+        private static string? Normalize(string? value)
+            => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     public sealed class BookingForm

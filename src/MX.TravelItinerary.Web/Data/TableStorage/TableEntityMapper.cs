@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using Azure.Data.Tables;
 using MX.TravelItinerary.Web.Data.Models;
 
@@ -28,6 +29,8 @@ internal static class TableEntityMapper
             ? null
             : new LocationInfo(locationName, latitude, longitude, locationUrl);
 
+        var metadata = GetMetadata(entity);
+
         return new ItineraryEntry(
             TripId: entity.PartitionKey,
             EntryId: entity.RowKey,
@@ -38,7 +41,8 @@ internal static class TableEntityMapper
             Title: entity.GetString("Title") ?? entity.RowKey,
             Details: entity.GetString("Details"),
             Location: location,
-            Tags: entity.GetString("Tags"));
+            Tags: entity.GetString("Tags"),
+            Metadata: metadata);
     }
 
     public static Booking ToBooking(TableEntity entity)
@@ -74,6 +78,24 @@ internal static class TableEntityMapper
 
     private static TimelineItemType GetBookingItemType(TableEntity entity)
         => entity.GetString("ItemType").ToTimelineItemType();
+
+    private static TravelMetadata? GetMetadata(TableEntity entity)
+    {
+        var json = entity.GetString("MetadataJson");
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<TravelMetadata>(json, TableStorageJsonOptions.Metadata);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
     private static Uri? TryGetUri(string? value)
     {

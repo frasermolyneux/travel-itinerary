@@ -77,6 +77,29 @@ public sealed record LocationInfo(
     string? Url = null,
     string? Notes = null);
 
+public sealed partial record TravelMetadata(
+    FlightMetadata? Flight,
+    StayMetadata? Stay);
+
+public sealed partial record FlightMetadata(
+    string? Airline,
+    string? FlightNumber,
+    string? DepartureAirport,
+    string? DepartureTime,
+    string? ArrivalAirport,
+    string? ArrivalTime,
+    string? Seat,
+    string? ConfirmationNumber);
+
+public sealed partial record StayMetadata(
+    string? PropertyName,
+    string? Address,
+    string? CheckInTime,
+    string? CheckOutTime,
+    string? RoomType,
+    string? ConfirmationNumber,
+    string? ContactInfo);
+
 public sealed partial record ItineraryEntry(
     string TripId,
     string EntryId,
@@ -87,7 +110,8 @@ public sealed partial record ItineraryEntry(
     string Title,
     string? Details,
     LocationInfo? Location,
-    string? Tags);
+    string? Tags,
+    TravelMetadata? Metadata);
 
 public sealed record ItineraryEntryMutation(
     DateOnly? Date,
@@ -97,7 +121,8 @@ public sealed record ItineraryEntryMutation(
     string Title,
     string? Details,
     LocationInfo? Location,
-    string? Tags);
+    string? Tags,
+    TravelMetadata? Metadata);
 
 public sealed record Booking(
     string TripId,
@@ -232,4 +257,36 @@ public static class ModelEnumExtensions
             TimelineItemType.Note => "bi-journal-text",
             _ => "bi-stars"
         };
+}
+
+public sealed partial record TravelMetadata
+{
+    public bool HasFlightDetails => Flight?.HasContent == true;
+
+    public bool HasStayDetails => Stay?.HasContent == true;
+
+    public bool HasContent => HasFlightDetails || HasStayDetails;
+}
+
+public sealed partial record FlightMetadata
+{
+    public bool HasContent => !string.IsNullOrWhiteSpace(Airline)
+        || !string.IsNullOrWhiteSpace(FlightNumber)
+        || !string.IsNullOrWhiteSpace(DepartureAirport)
+        || !string.IsNullOrWhiteSpace(DepartureTime)
+        || !string.IsNullOrWhiteSpace(ArrivalAirport)
+        || !string.IsNullOrWhiteSpace(ArrivalTime)
+        || !string.IsNullOrWhiteSpace(Seat)
+        || !string.IsNullOrWhiteSpace(ConfirmationNumber);
+}
+
+public sealed partial record StayMetadata
+{
+    public bool HasContent => !string.IsNullOrWhiteSpace(PropertyName)
+        || !string.IsNullOrWhiteSpace(Address)
+        || !string.IsNullOrWhiteSpace(CheckInTime)
+        || !string.IsNullOrWhiteSpace(CheckOutTime)
+        || !string.IsNullOrWhiteSpace(RoomType)
+        || !string.IsNullOrWhiteSpace(ConfirmationNumber)
+        || !string.IsNullOrWhiteSpace(ContactInfo);
 }
