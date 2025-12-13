@@ -37,7 +37,7 @@ public sealed class DetailsModel : PageModel
 
     public IReadOnlyList<SelectListItem> BookingTypeOptions { get; } = BuildSelectList<BookingType>();
 
-    public IReadOnlyList<SelectListItem> EntryTypeOptions { get; } = BuildSelectList<TimelineItemType>();
+    public IReadOnlyList<SelectListItem> EntryTypeOptions { get; } = BuildSelectList<TimelineItemType>(TimelineItemGroupSelector);
 
     [TempData]
     public string? StatusMessage { get; set; }
@@ -333,7 +333,7 @@ public sealed class DetailsModel : PageModel
         public bool IsMultiDay { get; set; }
 
         [Display(Name = "Type")]
-        public TimelineItemType ItemType { get; set; } = TimelineItemType.Activity;
+        public TimelineItemType ItemType { get; set; } = TimelineItemType.Tour;
 
         [DataType(DataType.MultilineText)]
         public string? Details { get; set; }
@@ -407,20 +407,62 @@ public sealed class DetailsModel : PageModel
             => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
-    private static IReadOnlyList<SelectListItem> BuildSelectList<TEnum>() where TEnum : struct, Enum
+    private static IReadOnlyDictionary<TimelineItemType, SelectListGroup> TimelineItemGroups { get; } = CreateTimelineItemGroups();
+
+    private static SelectListGroup? TimelineItemGroupSelector(TimelineItemType type)
+        => TimelineItemGroups.TryGetValue(type, out var group) ? group : null;
+
+    private static IReadOnlyList<SelectListItem> BuildSelectList<TEnum>(Func<TEnum, SelectListGroup?>? groupSelector = null) where TEnum : struct, Enum
         => Enum.GetValues<TEnum>()
-            .Select(value => new SelectListItem(value.GetDisplayName(), value.ToString()))
+            .Select(value =>
+            {
+                var item = new SelectListItem(value.GetDisplayName(), value.ToString());
+                var group = groupSelector?.Invoke(value);
+                if (group is not null)
+                {
+                    item.Group = group;
+                }
+
+                return item;
+            })
             .ToList();
 
-    private static IReadOnlyList<SelectListItem> BuildNullableSelectList<TEnum>(string placeholder) where TEnum : struct, Enum
+    private static IReadOnlyList<SelectListItem> BuildNullableSelectList<TEnum>(string placeholder, Func<TEnum, SelectListGroup?>? groupSelector = null) where TEnum : struct, Enum
     {
         var items = new List<SelectListItem>
         {
             new(placeholder, string.Empty)
         };
 
-        items.AddRange(BuildSelectList<TEnum>());
+        items.AddRange(BuildSelectList(groupSelector));
         return items;
+    }
+
+    private static IReadOnlyDictionary<TimelineItemType, SelectListGroup> CreateTimelineItemGroups()
+    {
+        var travel = new SelectListGroup { Name = "Travel" };
+        var stay = new SelectListGroup { Name = "Stays" };
+        var activity = new SelectListGroup { Name = "Activities" };
+        var dining = new SelectListGroup { Name = "Dining" };
+        var notes = new SelectListGroup { Name = "Notes" };
+
+        return new Dictionary<TimelineItemType, SelectListGroup>
+        {
+            [TimelineItemType.Flight] = travel,
+            [TimelineItemType.Train] = travel,
+            [TimelineItemType.Coach] = travel,
+            [TimelineItemType.Ferry] = travel,
+            [TimelineItemType.Taxi] = travel,
+            [TimelineItemType.Hotel] = stay,
+            [TimelineItemType.Flat] = stay,
+            [TimelineItemType.House] = stay,
+            [TimelineItemType.Tour] = activity,
+            [TimelineItemType.Museum] = activity,
+            [TimelineItemType.Park] = activity,
+            [TimelineItemType.Dining] = dining,
+            [TimelineItemType.Note] = notes,
+            [TimelineItemType.Other] = notes
+        };
     }
 
     public sealed class TimelineViewModel

@@ -8,26 +8,47 @@ namespace MX.TravelItinerary.Web.Data.Models;
 
 public enum TimelineItemType
 {
-    [Display(Name = "Travel / transit")]
-    Travel = 0,
+    [Display(Name = "Flight")]
+    Flight = 0,
 
-    [Display(Name = "Lodging / stay")]
-    Lodging = 1,
+    [Display(Name = "Train")]
+    Train = 1,
 
-    [Display(Name = "Activity / excursion")]
-    Activity = 2,
+    [Display(Name = "Coach")]
+    Coach = 2,
 
-    [Display(Name = "Dining / food")]
-    Dining = 3,
+    [Display(Name = "Ferry")]
+    Ferry = 3,
 
-    [Display(Name = "Transportation / transfer")]
-    Transportation = 4,
+    [Display(Name = "Taxi")]
+    Taxi = 4,
 
-    [Display(Name = "Personal note")]
-    Note = 5,
+    [Display(Name = "Hotel")]
+    Hotel = 5,
+
+    [Display(Name = "Flat")]
+    Flat = 6,
+
+    [Display(Name = "House")]
+    House = 7,
+
+    [Display(Name = "Tour")]
+    Tour = 8,
+
+    [Display(Name = "Museum")]
+    Museum = 9,
+
+    [Display(Name = "Park")]
+    Park = 10,
+
+    [Display(Name = "Dining")]
+    Dining = 11,
+
+    [Display(Name = "Note")]
+    Note = 12,
 
     [Display(Name = "Other")]
-    Other = 6
+    Other = 13
 }
 
 public enum BookingType
@@ -193,12 +214,25 @@ public static class ModelEnumExtensions
 
     public static TimelineItemType ToTimelineItemType(this string? value)
     {
-        if (!string.IsNullOrWhiteSpace(value) && Enum.TryParse<TimelineItemType>(value, true, out var parsed))
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return TimelineItemType.Other;
+        }
+
+        if (Enum.TryParse<TimelineItemType>(value, true, out var parsed))
         {
             return parsed;
         }
 
-        return TimelineItemType.Other;
+        return value.Trim().ToLowerInvariant() switch
+        {
+            "travel" => TimelineItemType.Flight,
+            "lodging" => TimelineItemType.Hotel,
+            "activity" => TimelineItemType.Tour,
+            "dining" => TimelineItemType.Dining,
+            "transportation" => TimelineItemType.Taxi,
+            _ => TimelineItemType.Other
+        };
     }
 
     public static string ToStorageValue(this BookingType bookingType)
