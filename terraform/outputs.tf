@@ -22,3 +22,11 @@ output "entra_application_client_secret" {
 output "entra_redirect_uris" {
   value = local.entra_redirect_uris
 }
+
+output "storage_account_name" {
+  value = azurerm_storage_account.data.name
+}
+
+output "storage_table_names" {
+  value = local.storage_table_names
+}

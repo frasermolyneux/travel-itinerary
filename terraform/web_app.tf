@@ -34,6 +34,13 @@ resource "azurerm_linux_web_app" "app" {
     "AzureAd__ClientId"                          = azuread_application.web.application_id
     "AzureAd__ClientSecret"                      = azuread_application_password.web.value
     "AzureAd__CallbackPath"                      = "/signin-oidc"
+    "Storage__AccountName"                       = azurerm_storage_account.data.name
+    "Storage__TableEndpoint"                     = azurerm_storage_account.data.primary_table_endpoint
+    "Storage__Tables__Trips"                     = azurerm_storage_table.tables["trips"].name
+    "Storage__Tables__TripSegments"              = azurerm_storage_table.tables["trip_segments"].name
+    "Storage__Tables__ItineraryEntries"          = azurerm_storage_table.tables["itinerary_entries"].name
+    "Storage__Tables__Bookings"                  = azurerm_storage_table.tables["bookings"].name
+    "Storage__Tables__ShareLinks"                = azurerm_storage_table.tables["share_links"].name
   }
 }
 

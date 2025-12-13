@@ -13,6 +13,7 @@ After applying the infrastructure, capture the identity values for other environ
 terraform output -raw entra_application_client_id
 terraform output -raw entra_application_client_secret
 terraform output entra_redirect_uris
+terraform output -raw storage_account_name
 ```
 
 Add or rotate user assignments in the Microsoft Entra portal (`Enterprise applications > <app-name>`).
@@ -26,9 +27,20 @@ dotnet user-secrets set "AzureAd:TenantId" "<tenant-guid>"
 dotnet user-secrets set "AzureAd:ClientId" "<entra_application_client_id>"
 dotnet user-secrets set "AzureAd:ClientSecret" "<entra_application_client_secret>"
 dotnet user-secrets set "AzureAd:Domain" "molyneux.io"
+dotnet user-secrets set "Storage:TableEndpoint" "https://<storage-account>.table.core.windows.net"
 ```
 
 > Tip: `az account show --query tenantId -o tsv` returns the tenant GUID if you need to confirm it locally.
+
+## Table Storage
+
+Terraform now provisions a dedicated Storage Account plus Azure Table containers for the data model. The web app's system-assigned managed identity receives the `Storage Table Data Contributor` role, so the application code authenticates with managed identity (or `DefaultAzureCredential` locally) instead of connection strings.
+
+- Tables: `Trips`, `TripSegments`, `ItineraryEntries`, `Bookings`, `ShareLinks`.
+- Outputs: `storage_account_name` and `storage_table_names` expose deployment-time metadata.
+- App configuration: the web app expects `Storage:TableEndpoint` (and optionally overrides for table names) via configuration. In Azure these values are injected through App Service settings; locally configure them with `dotnet user-secrets` or environment variables.
+
+> Share links must store `OwnerUserId` (or `CreatedBy`) so the repository layer can enforce that consumers only see itineraries they own or have an explicit share code.
 
 The default callback path is `/signin-oidc`. Ensure your local HTTPS profile (from `launchSettings.json`) is included in the Terraform-managed redirect URIs if you customize ports.
 

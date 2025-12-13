@@ -1,9 +1,32 @@
+using Azure.Data.Tables;
+using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using MX.TravelItinerary.Web.Data;
+using MX.TravelItinerary.Web.Data.TableStorage;
+using MX.TravelItinerary.Web.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
+
+builder.Services.AddSingleton<TableServiceClient>(sp =>
+{
+    var storageOptions = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
+    if (string.IsNullOrWhiteSpace(storageOptions.TableEndpoint))
+    {
+        throw new InvalidOperationException("Storage:TableEndpoint must be configured.");
+    }
+
+    var credential = new DefaultAzureCredential();
+    return new TableServiceClient(new Uri(storageOptions.TableEndpoint), credential);
+});
+
+builder.Services.AddSingleton<ITableContext, TableContext>();
+builder.Services.AddScoped<IItineraryRepository, TableItineraryRepository>();
 
 builder.Services
     .AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)

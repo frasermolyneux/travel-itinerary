@@ -10,5 +10,14 @@ locals {
     "https://${local.web_app_name}.azurewebsites.net/signin-oidc",
     "https://localhost:5001/signin-oidc"
   ])
-  entra_logout_url = "https://${local.public_hostname}/signout-callback-oidc"
+  entra_logout_url       = "https://${local.public_hostname}/signout-callback-oidc"
+  storage_account_prefix = substr(replace(var.workload, "-", ""), 0, 8)
+  storage_account_name   = lower("st${local.storage_account_prefix}${var.environment}${random_id.storage.hex}")
+  storage_table_names = {
+    trips             = "Trips"
+    trip_segments     = "TripSegments"
+    itinerary_entries = "ItineraryEntries"
+    bookings          = "Bookings"
+    share_links       = "ShareLinks"
+  }
 }
