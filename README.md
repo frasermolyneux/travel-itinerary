@@ -95,7 +95,7 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 | `IsRefundable`        | `true/false`                                         | Highlight cancellable bookings.                        |
 | `IsPaid`              | `true/false`                                         | Whether the organiser already settled the bill.        |
 | `CancellationPolicy`  | Text                                                 | Free-form summary.                                     |
-| `ConfirmationDetails` | `{ "notes": "Call desk on arrival" }`                 | Sensitive structured data (tickets, passengers, etc.). |
+| `ConfirmationDetails` | `{ "notes": "Call desk on arrival" }`                | Sensitive structured data (tickets, passengers, etc.). |
 | `ConfirmationUrl`     | `https://manage.booking.com/reservation/123`         | Direct link back to the booking portal.                |
 
 ### ShareLinks
