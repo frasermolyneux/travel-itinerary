@@ -32,6 +32,24 @@ public static class CurrencyCatalog
             {
                 "Euro",
                 "European Euro"
+            },
+            ["PTS"] = new[]
+            {
+                "Rewards Points"
+            }
+        };
+
+    private static readonly IReadOnlyDictionary<string, string[]> ManualKeywords =
+        new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["PTS"] = new[]
+            {
+                "Rewards Points",
+                "Reward Points",
+                "Loyalty Points",
+                "Points Booking",
+                "Points Redemption",
+                "Loyalty Rewards"
             }
         };
 
@@ -77,6 +95,17 @@ public static class CurrencyCatalog
             }
 
             builder.AddAliases(manual.Value);
+        }
+
+        foreach (var manual in ManualKeywords)
+        {
+            if (!builders.TryGetValue(manual.Key, out var builder))
+            {
+                builder = new CurrencyOptionBuilder(manual.Key);
+                builders[manual.Key] = builder;
+            }
+
+            builder.AddKeywords(manual.Value);
         }
 
         return builders.Values
@@ -132,6 +161,19 @@ public static class CurrencyCatalog
             {
                 AddName(alias);
                 AddKeyword(alias);
+            }
+        }
+
+        internal void AddKeywords(IEnumerable<string> keywords)
+        {
+            if (keywords is null)
+            {
+                return;
+            }
+
+            foreach (var keyword in keywords)
+            {
+                AddKeyword(keyword);
             }
         }
 
