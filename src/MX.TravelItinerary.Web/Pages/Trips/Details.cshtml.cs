@@ -447,7 +447,6 @@ public sealed class DetailsModel : PageModel
                 ItemType,
                 string.IsNullOrWhiteSpace(Title) ? "Untitled entry" : Title.Trim(),
                 string.IsNullOrWhiteSpace(Details) ? null : Details,
-                Location: null,
                 Tags: null,
                 Metadata: BuildMetadata(),
                 SortOrder: null);

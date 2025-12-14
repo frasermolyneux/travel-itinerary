@@ -767,7 +767,6 @@ public sealed class TableItineraryRepository : IItineraryRepository
         SetOrRemove(entity, "Details", mutation.Details);
         SetOrRemove(entity, "Tags", mutation.Tags);
 
-        SetItineraryLocation(entity, mutation.Location);
         SetMetadata(entity, mutation.Metadata);
 
         if (mutation.SortOrder.HasValue)
@@ -792,28 +791,6 @@ public sealed class TableItineraryRepository : IItineraryRepository
         SetOrRemove(entity, "ConfirmationDetails", mutation.ConfirmationDetails);
         SetOrRemove(entity, "ConfirmationUrl", mutation.ConfirmationUrl?.ToString());
         SetBookingMetadata(entity, mutation.Metadata);
-    }
-
-    private static void SetItineraryLocation(TableEntity entity, LocationInfo? location)
-    {
-        if (location is null)
-        {
-            ClearItineraryLocation(entity);
-            return;
-        }
-
-        SetOrRemove(entity, "LocationName", location.Label);
-        SetOrRemove(entity, "LocationUrl", location.Url);
-        SetOrRemove(entity, "Latitude", location.Latitude);
-        SetOrRemove(entity, "Longitude", location.Longitude);
-    }
-
-    private static void ClearItineraryLocation(TableEntity entity)
-    {
-        RemoveIfExists(entity, "LocationName");
-        RemoveIfExists(entity, "LocationUrl");
-        RemoveIfExists(entity, "Latitude");
-        RemoveIfExists(entity, "Longitude");
     }
 
     private static void SetMetadata(TableEntity entity, TravelMetadata? metadata)

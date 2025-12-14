@@ -79,13 +79,6 @@ public sealed record TripMutation(
     string? HomeTimeZone,
     string? DefaultCurrency);
 
-public sealed record LocationInfo(
-    string? Label,
-    double? Latitude,
-    double? Longitude,
-    string? Url = null,
-    string? Notes = null);
-
 public sealed partial record TravelMetadata(
     FlightMetadata? Flight,
     StayMetadata? Stay);
@@ -111,7 +104,6 @@ public sealed partial record ItineraryEntry(
     TimelineItemType ItemType,
     string Title,
     string? Details,
-    LocationInfo? Location,
     string? Tags,
     TravelMetadata? Metadata,
     int? SortOrder);
@@ -123,7 +115,6 @@ public sealed record ItineraryEntryMutation(
     TimelineItemType ItemType,
     string Title,
     string? Details,
-    LocationInfo? Location,
     string? Tags,
     TravelMetadata? Metadata,
     int? SortOrder);

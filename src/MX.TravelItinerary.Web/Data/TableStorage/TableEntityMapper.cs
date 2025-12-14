@@ -20,15 +20,6 @@ internal static class TableEntityMapper
 
     public static ItineraryEntry ToItineraryEntry(TableEntity entity)
     {
-        var locationName = entity.GetString("LocationName");
-        var locationUrl = entity.GetString("LocationUrl");
-        var latitude = entity.GetDouble("Latitude");
-        var longitude = entity.GetDouble("Longitude");
-
-        var location = locationName is null && locationUrl is null && latitude is null && longitude is null
-            ? null
-            : new LocationInfo(locationName, latitude, longitude, locationUrl);
-
         var metadata = GetMetadata(entity);
 
         return new ItineraryEntry(
@@ -40,7 +31,6 @@ internal static class TableEntityMapper
             ItemType: entity.GetString("ItemType").ToTimelineItemType(),
             Title: entity.GetString("Title") ?? entity.RowKey,
             Details: entity.GetString("Details"),
-            Location: location,
             Tags: entity.GetString("Tags"),
             Metadata: metadata,
             SortOrder: entity.GetInt32("SortOrder"));
