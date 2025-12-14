@@ -449,18 +449,26 @@ public sealed class DetailsModel : PageModel
 
         public StayMetadataInput StayMetadata { get; set; } = new();
 
+        public TravelSegmentMetadataInput TravelSegment { get; set; } = new();
+
         public ItineraryEntryMutation ToMutation()
-            => new(
+        {
+            var normalizedPlaceId = DetailsModel.IsTravelItemType(ItemType) ? null : Normalize(GooglePlaceId);
+            var normalizedDetails = string.IsNullOrWhiteSpace(Details) ? null : Details;
+            var normalizedTitle = string.IsNullOrWhiteSpace(Title) ? "Untitled entry" : Title.Trim();
+
+            return new ItineraryEntryMutation(
                 Date,
                 EndDate,
                 IsMultiDay,
                 ItemType,
-                string.IsNullOrWhiteSpace(Title) ? "Untitled entry" : Title.Trim(),
-                string.IsNullOrWhiteSpace(Details) ? null : Details,
-            string.IsNullOrWhiteSpace(GooglePlaceId) ? null : GooglePlaceId?.Trim(),
+                normalizedTitle,
+                normalizedDetails,
+                normalizedPlaceId,
                 Tags: null,
                 Metadata: BuildMetadata(),
                 SortOrder: null);
+        }
 
         private TravelMetadata? BuildMetadata()
         {
@@ -468,13 +476,16 @@ public sealed class DetailsModel : PageModel
             StayMetadata? stay = ItemType is TimelineItemType.Hotel or TimelineItemType.Flat or TimelineItemType.House
                 ? StayMetadata.ToDomain()
                 : null;
+            TravelSegmentMetadata? segment = DetailsModel.IsTravelItemType(ItemType)
+                ? TravelSegment.ToDomain()
+                : null;
 
-            if (flight is null && stay is null)
+            if (flight is null && stay is null && segment is null)
             {
                 return null;
             }
 
-            return new TravelMetadata(flight, stay);
+            return new TravelMetadata(flight, stay, segment);
         }
 
         public sealed class FlightMetadataInput
@@ -528,6 +539,28 @@ public sealed class DetailsModel : PageModel
                     Normalize(PropertyLink));
 
                 return metadata.HasContent ? metadata : null;
+            }
+        }
+
+        public sealed class TravelSegmentMetadataInput
+        {
+            [Display(Name = "Departure place ID")]
+            public string? DeparturePlaceId { get; set; }
+
+            [Display(Name = "Arrival place ID")]
+            public string? ArrivalPlaceId { get; set; }
+
+            public TravelSegmentMetadata? ToDomain()
+            {
+                var departure = Normalize(DeparturePlaceId);
+                var arrival = Normalize(ArrivalPlaceId);
+
+                if (string.IsNullOrWhiteSpace(departure) && string.IsNullOrWhiteSpace(arrival))
+                {
+                    return null;
+                }
+
+                return new TravelSegmentMetadata(departure, arrival);
             }
         }
 
@@ -676,6 +709,17 @@ public sealed class DetailsModel : PageModel
         "Lounge Access"
     };
 
+    private static readonly TimelineItemType[] TravelItemTypes =
+    {
+        TimelineItemType.Flight,
+        TimelineItemType.Train,
+        TimelineItemType.Coach,
+        TimelineItemType.Ferry,
+        TimelineItemType.Taxi,
+        TimelineItemType.PrivateCar,
+        TimelineItemType.RentalCar
+    };
+
     private static SelectListGroup? TimelineItemGroupSelector(TimelineItemType type)
         => TimelineItemGroups.TryGetValue(type, out var group) ? group : null;
 
@@ -709,6 +753,9 @@ public sealed class DetailsModel : PageModel
         => StayInclusionLabels
             .Select(value => new SelectListItem(value, value))
             .ToList();
+
+    private static bool IsTravelItemType(TimelineItemType type)
+        => TravelItemTypes.Contains(type);
 
     private static IReadOnlyDictionary<TimelineItemType, SelectListGroup> CreateTimelineItemGroups()
     {

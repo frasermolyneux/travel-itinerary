@@ -81,7 +81,8 @@ public sealed record TripMutation(
 
 public sealed partial record TravelMetadata(
     FlightMetadata? Flight,
-    StayMetadata? Stay);
+    StayMetadata? Stay,
+    TravelSegmentMetadata? Segment);
 
 public sealed partial record FlightMetadata(
     string? Airline,
@@ -94,6 +95,10 @@ public sealed partial record FlightMetadata(
 public sealed partial record StayMetadata(
     string? PropertyName,
     string? PropertyLink);
+
+public sealed partial record TravelSegmentMetadata(
+    string? DeparturePlaceId,
+    string? ArrivalPlaceId);
 
 public sealed partial record ItineraryEntry(
     string TripId,
@@ -288,7 +293,9 @@ public sealed partial record TravelMetadata
 
     public bool HasStayDetails => Stay?.HasContent == true;
 
-    public bool HasContent => HasFlightDetails || HasStayDetails;
+    public bool HasSegmentDetails => Segment?.HasContent == true;
+
+    public bool HasContent => HasFlightDetails || HasStayDetails || HasSegmentDetails;
 }
 
 public sealed partial record FlightMetadata
@@ -305,6 +312,12 @@ public sealed partial record StayMetadata
 {
     public bool HasContent => !string.IsNullOrWhiteSpace(PropertyName)
     || !string.IsNullOrWhiteSpace(PropertyLink);
+}
+
+public sealed partial record TravelSegmentMetadata
+{
+    public bool HasContent => !string.IsNullOrWhiteSpace(DeparturePlaceId)
+        || !string.IsNullOrWhiteSpace(ArrivalPlaceId);
 }
 
 public sealed partial record BookingMetadata

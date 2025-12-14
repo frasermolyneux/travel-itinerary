@@ -102,15 +102,17 @@ else
                 <span asp-validation-for="EntryInput.EndDate" class="text-danger"></span>
             </div>
 
-            @{
-                var placePickerModel = new GooglePlacePickerModel(
-                    Html.IdFor(m => m.EntryInput.GooglePlaceId).ToString(),
-                    Html.NameFor(m => m.EntryInput.GooglePlaceId).ToString(),
-                    "Google Place ID",
-                    Model.EntryInput.GooglePlaceId,
-                    Model.IsGoogleMapsConfigured);
-            }
-            <partial name="~/Pages/Shared/FormControls/_GooglePlacePicker.cshtml" model="@placePickerModel" />
+            <div data-entry-google-place-container>
+                @{
+                    var placePickerModel = new GooglePlacePickerModel(
+                        Html.IdFor(m => m.EntryInput.GooglePlaceId).ToString(),
+                        Html.NameFor(m => m.EntryInput.GooglePlaceId).ToString(),
+                        "Google Place ID",
+                        Model.EntryInput.GooglePlaceId,
+                        Model.IsGoogleMapsConfigured);
+                }
+                <partial name="~/Pages/Shared/FormControls/_GooglePlacePicker.cshtml" model="@placePickerModel" />
+            </div>
 
             <div class="mb-3">
                 <label asp-for="EntryInput.Details" class="form-label"></label>
@@ -120,7 +122,35 @@ else
 
             <div class="mb-3">
                 <div class="text-muted text-uppercase small">Category metadata</div>
-                <div class="form-text">Flight and stay fields appear when you pick those entry types.</div>
+                <div class="form-text">Additional fields appear when you pick travel, flight, or stay entry types.</div>
+            </div>
+
+            <div class="entry-metadata-section d-none" data-entry-metadata-section="travel">
+                <h6 class="text-muted text-uppercase small mb-3">Travel locations</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        @{
+                            var departurePicker = new GooglePlacePickerModel(
+                                Html.IdFor(m => m.EntryInput.TravelSegment.DeparturePlaceId).ToString(),
+                                Html.NameFor(m => m.EntryInput.TravelSegment.DeparturePlaceId).ToString(),
+                                "Departure location",
+                                Model.EntryInput.TravelSegment.DeparturePlaceId,
+                                Model.IsGoogleMapsConfigured);
+                        }
+                        <partial name="~/Pages/Shared/FormControls/_GooglePlacePicker.cshtml" model="@departurePicker" />
+                    </div>
+                    <div class="col-md-6">
+                        @{
+                            var arrivalPicker = new GooglePlacePickerModel(
+                                Html.IdFor(m => m.EntryInput.TravelSegment.ArrivalPlaceId).ToString(),
+                                Html.NameFor(m => m.EntryInput.TravelSegment.ArrivalPlaceId).ToString(),
+                                "Arrival location",
+                                Model.EntryInput.TravelSegment.ArrivalPlaceId,
+                                Model.IsGoogleMapsConfigured);
+                        }
+                        <partial name="~/Pages/Shared/FormControls/_GooglePlacePicker.cshtml" model="@arrivalPicker" />
+                    </div>
+                </div>
             </div>
 
             <div class="entry-metadata-section d-none" data-entry-metadata-section="flight">

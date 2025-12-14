@@ -65,6 +65,29 @@
     </div>
 }
 
+@if (Model.HasSegmentDetails)
+{
+    var segment = Model.Segment!;
+    <div class="metadata-block">
+        <div class="metadata-block-title">
+            <span class="bi bi-geo-alt me-2" aria-hidden="true"></span>
+            Travel locations
+        </div>
+        <dl class="metadata-list">
+            @if (!string.IsNullOrWhiteSpace(segment.DeparturePlaceId))
+            {
+                <dt>Departure place ID</dt>
+                <dd><code>@segment.DeparturePlaceId</code></dd>
+            }
+            @if (!string.IsNullOrWhiteSpace(segment.ArrivalPlaceId))
+            {
+                <dt>Arrival place ID</dt>
+                <dd><code>@segment.ArrivalPlaceId</code></dd>
+            }
+        </dl>
+    </div>
+}
+
 @if (Model.HasStayDetails)
 {
     var stay = Model.Stay!;

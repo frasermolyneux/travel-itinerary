@@ -14,6 +14,7 @@
     };
 
     const stayCategoryTypes = ['Hotel', 'Flat', 'House'];
+    const travelCategoryTypes = ['Flight', 'Train', 'Coach', 'Ferry', 'Taxi', 'PrivateCar', 'RentalCar'];
 
     let syncEntryBounds = () => { };
     let syncEntryMetadata = () => { };
@@ -285,6 +286,11 @@
         return stayCategoryTypes.some((type) => type.toLowerCase() === normalized);
     }
 
+    function isTravelItemType(value) {
+        const normalized = normalizeItemType(value).toLowerCase();
+        return travelCategoryTypes.some((type) => type.toLowerCase() === normalized);
+    }
+
     function toggleStaySection(section, itemType) {
         if (!section) {
             return;
@@ -336,6 +342,9 @@
 
         setInputValue('EntryInput_StayMetadata_PropertyName', dataset.entryStayProperty ?? '');
         setInputValue('EntryInput_StayMetadata_PropertyLink', dataset.entryStayLink ?? '');
+
+        setInputValue('EntryInput_TravelSegment_DeparturePlaceId', dataset.entryTravelDeparture ?? '');
+        setInputValue('EntryInput_TravelSegment_ArrivalPlaceId', dataset.entryTravelArrival ?? '');
     }
 
     function openBookingForm(options) {
@@ -517,6 +526,7 @@
     function initMetadataSections() {
         const typeSelect = document.getElementById('EntryInput_ItemType');
         const sections = document.querySelectorAll('[data-entry-metadata-section]');
+        const googlePlaceContainer = document.querySelector('[data-entry-google-place-container]');
         if (!typeSelect || sections.length === 0) {
             return;
         }
@@ -526,9 +536,14 @@
             sections.forEach((section) => {
                 const target = section.dataset.entryMetadataSection;
                 const showFlight = target === 'flight' && currentType === 'Flight';
-                const showStay = target === 'stay' && stayCategoryTypes.includes(currentType);
-                section.classList.toggle('d-none', !(showFlight || showStay));
+                const showStay = target === 'stay' && isStayItemType(currentType);
+                const showTravel = target === 'travel' && isTravelItemType(currentType);
+                section.classList.toggle('d-none', !(showFlight || showStay || showTravel));
             });
+
+            if (googlePlaceContainer) {
+                googlePlaceContainer.classList.toggle('d-none', isTravelItemType(currentType));
+            }
         };
 
         typeSelect.addEventListener('change', syncEntryMetadata);
