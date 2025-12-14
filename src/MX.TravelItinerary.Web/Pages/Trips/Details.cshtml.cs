@@ -536,6 +536,8 @@ public sealed class DetailsModel : PageModel
         [Display(Name = "Confirmation number")]
         public string? Reference { get; set; }
 
+        public TimelineItemType ItemType { get; set; } = TimelineItemType.Other;
+
         [DataType(DataType.Currency)]
         public decimal? Cost { get; set; }
 
@@ -574,12 +576,12 @@ public sealed class DetailsModel : PageModel
         public string? StayRoomType { get; set; }
 
         [Display(Name = "Includes")]
-        public List<string> StayIncludes { get; set; } = new();
+        public List<string>? StayIncludes { get; set; } = new();
 
         public BookingMutation ToMutation()
             => new(
                 Normalize(EntryId),
-                TimelineItemType.Other,
+                ItemType,
                 Normalize(Vendor),
                 Normalize(Reference),
                 Cost,

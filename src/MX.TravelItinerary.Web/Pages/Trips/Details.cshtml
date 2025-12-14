@@ -186,6 +186,7 @@ else
             <input asp-for="BookingInput.TripId" type="hidden" />
             <input asp-for="BookingInput.BookingId" type="hidden" />
             <input asp-for="BookingInput.EntryId" type="hidden" />
+            <input asp-for="BookingInput.ItemType" type="hidden" />
             <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
             <div class="mb-3">
@@ -248,7 +249,14 @@ else
                 <span asp-validation-for="BookingInput.ConfirmationDetails" class="text-danger"></span>
             </div>
 
-            <div class="mb-3 pt-3 border-top">
+            @{
+                var showBookingStaySection = Model.BookingInput.ItemType is
+                MX.TravelItinerary.Web.Data.Models.TimelineItemType.Hotel
+                or MX.TravelItinerary.Web.Data.Models.TimelineItemType.Flat
+                or MX.TravelItinerary.Web.Data.Models.TimelineItemType.House;
+                var staySectionClasses = showBookingStaySection ? "mb-3 pt-3 border-top" : "mb-3 pt-3 border-top d-none";
+            }
+            <div class="@staySectionClasses" data-booking-stay-section>
                 <div class="d-flex justify-content-between flex-wrap align-items-center mb-2">
                     <div>
                         <div class="text-muted text-uppercase small">Stay metadata</div>

@@ -13,6 +13,8 @@
         }
     };
 
+    const stayCategoryTypes = ['Hotel', 'Flat', 'House'];
+
     let syncEntryBounds = () => { };
     let syncEntryMetadata = () => { };
 
@@ -27,6 +29,8 @@
         initTimelineReorder();
         initCurrencyPicker();
         reopenOffcanvasOnValidation();
+        const initialItemType = document.getElementById('BookingInput_ItemType')?.value || '';
+        toggleBookingStaySection(initialItemType);
     });
 
     function initTimelineSelection() {
@@ -102,6 +106,7 @@
                     categoryLabel: button.dataset.entryTypeLabel,
                     title: button.dataset.entryTitle || button.dataset.segmentTitle || '',
                     defaultCurrency: button.dataset.defaultCurrency || tripDefaultCurrency,
+                    itemType: button.dataset.entryType,
                     includes: ''
                 });
             });
@@ -140,7 +145,8 @@
                 checkIn: detailPane.dataset.bookingCheckIn,
                 checkOut: detailPane.dataset.bookingCheckOut,
                 room: detailPane.dataset.bookingRoom,
-                includes: detailPane.dataset.bookingIncludes
+                includes: detailPane.dataset.bookingIncludes,
+                itemType: detailPane.dataset.bookingType
             });
         });
     }
@@ -211,7 +217,10 @@
         setInputValue('BookingInput_StayCheckOutTime', '');
         setInputValue('BookingInput_StayRoomType', '');
         setMultiSelectValues('BookingInput_StayIncludes', []);
+        const defaultItemType = normalizeItemType('');
+        setInputValue('BookingInput_ItemType', defaultItemType);
         setBookingCategoryDisplay('—');
+        toggleBookingStaySection(defaultItemType);
 
         const refundable = document.getElementById('BookingInput_IsRefundable');
         if (refundable) {
@@ -257,6 +266,26 @@
         });
     }
 
+    function normalizeItemType(value) {
+        const normalized = (value ?? '').toString().trim();
+        return normalized.length > 0 ? normalized : 'Other';
+    }
+
+    function isStayItemType(value) {
+        const normalized = normalizeItemType(value).toLowerCase();
+        return stayCategoryTypes.some((type) => type.toLowerCase() === normalized);
+    }
+
+    function toggleBookingStaySection(itemType) {
+        const section = document.querySelector('[data-booking-stay-section]');
+        if (!section) {
+            return;
+        }
+
+        const shouldShow = isStayItemType(itemType);
+        section.classList.toggle('d-none', !shouldShow);
+    }
+
     function setEntryMetadataFields(dataset) {
         setInputValue('EntryInput_FlightMetadata_Airline', dataset.entryFlightAirline ?? '');
         setInputValue('EntryInput_FlightMetadata_FlightNumber', dataset.entryFlightNumber ?? '');
@@ -295,6 +324,9 @@
         setInputValue('BookingInput_StayCheckOutTime', options.checkOut ?? '');
         setInputValue('BookingInput_StayRoomType', options.room ?? '');
         setMultiSelectValues('BookingInput_StayIncludes', parseBookingIncludes(options.includes));
+        const itemTypeValue = normalizeItemType(options.itemType);
+        setInputValue('BookingInput_ItemType', itemTypeValue);
+        toggleBookingStaySection(itemTypeValue);
 
         const refundable = document.getElementById('BookingInput_IsRefundable');
         if (refundable) {
@@ -442,13 +474,12 @@
             return;
         }
 
-        const stayTypes = ['Hotel', 'Flat', 'House'];
         syncEntryMetadata = () => {
             const currentType = typeSelect.value || '';
             sections.forEach((section) => {
                 const target = section.dataset.entryMetadataSection;
                 const showFlight = target === 'flight' && currentType === 'Flight';
-                const showStay = target === 'stay' && stayTypes.includes(currentType);
+                const showStay = target === 'stay' && stayCategoryTypes.includes(currentType);
                 section.classList.toggle('d-none', !(showFlight || showStay));
             });
         };
@@ -741,6 +772,8 @@
                 }
             }
             openOffcanvas('bookingFlyout');
+            const currentType = document.getElementById('BookingInput_ItemType')?.value || '';
+            toggleBookingStaySection(currentType);
         }
     }
 
