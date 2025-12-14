@@ -163,6 +163,11 @@ body {
   display: block;
 }
 
+.timeline-segment-mobile {
+  display: none;
+  margin-bottom: 0.75rem;
+}
+
 .timeline-item-notes {
   white-space: pre-line;
   margin-bottom: 0.75rem;
@@ -468,14 +473,11 @@ body {
   }
 
   .timeline-segment {
-    order: 2;
-    width: 100%;
-    margin-left: 0;
-    --lane-gap: 0;
+    display: none;
   }
 
-  .timeline-segment-span {
-    display: none;
+  .timeline-segment-mobile {
+    display: block;
   }
 
   .timeline-content {

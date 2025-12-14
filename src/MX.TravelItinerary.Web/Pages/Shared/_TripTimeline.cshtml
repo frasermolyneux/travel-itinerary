@@ -6,6 +6,9 @@
     var timeline = Model.Timeline;
     var hasPlannedContent = timeline.Spans.Any() || timeline.Days.Any(day => day.Entries.Count > 0);
     var laneMultiplier = Math.Max(1, timeline.MaxSegmentLaneCount);
+    var spansByStartDate = timeline.Spans
+        .GroupBy(block => block.StartDate)
+        .ToDictionary(group => group.Key, group => group.ToList());
 }
 
 @if (!hasPlannedContent && Model.ShowEmptyStateMessage)
@@ -29,6 +32,9 @@
                 <div class="timeline-day-weekday">@day.Date.ToString("dddd")</div>
             </div>
         </div>
+        var mobileSpans = spansByStartDate.TryGetValue(day.Date, out var foundSpans)
+            ? foundSpans
+            : null;
         <div class="timeline-content" style="grid-row:@day.RowLine;" @Html.Raw(dayDataAttributes)>
             <div class="timeline-day-mobile-header">
                 <span class="timeline-day-mobile-dot" aria-hidden="true"></span>
@@ -37,6 +43,134 @@
                     <div class="timeline-day-weekday">@day.Date.ToString("dddd")</div>
                 </div>
             </div>
+            @if (mobileSpans is not null)
+            {
+                foreach (var block in mobileSpans)
+                {
+                    var segmentType = block.Entry.ItemType.ToCssToken();
+                    var entryBooking = Model.GetBookingForEntry(block.Entry.EntryId);
+                    var entryDisplayTitle = string.IsNullOrWhiteSpace(block.Entry.Title)
+                    ? block.Entry.ToString()
+                    : block.Entry.Title;
+                    var entryHasDetails = !string.IsNullOrWhiteSpace(block.Entry.Details);
+                    var entryHasMetadata = block.Entry.Metadata?.HasContent == true;
+                    var canShowBookingInfo = Model.AllowBookingViewing && entryBooking is not null;
+                    string? bookingMeta = null;
+                    if (canShowBookingInfo)
+                    {
+                        if (!string.IsNullOrWhiteSpace(entryBooking!.Reference))
+                        {
+                            bookingMeta = entryBooking.Reference;
+                        }
+
+                        if (entryBooking.Cost is not null)
+                        {
+                            var formattedCost = entryBooking.Cost.Value.ToString("0.##");
+                            var costText = string.IsNullOrWhiteSpace(entryBooking.Currency)
+                            ? formattedCost
+                            : $"{formattedCost} {entryBooking.Currency}";
+                            bookingMeta = string.IsNullOrWhiteSpace(bookingMeta)
+                            ? costText
+                            : $"{bookingMeta} • {costText}";
+                        }
+                    }
+                    var showDetailsPanel = entryHasDetails || entryHasMetadata || canShowBookingInfo;
+                    <div class="timeline-item timeline-item--segment timeline-segment-mobile segment-type-@segmentType" data-timeline-item data-item-type="entry" data-item-id="@block.Entry.EntryId">
+                        <div class="timeline-item-body">
+                            <div class="timeline-item-heading">
+                                <span class="timeline-item-icon bi @block.Entry.ItemType.GetIconClass() segment-type-@segmentType" aria-hidden="true"></span>
+                                <span class="timeline-item-title">@entryDisplayTitle</span>
+                            </div>
+                            @if (canShowBookingInfo)
+                            {
+                                <div class="booking-pill segment-type-@entryBooking!.ItemType.ToCssToken()">
+                                    <div class="booking-pill-icon">
+                                        <span class="bi @entryBooking.ItemType.GetIconClass()" aria-hidden="true"></span>
+                                    </div>
+                                    <div class="booking-pill-body">
+                                        <div class="booking-pill-label">@(entryBooking.Vendor ?? entryBooking.ItemType.GetDisplayName())</div>
+                                        @if (!string.IsNullOrWhiteSpace(bookingMeta))
+                                        {
+                                            <div class="booking-pill-meta">@bookingMeta</div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")</div>
+                        </div>
+                        @if (showDetailsPanel)
+                        {
+                            <div class="timeline-item-details">
+                                @if (entryHasDetails)
+                                {
+                                    <div class="timeline-item-notes">@block.Entry.Details</div>
+                                }
+                                @if (canShowBookingInfo)
+                                {
+                                    <div class="booking-summary">
+                                        <div class="booking-summary-title">Booking</div>
+                                        <dl class="booking-summary-list">
+                                            @if (!string.IsNullOrWhiteSpace(entryBooking!.Vendor))
+                                            {
+                                                <dt>Vendor</dt>
+                                                <dd>@entryBooking.Vendor</dd>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(entryBooking.Reference))
+                                            {
+                                                <dt>Reference</dt>
+                                                <dd>@entryBooking.Reference</dd>
+                                            }
+                                            @if (entryBooking.Cost is not null)
+                                            {
+                                                <dt>Cost</dt>
+                                                <dd>
+                                                    @entryBooking.Cost?.ToString("0.##")
+                                                    @if (!string.IsNullOrWhiteSpace(entryBooking.Currency))
+                                                    {
+                                                        <span class="text-muted">@entryBooking.Currency</span>
+                                                    }
+                                                </dd>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(entryBooking.CancellationPolicy))
+                                            {
+                                                <dt>Cancellation</dt>
+                                                <dd>@entryBooking.CancellationPolicy</dd>
+                                            }
+                                        </dl>
+                                        <div class="booking-summary-actions">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-booking-action="view"
+                                                data-booking-id="@entryBooking.BookingId" data-booking-type="@entryBooking.ItemType"
+                                                data-booking-type-label="@entryBooking.ItemType.GetDisplayName()"
+                                                data-booking-vendor="@(entryBooking.Vendor ?? string.Empty)"
+                                                data-booking-reference="@(entryBooking.Reference ?? string.Empty)"
+                                                data-booking-cost="@(entryBooking.Cost?.ToString("0.##") ?? string.Empty)"
+                                                data-booking-currency="@(entryBooking.Currency ?? string.Empty)"
+                                                data-booking-refundable="@(entryBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
+                                                data-booking-paid="@(entryBooking.IsPaid?.ToString().ToLowerInvariant() ?? string.Empty)"
+                                                data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
+                                                data-booking-details="@(entryBooking.ConfirmationDetails ?? string.Empty)"
+                                                data-booking-confirmation-url="@(entryBooking.ConfirmationUrl?.ToString() ?? string.Empty)"
+                                                data-booking-parent-label="@entryDisplayTitle" data-booking-parent-type="entry"
+                                                data-parent-entry="@block.Entry.EntryId">
+                                                View full booking
+                                            </button>
+                                            @if (entryBooking.ConfirmationUrl is not null)
+                                            {
+                                                <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"
+                                                    href="@entryBooking.ConfirmationUrl">Open booking link</a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                @if (entryHasMetadata)
+                                {
+                                    <partial name="_EntryMetadata" model="block.Entry.Metadata" />
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
             @if (day.Entries.Count == 0)
             {
                 <div class="timeline-empty text-muted">No entries for this day.</div>
