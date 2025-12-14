@@ -103,9 +103,16 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 | Column                    | Type / Example                 | Notes                                                       |
 | ------------------------- | ------------------------------ | ----------------------------------------------------------- |
 | `PartitionKey`            | `TripId`                       | Multiple links per trip.                                    |
-| `RowKey`                  | `ShareCode` (e.g. `HUHB3HU2H`) | Used in `/share/<code>`.                                    |
+| `RowKey`                  | `ShareCode` (e.g. `HUHB3HU2H`) | Used in `/shares/<trip-slug>/<code>`.                       |
 | `CreatedOn` / `CreatedBy` | timestamps + user id           | Audit info.                                                 |
 | `ExpiresOn`               | nullable                       | Optional auto-expiry.                                       |
 | `MaskBookings`            | `true/false`                   | Whether confirmations/costs should be hidden for this link. |
 | `IncludeCost`             | `true/false`                   | Toggle budget visibility.                                   |
 | `Notes`                   | `"Link for parents"`           | Organizer-only context.                                     |
+
+## Sharing itineraries
+
+- From the Trips dashboard use the **Share** action to open `/Trips/ShareLinks`. Every trip can own multiple share codes with their own expiry date, booking visibility, and notes.
+- Share links surface a public, anonymous route at `/shares/{tripSlug}/{shareCode}`. The page reuses the same responsive timeline component but trims all editing affordances.
+- `MaskBookings = true` removes booking cards entirely; `IncludeCost = false` keeps the linked bookings but strips currency, totals, and outbound confirmation links before rendering.
+- The clipboard helper next to each share URL uses the browser Clipboard API, so the site must be served over HTTPS (or `localhost`) for one-click copy.

@@ -160,6 +160,12 @@ public sealed record ShareLink(
     bool IncludeCost,
     string? Notes);
 
+public sealed record ShareLinkMutation(
+    DateTimeOffset? ExpiresOn,
+    bool MaskBookings,
+    bool IncludeCost,
+    string? Notes);
+
 public sealed record TripDetails(
     Trip Trip,
     IReadOnlyList<ItineraryEntry> Entries,

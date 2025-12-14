@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text.Json;
 using Azure;
 using Azure.Data.Tables;
 using MX.TravelItinerary.Web.Data.Models;
-using System.Text.Json;
 
 namespace MX.TravelItinerary.Web.Data.TableStorage;
 
@@ -116,6 +117,108 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
         var trip = TableEntityMapper.ToTrip(tripEntity.Value!);
         return await BuildTripDetailsAsync(trip, shareLink, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ShareLink>> GetShareLinksAsync(string userId, string tripId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+
+        var results = new List<ShareLink>();
+        await foreach (var entity in _tables.ShareLinks.QueryAsync<TableEntity>(
+                   filter: CreatePartitionFilter(tripId),
+                   cancellationToken: cancellationToken))
+        {
+            results.Add(TableEntityMapper.ToShareLink(entity));
+        }
+
+        return results
+            .OrderByDescending(link => link.CreatedOn)
+            .ThenBy(link => link.ShareCode)
+            .ToList();
+    }
+
+    public async Task<ShareLink> CreateShareLinkAsync(string userId, string tripId, ShareLinkMutation mutation, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+        ArgumentNullException.ThrowIfNull(mutation);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+
+        const int maxAttempts = 5;
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            var code = GenerateShareCode();
+            var entity = new TableEntity(tripId, code)
+            {
+                ["OwnerUserId"] = userId,
+                ["CreatedOn"] = DateTimeOffset.UtcNow,
+                ["CreatedBy"] = userId
+            };
+
+            ApplyShareLinkMutation(entity, mutation);
+
+            try
+            {
+                await _tables.ShareLinks.AddEntityAsync(entity, cancellationToken);
+                return TableEntityMapper.ToShareLink(entity);
+            }
+            catch (RequestFailedException ex) when (ex.Status == 409)
+            {
+                // Retry with a new share code.
+            }
+        }
+
+        throw new InvalidOperationException("Unable to create a unique share link. Please try again.");
+    }
+
+    public async Task<ShareLink?> UpdateShareLinkAsync(string userId, string tripId, string shareCode, ShareLinkMutation mutation, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(shareCode);
+        ArgumentNullException.ThrowIfNull(mutation);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+
+        var existing = await _tables.ShareLinks.GetEntityIfExistsAsync<TableEntity>(tripId, shareCode, cancellationToken: cancellationToken);
+        if (existing.HasValue is false)
+        {
+            return null;
+        }
+
+        var entity = existing.Value;
+        if (entity is null)
+        {
+            return null;
+        }
+
+        ApplyShareLinkMutation(entity, mutation);
+        await _tables.ShareLinks.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
+
+        return TableEntityMapper.ToShareLink(entity);
+    }
+
+    public async Task<bool> DeleteShareLinkAsync(string userId, string tripId, string shareCode, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(shareCode);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+
+        try
+        {
+            await _tables.ShareLinks.DeleteEntityAsync(tripId, shareCode, cancellationToken: cancellationToken);
+            return true;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return false;
+        }
     }
 
     public async Task<Trip> CreateTripAsync(string userId, TripMutation mutation, CancellationToken cancellationToken = default)
@@ -580,6 +683,26 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
     }
 
+    private static void ApplyShareLinkMutation(TableEntity entity, ShareLinkMutation mutation)
+    {
+        SetOrRemove(entity, "ExpiresOn", mutation.ExpiresOn);
+        entity["MaskBookings"] = mutation.MaskBookings;
+        entity["IncludeCost"] = mutation.IncludeCost;
+        SetOrRemove(entity, "Notes", mutation.Notes);
+    }
+
+    private static string GenerateShareCode()
+    {
+        Span<char> buffer = stackalloc char[8];
+        for (var i = 0; i < buffer.Length; i++)
+        {
+            var index = RandomNumberGenerator.GetInt32(ShareCodeAlphabet.Length);
+            buffer[i] = ShareCodeAlphabet[index];
+        }
+
+        return new string(buffer);
+    }
+
     private static void RemoveIfExists(TableEntity entity, string propertyName)
     {
         if (entity.ContainsKey(propertyName))
@@ -587,4 +710,6 @@ public sealed class TableItineraryRepository : IItineraryRepository
             entity.Remove(propertyName);
         }
     }
+
+    private static readonly char[] ShareCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".ToCharArray();
 }

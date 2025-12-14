@@ -1,0 +1,109 @@
+@model MX.TravelItinerary.Web.Data.Models.TravelMetadata
+
+@if (Model is null || Model.HasContent is false)
+{
+    return;
+}
+
+@if (Model.HasFlightDetails)
+{
+    var flight = Model.Flight!;
+    <div class="metadata-block">
+        <div class="metadata-block-title">
+            <span class="bi bi-airplane-engines me-2" aria-hidden="true"></span>
+            Flight details
+        </div>
+        <dl class="metadata-list">
+            @if (!string.IsNullOrWhiteSpace(flight.Airline))
+            {
+                <dt>Airline</dt>
+                <dd>@flight.Airline</dd>
+            }
+            @if (!string.IsNullOrWhiteSpace(flight.FlightNumber))
+            {
+                <dt>Flight #</dt>
+                <dd>@flight.FlightNumber</dd>
+            }
+            @if (!string.IsNullOrWhiteSpace(flight.DepartureAirport) || !string.IsNullOrWhiteSpace(flight.DepartureTime))
+            {
+                <dt>Departure</dt>
+                <dd>
+                    @if (!string.IsNullOrWhiteSpace(flight.DepartureAirport))
+                    {
+                        <span>@flight.DepartureAirport</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(flight.DepartureAirport) &&
+                                !string.IsNullOrWhiteSpace(flight.DepartureTime))
+                    {
+                        <span class="text-muted"> · </span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(flight.DepartureTime))
+                    {
+                        <span>@flight.DepartureTime</span>
+                    }
+                </dd>
+            }
+            @if (!string.IsNullOrWhiteSpace(flight.ArrivalAirport) || !string.IsNullOrWhiteSpace(flight.ArrivalTime))
+            {
+                <dt>Arrival</dt>
+                <dd>
+                    @if (!string.IsNullOrWhiteSpace(flight.ArrivalAirport))
+                    {
+                        <span>@flight.ArrivalAirport</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(flight.ArrivalAirport) && !string.IsNullOrWhiteSpace(flight.ArrivalTime))
+                    {
+                        <span class="text-muted"> · </span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(flight.ArrivalTime))
+                    {
+                        <span>@flight.ArrivalTime</span>
+                    }
+                </dd>
+            }
+        </dl>
+    </div>
+}
+
+@if (Model.HasStayDetails)
+{
+    var stay = Model.Stay!;
+    <div class="metadata-block">
+        <div class="metadata-block-title">
+            <span class="bi bi-buildings me-2" aria-hidden="true"></span>
+            Stay details
+        </div>
+        <dl class="metadata-list">
+            @if (!string.IsNullOrWhiteSpace(stay.PropertyName))
+            {
+                <dt>Property</dt>
+                <dd>@stay.PropertyName</dd>
+            }
+            @if (!string.IsNullOrWhiteSpace(stay.Address))
+            {
+                <dt>Address</dt>
+                <dd>@stay.Address</dd>
+            }
+            @if (!string.IsNullOrWhiteSpace(stay.CheckInTime))
+            {
+                <dt>Check-in</dt>
+                <dd>@stay.CheckInTime</dd>
+            }
+            @if (!string.IsNullOrWhiteSpace(stay.CheckOutTime))
+            {
+                <dt>Check-out</dt>
+                <dd>@stay.CheckOutTime</dd>
+            }
+            @if (!string.IsNullOrWhiteSpace(stay.RoomType))
+            {
+                <dt>Room</dt>
+                <dd>@stay.RoomType</dd>
+            }
+            @if (!string.IsNullOrWhiteSpace(stay.ConfirmationNumber))
+            {
+                <dt>Confirmation</dt>
+                <dd>@stay.ConfirmationNumber</dd>
+            }
+        </dl>
+    </div>
+}

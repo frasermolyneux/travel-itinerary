@@ -46,6 +46,7 @@ builder.Services
         options.Conventions.AuthorizeFolder("/");
         options.Conventions.AllowAnonymousToPage("/Index");
         options.Conventions.AllowAnonymousToPage("/Error");
+        options.Conventions.AllowAnonymousToPage("/Shares/View");
         options.Conventions.AllowAnonymousToAreaFolder("MicrosoftIdentity", "/Account");
         options.Conventions.AddPageRoute(
             "/Trips/Details",

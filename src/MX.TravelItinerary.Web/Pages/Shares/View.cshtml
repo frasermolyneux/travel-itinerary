@@ -1,0 +1,89 @@
+@page "/shares/{tripSlug}/{shareCode}"
+@model MX.TravelItinerary.Web.Pages.Shares.ViewModel
+@{
+    ViewData["Title"] = "Shared itinerary";
+    var trip = Model.TripDetails?.Trip;
+    var heading = !string.IsNullOrWhiteSpace(trip?.Name) ? trip!.Name : "Trip itinerary";
+}
+
+<div class="py-4">
+    <div class="container-small">
+        <div class="d-flex flex-column flex-lg-row gap-3 justify-content-between mb-4">
+            <div>
+                <p class="text-uppercase small text-muted mb-1">Shared timeline</p>
+                <h1 class="mb-1">@heading</h1>
+                <div class="text-muted">
+                    @if (trip?.StartDate is not null || trip?.EndDate is not null)
+                    {
+                        <span>@trip?.StartDate?.ToString("MMM dd, yyyy")</span>
+                        @if (trip?.EndDate is not null)
+                        {
+                            <text> – @trip?.EndDate?.ToString("MMM dd, yyyy")</text>
+                        }
+                    }
+                    else
+                    {
+                        <span>Dates coming soon</span>
+                    }
+                </div>
+            </div>
+            <div></div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="alert alert-warning">@Model.ErrorMessage</div>
+        }
+        else if (Model.TripDetails is not null)
+        {
+            var timelineModel = Model.GetTimelineDisplayModel();
+            if (timelineModel is not null)
+            {
+                <partial name="~/Pages/Shared/_TripTimeline.cshtml" model="timelineModel" />
+            }
+        }
+        else
+        {
+            <div class="alert alert-warning">This itinerary could not be found.</div>
+        }
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="bookingDetailFlyout" aria-labelledby="bookingDetailFlyoutLabel">
+    <div class="offcanvas-header">
+        <h5 id="bookingDetailFlyoutLabel" class="offcanvas-title">Booking details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="mb-3">
+            <div class="text-muted text-uppercase small">Linked to</div>
+            <div class="fw-semibold" data-booking-detail="parent">—</div>
+        </div>
+        <dl class="row booking-detail-list">
+            <dt class="col-sm-4">Type</dt>
+            <dd class="col-sm-8" data-booking-detail="type">—</dd>
+            <dt class="col-sm-4">Vendor</dt>
+            <dd class="col-sm-8" data-booking-detail="vendor">—</dd>
+            <dt class="col-sm-4">Confirmation #</dt>
+            <dd class="col-sm-8" data-booking-detail="reference">—</dd>
+            <dt class="col-sm-4">Cost</dt>
+            <dd class="col-sm-8" data-booking-detail="cost">—</dd>
+            <dt class="col-sm-4">Refundable</dt>
+            <dd class="col-sm-8" data-booking-detail="refundable">—</dd>
+            <dt class="col-sm-4">Paid</dt>
+            <dd class="col-sm-8" data-booking-detail="paid">—</dd>
+            <dt class="col-sm-4">Cancellation</dt>
+            <dd class="col-sm-8" data-booking-detail="cancellation">—</dd>
+            <dt class="col-sm-4">Manage booking</dt>
+            <dd class="col-sm-8">
+                <a href="#" class="booking-link d-none" target="_blank" rel="noopener" data-booking-link>Open booking link</a>
+                <span data-booking-link-placeholder>—</span>
+            </dd>
+        </dl>
+        <div class="mb-4">
+            <div class="text-muted text-uppercase small">Confirmation details</div>
+            <div class="booking-detail-notes" data-booking-detail="notes">—</div>
+        </div>
+        <div class="text-muted small">Contact the trip owner to edit booking information.</div>
+    </div>
+</div>
