@@ -129,8 +129,8 @@ else
                                     <label class="form-label text-uppercase small">Public URL</label>
                                     <div class="input-group input-group-sm">
                                         <input type="text" class="form-control" value="@shareUrl" readonly data-share-link-input />
-                                        <button type="button" class="btn btn-outline-secondary" data-copy-link>Copy</button>
-                                        <a class="btn btn-outline-primary" href="@shareUrl" target="_blank" rel="noopener">Open</a>
+                                        <button type="button" class="btn btn-outline-secondary" data-copy-link data-share-code="@link.ShareCode">Copy</button>
+                                        <a class="btn btn-outline-primary" href="@shareUrl" target="_blank" rel="noopener" data-open-share-link data-share-code="@link.ShareCode">Open</a>
                                     </div>
                                 </div>
                                 <div class="d-flex flex-wrap gap-2 mb-3">
@@ -179,21 +179,38 @@ else
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
+        const telemetry = {
+            track(eventName, shareCode) {
+                if (!eventName || !window.appInsights || typeof window.appInsights.trackEvent !== 'function') {
+                    return;
+                }
+
+                window.appInsights.trackEvent({ name: eventName }, {
+                    shareCode: shareCode || ''
+                });
+            }
+        };
+
         document.addEventListener('click', (event) => {
-            const trigger = event.target.closest('[data-copy-link]');
-            if (!trigger) {
+            const copyTrigger = event.target.closest('[data-copy-link]');
+            if (copyTrigger) {
+                const input = copyTrigger.parentElement?.querySelector('[data-share-link-input]');
+                if (!input) {
+                    return;
+                }
+
+                navigator.clipboard?.writeText(input.value).then(() => {
+                    copyTrigger.textContent = 'Copied!';
+                    telemetry.track('shareLink:copied', copyTrigger.dataset.shareCode);
+                    setTimeout(() => copyTrigger.textContent = 'Copy', 1500);
+                });
                 return;
             }
 
-            const input = trigger.parentElement?.querySelector('[data-share-link-input]');
-            if (!input) {
-                return;
+            const openTrigger = event.target.closest('[data-open-share-link]');
+            if (openTrigger) {
+                telemetry.track('shareLink:openedFromOwner', openTrigger.dataset.shareCode);
             }
-
-            navigator.clipboard?.writeText(input.value).then(() => {
-                trigger.textContent = 'Copied!';
-                setTimeout(() => trigger.textContent = 'Copy', 1500);
-            });
         });
     </script>
 }

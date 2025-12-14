@@ -27,6 +27,7 @@ builder.Services.AddSingleton<TableServiceClient>(sp =>
 
 builder.Services.AddSingleton<ITableContext, TableContext>();
 builder.Services.AddScoped<IItineraryRepository, TableItineraryRepository>();
+builder.Services.AddApplicationInsightsTelemetry();
 
 builder.Services
     .AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)

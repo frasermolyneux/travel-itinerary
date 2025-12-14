@@ -24,22 +24,23 @@ resource "azurerm_linux_web_app" "app" {
   }
 
   app_settings = {
-    "APPLICATIONINSIGHTS_CONNECTION_STRING"      = azurerm_application_insights.ai.connection_string
-    "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
-    "ASPNETCORE_ENVIRONMENT"                     = var.environment == "prd" ? "Production" : "Development"
-    "WEBSITE_RUN_FROM_PACKAGE"                   = "1"
-    "AzureAd__Instance"                          = "https://login.microsoftonline.com/"
-    "AzureAd__Domain"                            = var.tenant_domain
-    "AzureAd__TenantId"                          = data.azuread_client_config.current.tenant_id
-    "AzureAd__ClientId"                          = azuread_application.web.application_id
-    "AzureAd__ClientSecret"                      = azuread_application_password.web.value
-    "AzureAd__CallbackPath"                      = "/signin-oidc"
-    "Storage__AccountName"                       = azurerm_storage_account.data.name
-    "Storage__TableEndpoint"                     = azurerm_storage_account.data.primary_table_endpoint
-    "Storage__Tables__Trips"                     = azurerm_storage_table.tables["trips"].name
-    "Storage__Tables__ItineraryEntries"          = azurerm_storage_table.tables["itinerary_entries"].name
-    "Storage__Tables__Bookings"                  = azurerm_storage_table.tables["bookings"].name
-    "Storage__Tables__ShareLinks"                = azurerm_storage_table.tables["share_links"].name
+    "APPLICATIONINSIGHTS_CONNECTION_STRING"       = azurerm_application_insights.ai.connection_string
+    "ApplicationInsights__ClientConnectionString" = azurerm_application_insights.ai.connection_string
+    "ApplicationInsightsAgent_EXTENSION_VERSION"  = "~3"
+    "ASPNETCORE_ENVIRONMENT"                      = var.environment == "prd" ? "Production" : "Development"
+    "WEBSITE_RUN_FROM_PACKAGE"                    = "1"
+    "AzureAd__Instance"                           = "https://login.microsoftonline.com/"
+    "AzureAd__Domain"                             = var.tenant_domain
+    "AzureAd__TenantId"                           = data.azuread_client_config.current.tenant_id
+    "AzureAd__ClientId"                           = azuread_application.web.application_id
+    "AzureAd__ClientSecret"                       = azuread_application_password.web.value
+    "AzureAd__CallbackPath"                       = "/signin-oidc"
+    "Storage__AccountName"                        = azurerm_storage_account.data.name
+    "Storage__TableEndpoint"                      = azurerm_storage_account.data.primary_table_endpoint
+    "Storage__Tables__Trips"                      = azurerm_storage_table.tables["trips"].name
+    "Storage__Tables__ItineraryEntries"           = azurerm_storage_table.tables["itinerary_entries"].name
+    "Storage__Tables__Bookings"                   = azurerm_storage_table.tables["bookings"].name
+    "Storage__Tables__ShareLinks"                 = azurerm_storage_table.tables["share_links"].name
   }
 }
 

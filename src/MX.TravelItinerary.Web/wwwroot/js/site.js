@@ -1,4 +1,18 @@
 ﻿(() => {
+    const telemetry = {
+        track(eventName, properties = {}) {
+            if (!eventName || !window.appInsights || typeof window.appInsights.trackEvent !== 'function') {
+                return;
+            }
+
+            try {
+                window.appInsights.trackEvent({ name: eventName }, properties);
+            } catch (error) {
+                console.warn('Unable to emit telemetry', error);
+            }
+        }
+    };
+
     let syncEntryBounds = () => { };
     let syncEntryMetadata = () => { };
 
@@ -583,14 +597,31 @@
             })
                 .then((response) => {
                     if (!response.ok) {
+                        telemetry.track('timeline:reorder:failed', {
+                            tripId,
+                            date,
+                            entryCount: entryIds.length.toString(),
+                            status: response.status.toString()
+                        });
                         throw new Error('Failed to persist order.');
                     }
                     container.dataset.currentOrder = nextOrder;
+                    telemetry.track('timeline:reorder:saved', {
+                        tripId,
+                        date,
+                        entryCount: entryIds.length.toString()
+                    });
                 })
                 .catch((error) => {
                     console.error(error);
                     restoreOrder(container, previousOrder);
                     window.alert('We could not save the new order. Please try again.');
+                    telemetry.track('timeline:reorder:failed', {
+                        tripId,
+                        date,
+                        entryCount: entryIds.length.toString(),
+                        reason: error?.message || 'unknown'
+                    });
                 })
                 .finally(() => {
                     container.classList.remove('is-saving');

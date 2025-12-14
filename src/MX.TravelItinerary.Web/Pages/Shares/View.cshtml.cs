@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -15,10 +16,12 @@ namespace MX.TravelItinerary.Web.Pages.Shares;
 public sealed class ViewModel : PageModel
 {
     private readonly IItineraryRepository _repository;
+    private readonly TelemetryClient _telemetry;
 
-    public ViewModel(IItineraryRepository repository)
+    public ViewModel(IItineraryRepository repository, TelemetryClient telemetry)
     {
         _repository = repository;
+        _telemetry = telemetry;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -58,6 +61,10 @@ public sealed class ViewModel : PageModel
         if (string.IsNullOrWhiteSpace(ShareCode))
         {
             ErrorMessage = "This share link is missing a code.";
+            TrackShareLinkEvent("ShareLinkAccessRejected", properties =>
+            {
+                properties["Reason"] = "MissingCode";
+            });
             return Page();
         }
 
@@ -83,6 +90,22 @@ public sealed class ViewModel : PageModel
 
         TripSlug = canonicalSlug;
         return Page();
+    }
+
+    private void TrackShareLinkEvent(string eventName, Action<Dictionary<string, string?>> configure)
+    {
+        if (string.IsNullOrWhiteSpace(eventName))
+        {
+            return;
+        }
+
+        var properties = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["ShareCode"] = ShareCode
+        };
+
+        configure(properties);
+        _telemetry.TrackEvent(eventName, properties);
     }
 
     public Booking? GetBookingForEntry(string entryId)

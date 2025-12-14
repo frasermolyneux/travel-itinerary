@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Azure;
 using Azure.Data.Tables;
+using Microsoft.ApplicationInsights;
 using MX.TravelItinerary.Web.Data.Models;
 
 namespace MX.TravelItinerary.Web.Data.TableStorage;
@@ -12,12 +14,14 @@ namespace MX.TravelItinerary.Web.Data.TableStorage;
 public sealed class TableItineraryRepository : IItineraryRepository
 {
     private readonly ITableContext _tables;
+    private readonly TelemetryClient _telemetry;
     private const string DateFormat = "yyyy-MM-dd";
     private const int SortOrderIncrement = 10;
 
-    public TableItineraryRepository(ITableContext tables)
+    public TableItineraryRepository(ITableContext tables, TelemetryClient telemetry)
     {
         _tables = tables;
+        _telemetry = telemetry;
     }
 
     public async Task<IReadOnlyList<Trip>> GetTripsForUserAsync(string userId, CancellationToken cancellationToken = default)
@@ -96,6 +100,11 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
         if (shareEntity is null)
         {
+            TrackEvent("ShareLinkAccessRejected", properties =>
+            {
+                properties["ShareCode"] = shareCode;
+                properties["Reason"] = "NotFound";
+            });
             return null;
         }
 
@@ -107,16 +116,37 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
         if (shareLink.ExpiresOn is { } expires && expires < DateTimeOffset.UtcNow)
         {
+            TrackEvent("ShareLinkAccessRejected", properties =>
+            {
+                properties["ShareCode"] = shareCode;
+                properties["Reason"] = "Expired";
+                properties["ExpiresOnUtc"] = FormatDateTimeOffset(expires);
+            });
             return null;
         }
 
         var tripEntity = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(shareLink.OwnerUserId, shareLink.TripId, cancellationToken: cancellationToken);
         if (tripEntity.HasValue is false)
         {
+            TrackEvent("ShareLinkAccessRejected", properties =>
+            {
+                properties["ShareCode"] = shareCode;
+                properties["Reason"] = "TripMissing";
+                properties["TripId"] = shareLink.TripId;
+            });
             return null;
         }
 
         var trip = TableEntityMapper.ToTrip(tripEntity.Value!);
+        TrackEvent("ShareLinkAccessGranted", properties =>
+        {
+            properties["ShareCode"] = shareCode;
+            properties["TripId"] = shareLink.TripId;
+            properties["OwnerUserId"] = shareLink.OwnerUserId;
+            properties["MaskBookings"] = FormatBool(shareLink.MaskBookings);
+            properties["IncludeCost"] = FormatBool(shareLink.IncludeCost);
+            properties["ExpiresOnUtc"] = FormatDateTimeOffset(shareLink.ExpiresOn);
+        });
         return await BuildTripDetailsAsync(trip, shareLink, cancellationToken);
     }
 
@@ -165,7 +195,17 @@ public sealed class TableItineraryRepository : IItineraryRepository
             try
             {
                 await _tables.ShareLinks.AddEntityAsync(entity, cancellationToken);
-                return TableEntityMapper.ToShareLink(entity);
+                var shareLink = TableEntityMapper.ToShareLink(entity);
+                TrackEvent("ShareLinkCreated", properties =>
+                {
+                    properties["UserId"] = userId;
+                    properties["TripId"] = tripId;
+                    properties["ShareCode"] = shareLink.ShareCode;
+                    properties["MaskBookings"] = FormatBool(shareLink.MaskBookings);
+                    properties["IncludeCost"] = FormatBool(shareLink.IncludeCost);
+                    properties["ExpiresOnUtc"] = FormatDateTimeOffset(shareLink.ExpiresOn);
+                });
+                return shareLink;
             }
             catch (RequestFailedException ex) when (ex.Status == 409)
             {
@@ -200,7 +240,18 @@ public sealed class TableItineraryRepository : IItineraryRepository
         ApplyShareLinkMutation(entity, mutation);
         await _tables.ShareLinks.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
 
-        return TableEntityMapper.ToShareLink(entity);
+        var shareLink = TableEntityMapper.ToShareLink(entity);
+        TrackEvent("ShareLinkUpdated", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripId"] = tripId;
+            properties["ShareCode"] = shareCode;
+            properties["MaskBookings"] = FormatBool(shareLink.MaskBookings);
+            properties["IncludeCost"] = FormatBool(shareLink.IncludeCost);
+            properties["ExpiresOnUtc"] = FormatDateTimeOffset(shareLink.ExpiresOn);
+        });
+
+        return shareLink;
     }
 
     public async Task<bool> DeleteShareLinkAsync(string userId, string tripId, string shareCode, CancellationToken cancellationToken = default)
@@ -214,6 +265,12 @@ public sealed class TableItineraryRepository : IItineraryRepository
         try
         {
             await _tables.ShareLinks.DeleteEntityAsync(tripId, shareCode, cancellationToken: cancellationToken);
+            TrackEvent("ShareLinkDeleted", properties =>
+            {
+                properties["UserId"] = userId;
+                properties["TripId"] = tripId;
+                properties["ShareCode"] = shareCode;
+            });
             return true;
         }
         catch (RequestFailedException ex) when (ex.Status == 404)
@@ -232,7 +289,14 @@ public sealed class TableItineraryRepository : IItineraryRepository
         ApplyTripMutation(entity, mutation);
 
         await _tables.Trips.AddEntityAsync(entity, cancellationToken);
-        return TableEntityMapper.ToTrip(entity);
+        var trip = TableEntityMapper.ToTrip(entity);
+        TrackEvent("TripCreated", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripId"] = trip.TripId;
+            properties["HasSlug"] = (!string.IsNullOrWhiteSpace(trip.Slug)).ToString().ToLowerInvariant();
+        });
+        return trip;
     }
 
     public async Task<Trip?> UpdateTripAsync(string userId, string tripId, TripMutation mutation, CancellationToken cancellationToken = default)
@@ -255,7 +319,14 @@ public sealed class TableItineraryRepository : IItineraryRepository
         ApplyTripMutation(entity, mutation);
         await _tables.Trips.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
 
-        return TableEntityMapper.ToTrip(entity);
+        var trip = TableEntityMapper.ToTrip(entity);
+        TrackEvent("TripUpdated", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripId"] = trip.TripId;
+        });
+
+        return trip;
     }
 
     public async Task<bool> DeleteTripAsync(string userId, string tripId, CancellationToken cancellationToken = default)
@@ -266,6 +337,11 @@ public sealed class TableItineraryRepository : IItineraryRepository
         try
         {
             await _tables.Trips.DeleteEntityAsync(userId, tripId, cancellationToken: cancellationToken);
+            TrackEvent("TripDeleted", properties =>
+            {
+                properties["UserId"] = userId;
+                properties["TripId"] = tripId;
+            });
             return true;
         }
         catch (RequestFailedException ex) when (ex.Status == 404)
@@ -294,7 +370,16 @@ public sealed class TableItineraryRepository : IItineraryRepository
         ApplyItineraryEntryMutation(entity, entryMutation);
 
         await _tables.ItineraryEntries.AddEntityAsync(entity, cancellationToken);
-        return TableEntityMapper.ToItineraryEntry(entity);
+        var entry = TableEntityMapper.ToItineraryEntry(entity);
+        TrackEvent("ItineraryEntryCreated", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripId"] = tripId;
+            properties["EntryId"] = entry.EntryId;
+            properties["ItemType"] = entry.ItemType.ToString();
+            properties["IsMultiDay"] = FormatBool(entry.IsMultiDay);
+        });
+        return entry;
     }
 
     public async Task<ItineraryEntry?> UpdateItineraryEntryAsync(string userId, string tripId, string entryId, ItineraryEntryMutation mutation, CancellationToken cancellationToken = default)
@@ -327,7 +412,17 @@ public sealed class TableItineraryRepository : IItineraryRepository
         ApplyItineraryEntryMutation(entity, entryMutation);
         await _tables.ItineraryEntries.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
 
-        return TableEntityMapper.ToItineraryEntry(entity);
+        var entry = TableEntityMapper.ToItineraryEntry(entity);
+        TrackEvent("ItineraryEntryUpdated", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripId"] = tripId;
+            properties["EntryId"] = entry.EntryId;
+            properties["ItemType"] = entry.ItemType.ToString();
+            properties["IsMultiDay"] = FormatBool(entry.IsMultiDay);
+        });
+
+        return entry;
     }
 
     public async Task<bool> DeleteItineraryEntryAsync(string userId, string tripId, string entryId, CancellationToken cancellationToken = default)
@@ -341,6 +436,12 @@ public sealed class TableItineraryRepository : IItineraryRepository
         try
         {
             await _tables.ItineraryEntries.DeleteEntityAsync(tripId, entryId, cancellationToken: cancellationToken);
+            TrackEvent("ItineraryEntryDeleted", properties =>
+            {
+                properties["UserId"] = userId;
+                properties["TripId"] = tripId;
+                properties["EntryId"] = entryId;
+            });
             return true;
         }
         catch (RequestFailedException ex) when (ex.Status == 404)
@@ -428,6 +529,15 @@ public sealed class TableItineraryRepository : IItineraryRepository
         {
             await _tables.ItineraryEntries.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Merge, cancellationToken);
         }
+
+        TrackEvent("TimelineEntriesReordered", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripId"] = tripId;
+            properties["Date"] = date.ToString(DateFormat, CultureInfo.InvariantCulture);
+            properties["EntryCount"] = normalizedOrder.Count.ToString(CultureInfo.InvariantCulture);
+            properties["UpdatesApplied"] = updates.Count.ToString(CultureInfo.InvariantCulture);
+        });
     }
 
     public async Task<Booking> CreateBookingAsync(string userId, string tripId, BookingMutation mutation, CancellationToken cancellationToken = default)
@@ -449,7 +559,16 @@ public sealed class TableItineraryRepository : IItineraryRepository
         ApplyBookingMutation(entity, mutation);
 
         await _tables.Bookings.AddEntityAsync(entity, cancellationToken);
-        return TableEntityMapper.ToBooking(entity);
+        var booking = TableEntityMapper.ToBooking(entity);
+        TrackEvent("BookingCreated", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripId"] = tripId;
+            properties["BookingId"] = booking.BookingId;
+            properties["EntryId"] = booking.EntryId;
+            properties["ItemType"] = booking.ItemType.ToString();
+        });
+        return booking;
     }
 
     public async Task<Booking?> UpdateBookingAsync(string userId, string tripId, string bookingId, BookingMutation mutation, CancellationToken cancellationToken = default)
@@ -482,7 +601,17 @@ public sealed class TableItineraryRepository : IItineraryRepository
         ApplyBookingMutation(entity, mutation);
         await _tables.Bookings.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
 
-        return TableEntityMapper.ToBooking(entity);
+        var booking = TableEntityMapper.ToBooking(entity);
+        TrackEvent("BookingUpdated", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripId"] = tripId;
+            properties["BookingId"] = booking.BookingId;
+            properties["EntryId"] = booking.EntryId;
+            properties["ItemType"] = booking.ItemType.ToString();
+        });
+
+        return booking;
     }
 
     public async Task<bool> DeleteBookingAsync(string userId, string tripId, string bookingId, CancellationToken cancellationToken = default)
@@ -496,6 +625,12 @@ public sealed class TableItineraryRepository : IItineraryRepository
         try
         {
             await _tables.Bookings.DeleteEntityAsync(tripId, bookingId, cancellationToken: cancellationToken);
+            TrackEvent("BookingDeleted", properties =>
+            {
+                properties["UserId"] = userId;
+                properties["TripId"] = tripId;
+                properties["BookingId"] = bookingId;
+            });
             return true;
         }
         catch (RequestFailedException ex) when (ex.Status == 404)
@@ -865,4 +1000,21 @@ public sealed class TableItineraryRepository : IItineraryRepository
     }
 
     private static readonly char[] ShareCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".ToCharArray();
+
+    private void TrackEvent(string eventName, Action<Dictionary<string, string?>> configure)
+    {
+        if (string.IsNullOrWhiteSpace(eventName))
+        {
+            return;
+        }
+
+        var properties = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        configure(properties);
+        _telemetry.TrackEvent(eventName, properties);
+    }
+
+    private static string FormatBool(bool value) => value ? "true" : "false";
+
+    private static string? FormatDateTimeOffset(DateTimeOffset? value)
+        => value?.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture);
 }

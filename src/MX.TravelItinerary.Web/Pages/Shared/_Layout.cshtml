@@ -1,4 +1,12 @@
-﻿<!DOCTYPE html>
+﻿@using System.Text.Json
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    var aiClientConnection = Configuration["ApplicationInsights:ClientConnectionString"];
+    var aiClientConnectionJson = string.IsNullOrWhiteSpace(aiClientConnection)
+        ? null
+        : JsonSerializer.Serialize(aiClientConnection);
+}
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -70,6 +78,41 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @if (aiClientConnectionJson is not null)
+    {
+        <script type="text/javascript">
+            (function (win, doc) {
+                var appInsights = win.appInsights || function (config) {
+                    function addMethod(name) {
+                        if (!name) {
+                            return;
+                        }
+
+                        app[name] = function () {
+                            var args = arguments;
+                            app.queue.push(function () { app[name].apply(app, args); });
+                        };
+                    }
+
+                    var app = { config: config }, script = doc.createElement("script");
+                    app.queue = [];
+                    script.src = config.url || "https://az416426.vo.msecnd.net/scripts/b/ai.2.min.js";
+                    doc.getElementsByTagName("head")[0].appendChild(script);
+                    addMethod("trackEvent");
+                    addMethod("trackPageView");
+                    addMethod("trackException");
+                    addMethod("trackTrace");
+                    addMethod("trackDependencyData");
+                    addMethod("flush");
+                    return app;
+                }({ connectionString: @Html.Raw(aiClientConnectionJson) });
+
+                win.appInsights = appInsights;
+                appInsights.trackPageView();
+            })(window, document);
+        </script>
+    }
+
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
