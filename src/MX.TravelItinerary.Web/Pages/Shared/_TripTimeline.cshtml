@@ -140,7 +140,8 @@
                         }
                     }
                     var visibleQuickFacts = canShowBookingInfo
-                    ? bookingQuickFacts.Where(fact => fact.IsMetadata ? Model.ShowBookingMetadata : Model.ShowBookingConfirmations).ToList()
+                    ? bookingQuickFacts.Where(fact => fact.IsMetadata ? Model.ShowBookingMetadata :
+                    Model.ShowBookingConfirmations).ToList()
                     : new List<BookingQuickFact>();
                     var showDetailsPanel = entryHasDetails || entryHasMetadata || canShowBookingInfo;
                     <div class="timeline-item timeline-item--segment timeline-segment-mobile segment-type-@segmentType"
@@ -316,7 +317,8 @@
                         }
                     }
                     var visibleQuickFacts = canShowBookingInfo
-                    ? bookingQuickFacts.Where(fact => fact.IsMetadata ? Model.ShowBookingMetadata : Model.ShowBookingConfirmations).ToList()
+                    ? bookingQuickFacts.Where(fact => fact.IsMetadata ? Model.ShowBookingMetadata :
+                    Model.ShowBookingConfirmations).ToList()
                     : new List<BookingQuickFact>();
                     var showDetailsPanel = entryHasDetails || entryHasMetadata || canShowBookingInfo;
                     var entryDataAttributes = Model.AllowEntryReordering
@@ -538,7 +540,8 @@
             }
         }
         var visibleQuickFacts = canShowBookingInfo
-        ? bookingQuickFacts.Where(fact => fact.IsMetadata ? Model.ShowBookingMetadata : Model.ShowBookingConfirmations).ToList()
+        ? bookingQuickFacts.Where(fact => fact.IsMetadata ? Model.ShowBookingMetadata :
+        Model.ShowBookingConfirmations).ToList()
         : new List<BookingQuickFact>();
         var showDetailsPanel = entryHasDetails || entryHasMetadata || canShowBookingInfo;
         <div class="timeline-segment"
