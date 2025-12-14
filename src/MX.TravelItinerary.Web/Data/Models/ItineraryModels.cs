@@ -261,7 +261,7 @@ public static class ModelEnumExtensions
             TimelineItemType.Taxi => "bi-taxi-front",
             TimelineItemType.PrivateCar => "bi-car-front",
             TimelineItemType.RentalCar => "bi-steering-wheel",
-            TimelineItemType.Parking => "bi-parking",
+            TimelineItemType.Parking => "bi-p-circle",
             TimelineItemType.Hotel => "bi-buildings",
             TimelineItemType.Flat => "bi-building",
             TimelineItemType.House => "bi-house-heart",
