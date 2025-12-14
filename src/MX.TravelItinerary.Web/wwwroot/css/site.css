@@ -199,6 +199,20 @@ body {
   font-weight: 600;
 }
 
+.timeline-map-link {
+  margin-left: 0.4rem;
+  color: #0d6efd;
+  display: inline-flex;
+  align-items: center;
+  font-size: 1rem;
+}
+
+.timeline-map-link:hover,
+.timeline-map-link:focus-visible {
+  color: #0a58ca;
+  text-decoration: none;
+}
+
 .timeline-drag-handle {
   position: absolute;
   top: 50%;

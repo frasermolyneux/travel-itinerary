@@ -58,6 +58,47 @@
 
         return facts;
     }
+
+    private static string? BuildEntryMapLink(ItineraryEntry entry)
+    {
+        static string BuildQueryLabel(string? preferred, string fallback)
+            => string.IsNullOrWhiteSpace(preferred) ? fallback : preferred.Trim();
+
+        static string? FormatLink(string? placeId, string? label)
+        {
+            if (string.IsNullOrWhiteSpace(placeId))
+            {
+                return null;
+            }
+
+            var placeIdValue = Uri.EscapeDataString(placeId.Trim());
+            var queryLabel = string.IsNullOrWhiteSpace(label) ? "Location" : label.Trim();
+            var queryValue = Uri.EscapeDataString(queryLabel);
+            return $"https://www.google.com/maps/search/?api=1&query={queryValue}&query_place_id={placeIdValue}";
+        }
+
+        var baseLabel = BuildQueryLabel(entry.Title, "Trip location");
+
+        var mapLink = FormatLink(entry.GooglePlaceId, baseLabel);
+        if (!string.IsNullOrWhiteSpace(mapLink))
+        {
+            return mapLink;
+        }
+
+        var segment = entry.Metadata?.Segment;
+        if (segment is null)
+        {
+            return null;
+        }
+
+        mapLink = FormatLink(segment.DeparturePlaceId, $"{baseLabel} departure".Trim());
+        if (!string.IsNullOrWhiteSpace(mapLink))
+        {
+            return mapLink;
+        }
+
+        return FormatLink(segment.ArrivalPlaceId, $"{baseLabel} arrival".Trim());
+    }
 }
 
 @if (!hasPlannedContent && Model.ShowEmptyStateMessage)
@@ -102,6 +143,7 @@
                     var entryDisplayTitle = string.IsNullOrWhiteSpace(block.Entry.Title)
                     ? block.Entry.ToString()
                     : block.Entry.Title;
+                    var entryMapLink = BuildEntryMapLink(block.Entry);
                     var entryHasDetails = !string.IsNullOrWhiteSpace(block.Entry.Details);
                     var entryHasMetadata = block.Entry.Metadata?.HasContent == true;
                     var hasBooking = entryBooking is not null;
@@ -150,7 +192,17 @@
                             <div class="timeline-item-heading">
                                 <span class="timeline-item-icon bi @block.Entry.ItemType.GetIconClass() segment-type-@segmentType"
                                     aria-hidden="true"></span>
-                                <span class="timeline-item-title">@entryDisplayTitle</span>
+                                <span class="timeline-item-title">
+                                    @entryDisplayTitle
+                                    @if (!string.IsNullOrWhiteSpace(entryMapLink))
+                                    {
+                                        <a class="timeline-map-link" href="@entryMapLink" target="_blank" rel="noopener"
+                                            title="View on Google Maps">
+                                            <span class="bi bi-geo-alt" aria-hidden="true"></span>
+                                            <span class="visually-hidden">View on Google Maps</span>
+                                        </a>
+                                    }
+                                </span>
                             </div>
                             @if (canShowBookingCore)
                             {
@@ -279,6 +331,7 @@
                     var entryDisplayTitle = string.IsNullOrWhiteSpace(entry.Title)
                     ? entry.ToString()
                     : entry.Title;
+                    var entryMapLink = BuildEntryMapLink(entry);
                     var entryHasDetails = !string.IsNullOrWhiteSpace(entry.Details);
                     var entryHasMetadata = entry.Metadata?.HasContent == true;
                     var hasBooking = entryBooking is not null;
@@ -330,7 +383,17 @@
                             <div class="timeline-item-heading">
                                 <span class="timeline-item-icon bi @entry.ItemType.GetIconClass() segment-type-@entryTypeToken"
                                     aria-hidden="true"></span>
-                                <span class="timeline-item-title">@entryDisplayTitle</span>
+                                <span class="timeline-item-title">
+                                    @entryDisplayTitle
+                                    @if (!string.IsNullOrWhiteSpace(entryMapLink))
+                                    {
+                                        <a class="timeline-map-link" href="@entryMapLink" target="_blank" rel="noopener"
+                                            title="View on Google Maps">
+                                            <span class="bi bi-geo-alt" aria-hidden="true"></span>
+                                            <span class="visually-hidden">View on Google Maps</span>
+                                        </a>
+                                    }
+                                </span>
                             </div>
                             @if (canShowBookingCore)
                             {
@@ -505,6 +568,7 @@
         var entryDisplayTitle = string.IsNullOrWhiteSpace(block.Entry.Title)
         ? block.Entry.ToString()
         : block.Entry.Title;
+        var entryMapLink = BuildEntryMapLink(block.Entry);
         var entryHasDetails = !string.IsNullOrWhiteSpace(block.Entry.Details);
         var entryHasMetadata = block.Entry.Metadata?.HasContent == true;
         var hasBooking = entryBooking is not null;
@@ -557,7 +621,17 @@
                     <div class="timeline-item-heading">
                         <span class="timeline-item-icon bi @block.Entry.ItemType.GetIconClass() segment-type-@segmentType"
                             aria-hidden="true"></span>
-                        <span class="timeline-item-title">@entryDisplayTitle</span>
+                        <span class="timeline-item-title">
+                            @entryDisplayTitle
+                            @if (!string.IsNullOrWhiteSpace(entryMapLink))
+                            {
+                                <a class="timeline-map-link" href="@entryMapLink" target="_blank" rel="noopener"
+                                    title="View on Google Maps">
+                                    <span class="bi bi-geo-alt" aria-hidden="true"></span>
+                                    <span class="visually-hidden">View on Google Maps</span>
+                                </a>
+                            }
+                        </span>
                     </div>
                     @if (canShowBookingCore)
                     {
