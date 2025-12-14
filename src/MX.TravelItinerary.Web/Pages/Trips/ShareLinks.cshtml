@@ -86,7 +86,7 @@ else
                         </div>
 
                         <div class="d-flex flex-wrap gap-2">
-                            <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save settings" : "Create                           link")</button>
+                            <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save settings" : "Create                            link")</button>
                             @if (Model.IsEditing)
                             {
                                 <a class="btn btn-outline-secondary" asp-page="./ShareLinks" asp-route-tripId="@Model.TripId"
@@ -129,8 +129,10 @@ else
                                     <label class="form-label text-uppercase small">Public URL</label>
                                     <div class="input-group input-group-sm">
                                         <input type="text" class="form-control" value="@shareUrl" readonly data-share-link-input />
-                                        <button type="button" class="btn btn-outline-secondary" data-copy-link data-share-code="@link.ShareCode">Copy</button>
-                                        <a class="btn btn-outline-primary" href="@shareUrl" target="_blank" rel="noopener" data-open-share-link data-share-code="@link.ShareCode">Open</a>
+                                        <button type="button" class="btn btn-outline-secondary" data-copy-link
+                                            data-share-code="@link.ShareCode">Copy</button>
+                                        <a class="btn btn-outline-primary" href="@shareUrl" target="_blank" rel="noopener"
+                                            data-open-share-link data-share-code="@link.ShareCode">Open</a>
                                     </div>
                                 </div>
                                 <div class="d-flex flex-wrap gap-2 mb-3">

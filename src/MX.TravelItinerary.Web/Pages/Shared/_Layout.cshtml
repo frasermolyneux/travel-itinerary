@@ -3,8 +3,8 @@
 @{
     var aiClientConnection = Configuration["ApplicationInsights:ClientConnectionString"];
     var aiClientConnectionJson = string.IsNullOrWhiteSpace(aiClientConnection)
-        ? null
-        : JsonSerializer.Serialize(aiClientConnection);
+    ? null
+    : JsonSerializer.Serialize(aiClientConnection);
 }
 <!DOCTYPE html>
 <html lang="en">
