@@ -240,7 +240,10 @@ body {
 .segment-type-train,
 .segment-type-coach,
 .segment-type-ferry,
-.segment-type-taxi {
+.segment-type-taxi,
+.segment-type-privatecar,
+.segment-type-rentalcar,
+.segment-type-parking {
   --segment-accent: rgba(13, 110, 253, 0.16);
   --segment-border: #0d6efd;
 }

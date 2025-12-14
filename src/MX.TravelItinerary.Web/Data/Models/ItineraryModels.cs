@@ -24,32 +24,41 @@ public enum TimelineItemType
     [Display(Name = "Taxi")]
     Taxi = 4,
 
+    [Display(Name = "Private Car")]
+    PrivateCar = 5,
+
+    [Display(Name = "Rental Car")]
+    RentalCar = 6,
+
+    [Display(Name = "Parking")]
+    Parking = 7,
+
     [Display(Name = "Hotel")]
-    Hotel = 5,
+    Hotel = 8,
 
     [Display(Name = "Flat")]
-    Flat = 6,
+    Flat = 9,
 
     [Display(Name = "House")]
-    House = 7,
+    House = 10,
 
     [Display(Name = "Tour")]
-    Tour = 8,
+    Tour = 11,
 
     [Display(Name = "Museum")]
-    Museum = 9,
+    Museum = 12,
 
     [Display(Name = "Park")]
-    Park = 10,
+    Park = 13,
 
     [Display(Name = "Dining")]
-    Dining = 11,
+    Dining = 14,
 
     [Display(Name = "Note")]
-    Note = 12,
+    Note = 15,
 
     [Display(Name = "Other")]
-    Other = 13
+    Other = 16
 }
 
 public sealed record Trip(
@@ -250,6 +259,9 @@ public static class ModelEnumExtensions
             TimelineItemType.Coach => "bi-bus-front",
             TimelineItemType.Ferry => "bi-tsunami",
             TimelineItemType.Taxi => "bi-taxi-front",
+            TimelineItemType.PrivateCar => "bi-car-front",
+            TimelineItemType.RentalCar => "bi-steering-wheel",
+            TimelineItemType.Parking => "bi-parking",
             TimelineItemType.Hotel => "bi-buildings",
             TimelineItemType.Flat => "bi-building",
             TimelineItemType.House => "bi-house-heart",
