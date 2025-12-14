@@ -188,7 +188,7 @@ public sealed class DetailsModel : PageModel
         var userId = GetUserId();
         await _repository.DeleteBookingAsync(userId, TripId, bookingId, cancellationToken);
         StatusMessage = "Booking confirmation deleted.";
-            return RedirectToTripPage();
+        return RedirectToTripPage();
     }
 
     private async Task<bool> LoadTripAsync(CancellationToken cancellationToken)

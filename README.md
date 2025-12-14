@@ -52,15 +52,15 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 
 ### Trips
 
-| Column                  | Type / Example              | Notes                                       |
-| ----------------------- | --------------------------- | ------------------------------------------- |
-| `PartitionKey`          | `UserId`                    | Groups trips per owner (user or household). |
-| `RowKey`                | `TripId` (GUID)             | Primary identifier.                         |
-| `Name`                  | `"India & Sri Lanka 2026"`  | Display title.                              |
+| Column                  | Type / Example              | Notes                                               |
+| ----------------------- | --------------------------- | --------------------------------------------------- |
+| `PartitionKey`          | `UserId`                    | Groups trips per owner (user or household).         |
+| `RowKey`                | `TripId` (GUID)             | Primary identifier.                                 |
+| `Name`                  | `"India & Sri Lanka 2026"`  | Display title.                                      |
 | `Slug`                  | `"india-sri-lanka-2026"`    | Friendly URL segment for the `/trips/<slug>` route. |
-| `StartDate` / `EndDate` | `2026-01-15` / `2026-02-03` | Trip span.                                  |
-| `HomeTimeZone`          | `"Europe/London"`           | Default time zone for itinerary rendering.  |
-| `DefaultCurrency`       | `"GBP"`                     | Applied when an entry omits currency.       |
+| `StartDate` / `EndDate` | `2026-01-15` / `2026-02-03` | Trip span.                                          |
+| `HomeTimeZone`          | `"Europe/London"`           | Default time zone for itinerary rendering.          |
+| `DefaultCurrency`       | `"GBP"`                     | Applied when an entry omits currency.               |
 
 ### ItineraryEntries
 
