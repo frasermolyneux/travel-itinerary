@@ -156,8 +156,48 @@ body {
   flex-shrink: 0;
 }
 
+
 .timeline-item-title {
   font-weight: 600;
+}
+
+.booking-pill {
+  border: 1px solid rgba(13, 110, 253, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: rgba(13, 110, 253, 0.06);
+  margin-top: 0.65rem;
+}
+
+.booking-pill-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--segment-border, #0d6efd);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+
+.booking-pill-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.booking-pill-label {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.booking-pill-meta {
+  font-size: 0.85rem;
+  color: var(--bs-secondary-color);
 }
 
 .timeline-actions {
@@ -208,9 +248,48 @@ body {
   margin: 0 0 0.75rem;
 }
 
-.booking-indicator {
-  font-size: 1rem;
-  margin-left: 0.35rem;
+.booking-summary {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: #f8fafc;
+  margin-bottom: 0.75rem;
+}
+
+.booking-summary-title {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--bs-secondary-color);
+  margin-bottom: 0.5rem;
+}
+
+.booking-summary-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.booking-summary-list dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+  margin-bottom: 0.15rem;
+}
+
+.booking-summary-list dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.booking-summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 
 .timeline-segment {
