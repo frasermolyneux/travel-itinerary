@@ -30,6 +30,13 @@
             </div>
         </div>
         <div class="timeline-content" style="grid-row:@day.RowLine;" @Html.Raw(dayDataAttributes)>
+            <div class="timeline-day-mobile-header">
+                <span class="timeline-day-mobile-dot" aria-hidden="true"></span>
+                <div>
+                    <div class="timeline-day-label">@day.Date.ToString("MMM dd")</div>
+                    <div class="timeline-day-weekday">@day.Date.ToString("dddd")</div>
+                </div>
+            </div>
             @if (day.Entries.Count == 0)
             {
                 <div class="timeline-empty text-muted">No entries for this day.</div>
