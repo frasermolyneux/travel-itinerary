@@ -276,14 +276,23 @@
         return stayCategoryTypes.some((type) => type.toLowerCase() === normalized);
     }
 
-    function toggleBookingStaySection(itemType) {
-        const section = document.querySelector('[data-booking-stay-section]');
+    function toggleStaySection(section, itemType) {
         if (!section) {
             return;
         }
 
         const shouldShow = isStayItemType(itemType);
         section.classList.toggle('d-none', !shouldShow);
+    }
+
+    function toggleBookingStaySection(itemType) {
+        const section = document.querySelector('[data-booking-stay-section]');
+        toggleStaySection(section, itemType);
+    }
+
+    function toggleBookingDetailStaySection(itemType) {
+        const section = document.querySelector('[data-booking-detail-stay-section]');
+        toggleStaySection(section, itemType);
     }
 
     function setEntryMetadataFields(dataset) {
@@ -383,6 +392,7 @@
         panel.dataset.bookingCancellation = dataset.bookingCancellation ?? '';
         panel.dataset.bookingDetails = dataset.bookingDetails ?? '';
         panel.dataset.bookingConfirmationUrl = dataset.bookingConfirmationUrl ?? '';
+        toggleBookingDetailStaySection(dataset.bookingType ?? '');
 
         const deleteInput = document.querySelector('#bookingDetailDeleteForm input[name="bookingId"]');
         if (deleteInput) {
