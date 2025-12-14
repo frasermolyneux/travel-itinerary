@@ -609,17 +609,17 @@ body {
   text-transform: uppercase;
   color: var(--bs-secondary-color);
 
-.booking-detail-flag {
-  font-weight: 600;
-}
+  .booking-detail-flag {
+    font-weight: 600;
+  }
 
-.booking-detail-flag--positive {
-  color: #198754;
-}
+  .booking-detail-flag--positive {
+    color: #198754;
+  }
 
-.booking-detail-flag--negative {
-  color: #dc3545;
-}
+  .booking-detail-flag--negative {
+    color: #dc3545;
+  }
 }
 
 .booking-detail-notes {
