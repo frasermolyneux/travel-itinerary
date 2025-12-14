@@ -316,6 +316,18 @@ body {
   text-transform: none;
 }
 
+.booking-pill-chip--positive {
+  border-color: rgba(25, 135, 84, 0.45);
+  background: #e7f6ef;
+  color: #0f5132;
+}
+
+.booking-pill-chip--negative {
+  border-color: rgba(220, 53, 69, 0.4);
+  background: #fdecec;
+  color: #842029;
+}
+
 .timeline-actions {
   display: flex;
   flex-wrap: wrap;
@@ -596,6 +608,18 @@ body {
   font-size: 0.85rem;
   text-transform: uppercase;
   color: var(--bs-secondary-color);
+
+.booking-detail-flag {
+  font-weight: 600;
+}
+
+.booking-detail-flag--positive {
+  color: #198754;
+}
+
+.booking-detail-flag--negative {
+  color: #dc3545;
+}
 }
 
 .booking-detail-notes {

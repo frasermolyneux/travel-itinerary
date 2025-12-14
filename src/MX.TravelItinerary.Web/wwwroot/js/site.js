@@ -398,6 +398,7 @@
         setBookingDetail(panel, 'includes', formatBookingIncludes(dataset.bookingIncludes));
         setBookingDetail(panel, 'refundable', formatBooleanFlag(dataset.bookingRefundable));
         setBookingDetail(panel, 'paid', formatBooleanFlag(dataset.bookingPaid));
+        setBookingFlagState(panel, 'paid', dataset.bookingPaid);
         const cancelByText = formatCancellationByDate(dataset.bookingCancellationBy);
         setBookingDetail(panel, 'cancelby', cancelByText);
         setBookingDetail(panel, 'cancellation', dataset.bookingCancellation || '—');
@@ -537,6 +538,21 @@
         }
 
         target.textContent = value && value.trim().length > 0 ? value : '—';
+    }
+
+    function setBookingFlagState(panel, name, rawValue) {
+        const target = panel.querySelector(`[data-booking-detail="${name}"]`);
+        if (!target) {
+            return;
+        }
+
+        target.classList.remove('booking-detail-flag--positive', 'booking-detail-flag--negative');
+
+        if (rawValue === 'true') {
+            target.classList.add('booking-detail-flag--positive');
+        } else if (rawValue === 'false') {
+            target.classList.add('booking-detail-flag--negative');
+        }
     }
 
     function setBookingLink(panel, url) {

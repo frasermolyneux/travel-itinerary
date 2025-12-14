@@ -13,13 +13,20 @@
 }
 
 @functions {
-    private static IReadOnlyList<string> BuildBookingQuickFacts(Booking booking)
+    private sealed record BookingQuickFact(string Text, string? Variant = null);
+
+    private static IReadOnlyList<BookingQuickFact> BuildBookingQuickFacts(Booking booking)
     {
-        var facts = new List<string>();
+        var facts = new List<BookingQuickFact>();
+
+        if (booking.IsPaid is bool isPaid)
+        {
+            facts.Add(new BookingQuickFact(isPaid ? "Paid" : "Unpaid", isPaid ? "positive" : "negative"));
+        }
 
         if (booking.CancellationByDate is { } cancelBy)
         {
-            facts.Add($"Cancel by {cancelBy:MMM dd}");
+            facts.Add(new BookingQuickFact($"Cancel by {cancelBy:MMM dd}"));
         }
 
         var stay = booking.Metadata?.Stay;
@@ -27,24 +34,24 @@
         {
             if (!string.IsNullOrWhiteSpace(stay.CheckInTime))
             {
-                facts.Add($"{stay.CheckInTime} check-in");
+                facts.Add(new BookingQuickFact($"{stay.CheckInTime} check-in"));
             }
 
             if (!string.IsNullOrWhiteSpace(stay.CheckOutTime))
             {
-                facts.Add($"{stay.CheckOutTime} check-out");
+                facts.Add(new BookingQuickFact($"{stay.CheckOutTime} check-out"));
             }
 
             if (!string.IsNullOrWhiteSpace(stay.RoomType))
             {
-                facts.Add(stay.RoomType);
+                facts.Add(new BookingQuickFact(stay.RoomType));
             }
 
             if (stay.Includes is { Count: > 0 } includes)
             {
                 foreach (var include in includes.Where(value => !string.IsNullOrWhiteSpace(value)))
                 {
-                    facts.Add(include.Trim());
+                    facts.Add(new BookingQuickFact(include.Trim()));
                 }
             }
         }
@@ -106,7 +113,7 @@
                     }
                     var bookingCancelByValue = entryBooking?.CancellationByDate?.ToString("yyyy-MM-dd") ?? string.Empty;
                     string? bookingMeta = null;
-                    IReadOnlyList<string> bookingQuickFacts = Array.Empty<string>();
+                    IReadOnlyList<BookingQuickFact> bookingQuickFacts = Array.Empty<BookingQuickFact>();
                     if (canShowBookingInfo)
                     {
                         var booking = entryBooking!;
@@ -157,7 +164,10 @@
                                     <div class="booking-pill-facts">
                                         @foreach (var fact in bookingQuickFacts)
                                         {
-                                            <span class="booking-pill-chip">@fact</span>
+                                            var chipClass = string.IsNullOrWhiteSpace(fact.Variant)
+                                            ? "booking-pill-chip"
+                                            : $"booking-pill-chip booking-pill-chip--{fact.Variant}";
+                                            <span class="@chipClass">@fact.Text</span>
                                         }
                                     </div>
                                 }
@@ -272,7 +282,7 @@
                     }
                     var bookingCancelByValue = entryBooking?.CancellationByDate?.ToString("yyyy-MM-dd") ?? string.Empty;
                     string? bookingMeta = null;
-                    IReadOnlyList<string> bookingQuickFacts = Array.Empty<string>();
+                    IReadOnlyList<BookingQuickFact> bookingQuickFacts = Array.Empty<BookingQuickFact>();
                     if (canShowBookingInfo)
                     {
                         var booking = entryBooking!;
@@ -326,7 +336,10 @@
                                     <div class="booking-pill-facts">
                                         @foreach (var fact in bookingQuickFacts)
                                         {
-                                            <span class="booking-pill-chip">@fact</span>
+                                            var chipClass = string.IsNullOrWhiteSpace(fact.Variant)
+                                            ? "booking-pill-chip"
+                                            : $"booking-pill-chip booking-pill-chip--{fact.Variant}";
+                                            <span class="@chipClass">@fact.Text</span>
                                         }
                                     </div>
                                 }
@@ -484,7 +497,7 @@
         }
         var bookingCancelByValue = entryBooking?.CancellationByDate?.ToString("yyyy-MM-dd") ?? string.Empty;
         string? bookingMeta = null;
-        IReadOnlyList<string> bookingQuickFacts = Array.Empty<string>();
+        IReadOnlyList<BookingQuickFact> bookingQuickFacts = Array.Empty<BookingQuickFact>();
         if (canShowBookingInfo)
         {
             var booking = entryBooking!;
@@ -539,7 +552,10 @@
                             <div class="booking-pill-facts">
                                 @foreach (var fact in bookingQuickFacts)
                                 {
-                                    <span class="booking-pill-chip">@fact</span>
+                                    var chipClass = string.IsNullOrWhiteSpace(fact.Variant)
+                                    ? "booking-pill-chip"
+                                    : $"booking-pill-chip booking-pill-chip--{fact.Variant}";
+                                    <span class="@chipClass">@fact.Text</span>
                                 }
                             </div>
                         }
