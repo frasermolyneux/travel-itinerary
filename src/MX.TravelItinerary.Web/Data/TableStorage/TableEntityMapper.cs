@@ -59,6 +59,7 @@ internal static class TableEntityMapper
             IsRefundable: entity.GetBoolean("IsRefundable", defaultValue: false),
             IsPaid: entity.GetBoolean("IsPaid", defaultValue: false),
             CancellationPolicy: entity.GetString("CancellationPolicy"),
+            CancellationByDate: entity.GetDateOnly("CancellationByDate"),
             ConfirmationDetails: entity.GetString("ConfirmationDetails"),
             ConfirmationUrl: TryGetUri(entity.GetString("ConfirmationUrl")),
             Metadata: GetBookingMetadata(entity));

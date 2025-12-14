@@ -226,6 +226,18 @@ else
                 <label asp-for="BookingInput.IsRefundable" class="form-check-label"></label>
             </div>
 
+            @{
+                var showRefundableSection = Model.BookingInput.IsRefundable;
+                var refundableSectionClasses = showRefundableSection ? "mb-3" : "mb-3 d-none";
+            }
+            <div class="@refundableSectionClasses" data-booking-refundable-section>
+                <label asp-for="BookingInput.CancellationByDate" class="form-label"></label>
+                <input asp-for="BookingInput.CancellationByDate" class="form-control" type="date"
+                    asp-format="{0:yyyy-MM-dd}" />
+                <span asp-validation-for="BookingInput.CancellationByDate" class="text-danger"></span>
+                <div class="form-text">Let yourself know when the refund window closes.</div>
+            </div>
+
             <div class="form-check mb-3">
                 <input asp-for="BookingInput.IsPaid" class="form-check-input" type="checkbox" value="true" />
                 <label asp-for="BookingInput.IsPaid" class="form-check-label"></label>
@@ -323,6 +335,8 @@ else
             <dd class="col-sm-8" data-booking-detail="refundable">—</dd>
             <dt class="col-sm-4">Paid</dt>
             <dd class="col-sm-8" data-booking-detail="paid">—</dd>
+            <dt class="col-sm-4">Cancel by</dt>
+            <dd class="col-sm-8" data-booking-detail="cancelby">—</dd>
             <dt class="col-sm-4">Cancellation</dt>
             <dd class="col-sm-8" data-booking-detail="cancellation">—</dd>
             <dt class="col-sm-4">Manage booking</dt>

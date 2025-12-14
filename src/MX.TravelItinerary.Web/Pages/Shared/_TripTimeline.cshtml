@@ -62,6 +62,7 @@
                         var sanitizedIncludes = stayIncludes.Where(value => !string.IsNullOrWhiteSpace(value)).ToArray();
                         bookingIncludesValue = sanitizedIncludes.Length > 0 ? string.Join("|", sanitizedIncludes) : string.Empty;
                     }
+                    var bookingCancelByValue = entryBooking?.CancellationByDate?.ToString("yyyy-MM-dd") ?? string.Empty;
                     string? bookingMeta = null;
                     if (canShowBookingInfo)
                     {
@@ -142,6 +143,11 @@
                                                     }
                                                 </dd>
                                             }
+                                            @if (entryBooking.CancellationByDate is { } cancelByMobile)
+                                            {
+                                                <dt>Cancel by</dt>
+                                                <dd>@cancelByMobile.ToString("MMM dd, yyyy")</dd>
+                                            }
                                             @if (!string.IsNullOrWhiteSpace(entryBooking.CancellationPolicy))
                                             {
                                                 <dt>Cancellation</dt>
@@ -163,6 +169,7 @@
                                                 data-booking-refundable="@(entryBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
                                                 data-booking-paid="@(entryBooking.IsPaid?.ToString().ToLowerInvariant() ?? string.Empty)"
                                                 data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
+                                                data-booking-cancellation-by="@bookingCancelByValue"
                                                 data-booking-details="@(entryBooking.ConfirmationDetails ?? string.Empty)"
                                                 data-booking-confirmation-url="@(entryBooking.ConfirmationUrl?.ToString() ?? string.Empty)"
                                                 data-booking-parent-label="@entryDisplayTitle" data-booking-parent-type="entry"
@@ -208,6 +215,7 @@
                         var sanitizedIncludes = stayIncludes.Where(value => !string.IsNullOrWhiteSpace(value)).ToArray();
                         bookingIncludesValue = sanitizedIncludes.Length > 0 ? string.Join("|", sanitizedIncludes) : string.Empty;
                     }
+                    var bookingCancelByValue = entryBooking?.CancellationByDate?.ToString("yyyy-MM-dd") ?? string.Empty;
                     string? bookingMeta = null;
                     if (canShowBookingInfo)
                     {
@@ -296,6 +304,11 @@
                                                     }
                                                 </dd>
                                             }
+                                            @if (entryBooking.CancellationByDate is { } cancelByDesktop)
+                                            {
+                                                <dt>Cancel by</dt>
+                                                <dd>@cancelByDesktop.ToString("MMM dd, yyyy")</dd>
+                                            }
                                             @if (!string.IsNullOrWhiteSpace(entryBooking.CancellationPolicy))
                                             {
                                                 <dt>Cancellation</dt>
@@ -317,6 +330,7 @@
                                                 data-booking-refundable="@(entryBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
                                                 data-booking-paid="@(entryBooking.IsPaid?.ToString().ToLowerInvariant() ?? string.Empty)"
                                                 data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
+                                                data-booking-cancellation-by="@bookingCancelByValue"
                                                 data-booking-details="@(entryBooking.ConfirmationDetails ?? string.Empty)"
                                                 data-booking-confirmation-url="@(entryBooking.ConfirmationUrl?.ToString() ?? string.Empty)"
                                                 data-booking-parent-label="@entryDisplayTitle" data-booking-parent-type="entry"
@@ -400,6 +414,7 @@
             var sanitizedIncludes = stayIncludes.Where(value => !string.IsNullOrWhiteSpace(value)).ToArray();
             bookingIncludesValue = sanitizedIncludes.Length > 0 ? string.Join("|", sanitizedIncludes) : string.Empty;
         }
+        var bookingCancelByValue = entryBooking?.CancellationByDate?.ToString("yyyy-MM-dd") ?? string.Empty;
         string? bookingMeta = null;
         if (canShowBookingInfo)
         {
@@ -484,6 +499,11 @@
                                             }
                                         </dd>
                                     }
+                                    @if (entryBooking.CancellationByDate is { } cancelBySpan)
+                                    {
+                                        <dt>Cancel by</dt>
+                                        <dd>@cancelBySpan.ToString("MMM dd, yyyy")</dd>
+                                    }
                                     @if (!string.IsNullOrWhiteSpace(entryBooking.CancellationPolicy))
                                     {
                                         <dt>Cancellation</dt>
@@ -505,6 +525,7 @@
                                         data-booking-refundable="@(entryBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
                                         data-booking-paid="@(entryBooking.IsPaid?.ToString().ToLowerInvariant() ?? string.Empty)"
                                         data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
+                                        data-booking-cancellation-by="@bookingCancelByValue"
                                         data-booking-details="@(entryBooking.ConfirmationDetails ?? string.Empty)"
                                         data-booking-confirmation-url="@(entryBooking.ConfirmationUrl?.ToString() ?? string.Empty)"
                                         data-booking-parent-label="@entryDisplayTitle" data-booking-parent-type="entry"

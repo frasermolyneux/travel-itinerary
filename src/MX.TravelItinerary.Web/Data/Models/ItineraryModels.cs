@@ -140,6 +140,7 @@ public sealed record Booking(
     bool? IsRefundable,
     bool? IsPaid,
     string? CancellationPolicy,
+    DateOnly? CancellationByDate,
     string? ConfirmationDetails,
     Uri? ConfirmationUrl,
     BookingMetadata? Metadata);
@@ -154,6 +155,7 @@ public sealed record BookingMutation(
     bool? IsRefundable,
     bool? IsPaid,
     string? CancellationPolicy,
+    DateOnly? CancellationByDate,
     string? ConfirmationDetails,
     Uri? ConfirmationUrl,
     BookingMetadata? Metadata);

@@ -787,6 +787,8 @@ public sealed class TableItineraryRepository : IItineraryRepository
         SetOrRemove(entity, "IsRefundable", mutation.IsRefundable);
         SetOrRemove(entity, "IsPaid", mutation.IsPaid);
         SetOrRemove(entity, "CancellationPolicy", mutation.CancellationPolicy);
+        var cancellationByDate = mutation.CancellationByDate?.ToString(DateFormat, CultureInfo.InvariantCulture);
+        SetOrRemove(entity, "CancellationByDate", cancellationByDate);
         SetOrRemove(entity, "ConfirmationDetails", mutation.ConfirmationDetails);
         SetOrRemove(entity, "ConfirmationUrl", mutation.ConfirmationUrl?.ToString());
         SetBookingMetadata(entity, mutation.Metadata);

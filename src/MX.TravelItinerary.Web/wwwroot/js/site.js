@@ -28,6 +28,7 @@
         initMetadataSections();
         initTimelineReorder();
         initCurrencyPicker();
+        initBookingRefundableToggle();
         reopenOffcanvasOnValidation();
         const initialItemType = document.getElementById('BookingInput_ItemType')?.value || '';
         toggleBookingStaySection(initialItemType);
@@ -107,7 +108,8 @@
                     title: button.dataset.entryTitle || button.dataset.segmentTitle || '',
                     defaultCurrency: button.dataset.defaultCurrency || tripDefaultCurrency,
                     itemType: button.dataset.entryType,
-                    includes: ''
+                    includes: '',
+                    cancelBy: ''
                 });
             });
         });
@@ -140,6 +142,7 @@
                 refundable: detailPane.dataset.bookingRefundable,
                 paid: detailPane.dataset.bookingPaid,
                 cancellation: detailPane.dataset.bookingCancellation,
+                cancelBy: detailPane.dataset.bookingCancellationBy,
                 details: detailPane.dataset.bookingDetails,
                 confirmationUrl: detailPane.dataset.bookingConfirmationUrl,
                 checkIn: detailPane.dataset.bookingCheckIn,
@@ -211,6 +214,7 @@
         setInputValue('BookingInput_Cost', '');
         setInputValue('BookingInput_Currency', '');
         setInputValue('BookingInput_CancellationPolicy', '');
+        setInputValue('BookingInput_CancellationByDate', '');
         setInputValue('BookingInput_ConfirmationDetails', '');
         setInputValue('BookingInput_ConfirmationUrl', '');
         setInputValue('BookingInput_StayCheckInTime', '');
@@ -226,6 +230,7 @@
         if (refundable) {
             refundable.checked = false;
         }
+        toggleBookingRefundableSection(false);
 
         const paid = document.getElementById('BookingInput_IsPaid');
         if (paid) {
@@ -295,6 +300,28 @@
         toggleStaySection(section, itemType);
     }
 
+    function initBookingRefundableToggle() {
+        const checkbox = document.getElementById('BookingInput_IsRefundable');
+        if (!checkbox) {
+            return;
+        }
+
+        checkbox.addEventListener('change', () => {
+            toggleBookingRefundableSection(checkbox.checked);
+        });
+
+        toggleBookingRefundableSection(checkbox.checked);
+    }
+
+    function toggleBookingRefundableSection(isRefundable) {
+        const section = document.querySelector('[data-booking-refundable-section]');
+        if (!section) {
+            return;
+        }
+
+        section.classList.toggle('d-none', !isRefundable);
+    }
+
     function setEntryMetadataFields(dataset) {
         setInputValue('EntryInput_FlightMetadata_Airline', dataset.entryFlightAirline ?? '');
         setInputValue('EntryInput_FlightMetadata_FlightNumber', dataset.entryFlightNumber ?? '');
@@ -326,6 +353,7 @@
         const currencyValue = currencyValueRaw ? currencyValueRaw.toString().trim().toUpperCase() : '';
         setInputValue('BookingInput_Currency', currencyValue);
         setInputValue('BookingInput_CancellationPolicy', options.cancellation ?? '');
+        setInputValue('BookingInput_CancellationByDate', options.cancelBy ?? '');
         setInputValue('BookingInput_ConfirmationDetails', options.details ?? '');
         setInputValue('BookingInput_ConfirmationUrl', options.confirmationUrl ?? '');
         setBookingCategoryDisplay(options.categoryLabel || 'Linked itinerary entry');
@@ -340,6 +368,7 @@
         const refundable = document.getElementById('BookingInput_IsRefundable');
         if (refundable) {
             refundable.checked = options.refundable === 'true';
+            toggleBookingRefundableSection(refundable.checked);
         }
 
         const paid = document.getElementById('BookingInput_IsPaid');
@@ -369,6 +398,8 @@
         setBookingDetail(panel, 'includes', formatBookingIncludes(dataset.bookingIncludes));
         setBookingDetail(panel, 'refundable', formatBooleanFlag(dataset.bookingRefundable));
         setBookingDetail(panel, 'paid', formatBooleanFlag(dataset.bookingPaid));
+        const cancelByText = formatCancellationByDate(dataset.bookingCancellationBy);
+        setBookingDetail(panel, 'cancelby', cancelByText);
         setBookingDetail(panel, 'cancellation', dataset.bookingCancellation || '—');
         setBookingDetail(panel, 'notes', dataset.bookingDetails || '—');
         setBookingLink(panel, dataset.bookingConfirmationUrl);
@@ -389,6 +420,7 @@
         panel.dataset.bookingIncludes = dataset.bookingIncludes ?? '';
         panel.dataset.bookingRefundable = dataset.bookingRefundable ?? '';
         panel.dataset.bookingPaid = dataset.bookingPaid ?? '';
+        panel.dataset.bookingCancellationBy = dataset.bookingCancellationBy ?? '';
         panel.dataset.bookingCancellation = dataset.bookingCancellation ?? '';
         panel.dataset.bookingDetails = dataset.bookingDetails ?? '';
         panel.dataset.bookingConfirmationUrl = dataset.bookingConfirmationUrl ?? '';
@@ -538,6 +570,19 @@
         }
 
         return amount;
+    }
+
+    function formatCancellationByDate(value) {
+        if (!value || value.trim().length === 0) {
+            return '';
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return value;
+        }
+
+        return parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
     function parseBookingIncludes(value) {

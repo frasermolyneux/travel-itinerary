@@ -350,6 +350,11 @@ public sealed class DetailsModel : PageModel
         {
             ModelState.AddModelError("BookingInput.EntryId", "Link the booking to a timeline entry.");
         }
+
+        if (BookingInput.IsRefundable && BookingInput.CancellationByDate is null)
+        {
+            ModelState.AddModelError("BookingInput.CancellationByDate", "Enter a cancel-by date for refundable bookings.");
+        }
     }
 
     private IActionResult RedirectToTripPage()
@@ -554,6 +559,10 @@ public sealed class DetailsModel : PageModel
         [StringLength(500)]
         public string? CancellationPolicy { get; set; }
 
+        [Display(Name = "Cancel by date")]
+        [DataType(DataType.Date)]
+        public DateOnly? CancellationByDate { get; set; }
+
         [Display(Name = "Confirmation details")]
         [DataType(DataType.MultilineText)]
         public string? ConfirmationDetails { get; set; }
@@ -589,6 +598,7 @@ public sealed class DetailsModel : PageModel
                 IsRefundable,
                 IsPaid,
                 Normalize(CancellationPolicy),
+                CancellationByDate,
                 string.IsNullOrWhiteSpace(ConfirmationDetails) ? null : ConfirmationDetails.Trim(),
                 ParseUri(ConfirmationUrl),
                 BuildMetadata());
