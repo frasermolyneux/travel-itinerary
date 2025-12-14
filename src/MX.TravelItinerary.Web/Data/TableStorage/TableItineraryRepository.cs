@@ -858,6 +858,32 @@ public sealed class TableItineraryRepository : IItineraryRepository
                 .ToList();
         }
 
+        if (shareLink?.ShowBookingConfirmations == false)
+        {
+            bookings = bookings
+                .Select(booking => booking with
+                {
+                    Vendor = null,
+                    Reference = null,
+                    Cost = null,
+                    Currency = null,
+                    IsRefundable = null,
+                    IsPaid = null,
+                    CancellationPolicy = null,
+                    CancellationByDate = null,
+                    ConfirmationDetails = null,
+                    ConfirmationUrl = null
+                })
+                .ToList();
+        }
+
+        if (shareLink?.ShowBookingMetadata == false)
+        {
+            bookings = bookings
+                .Select(booking => booking with { Metadata = null })
+                .ToList();
+        }
+
         if (shareLink?.MaskBookings == true)
         {
             bookings = new List<Booking>();
@@ -990,6 +1016,8 @@ public sealed class TableItineraryRepository : IItineraryRepository
         SetOrRemove(entity, "ExpiresOn", mutation.ExpiresOn);
         entity["MaskBookings"] = mutation.MaskBookings;
         entity["IncludeCost"] = mutation.IncludeCost;
+        entity["ShowBookingConfirmations"] = mutation.ShowBookingConfirmations;
+        entity["ShowBookingMetadata"] = mutation.ShowBookingMetadata;
         SetOrRemove(entity, "Notes", mutation.Notes);
     }
 

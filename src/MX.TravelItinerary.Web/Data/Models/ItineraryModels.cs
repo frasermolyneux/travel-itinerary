@@ -178,12 +178,16 @@ public sealed record ShareLink(
     DateTimeOffset? ExpiresOn,
     bool MaskBookings,
     bool IncludeCost,
+    bool ShowBookingConfirmations,
+    bool ShowBookingMetadata,
     string? Notes);
 
 public sealed record ShareLinkMutation(
     DateTimeOffset? ExpiresOn,
     bool MaskBookings,
     bool IncludeCost,
+    bool ShowBookingConfirmations,
+    bool ShowBookingMetadata,
     string? Notes);
 
 public sealed record TripDetails(

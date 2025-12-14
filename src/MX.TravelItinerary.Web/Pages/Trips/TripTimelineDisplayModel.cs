@@ -14,7 +14,9 @@ public sealed class TripTimelineDisplayModel
         bool allowBookingCreation = false,
         bool allowBookingViewing = false,
         bool showEmptyStateMessage = true,
-        string? emptyStateMessage = null)
+        string? emptyStateMessage = null,
+        bool showBookingConfirmations = true,
+        bool showBookingMetadata = true)
     {
         Trip = trip ?? throw new ArgumentNullException(nameof(trip));
         Timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
@@ -27,6 +29,8 @@ public sealed class TripTimelineDisplayModel
         EmptyStateMessage = string.IsNullOrWhiteSpace(emptyStateMessage)
             ? "No itinerary entries yet. Use the quick actions to start planning this trip."
             : emptyStateMessage;
+        ShowBookingConfirmations = showBookingConfirmations;
+        ShowBookingMetadata = showBookingMetadata;
     }
 
     public Trip Trip { get; }
@@ -46,6 +50,10 @@ public sealed class TripTimelineDisplayModel
     public bool ShowEmptyStateMessage { get; }
 
     public string EmptyStateMessage { get; }
+
+    public bool ShowBookingConfirmations { get; }
+
+    public bool ShowBookingMetadata { get; }
 
     public Booking? GetBookingForEntry(string entryId)
         => string.IsNullOrWhiteSpace(entryId) ? null : BookingSelector(entryId);

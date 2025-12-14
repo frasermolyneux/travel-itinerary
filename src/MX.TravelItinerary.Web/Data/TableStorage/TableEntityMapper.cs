@@ -76,6 +76,8 @@ internal static class TableEntityMapper
             ExpiresOn: entity.GetDateTimeOffset("ExpiresOn"),
             MaskBookings: entity.GetBoolean("MaskBookings", defaultValue: false),
             IncludeCost: entity.GetBoolean("IncludeCost", defaultValue: true),
+            ShowBookingConfirmations: entity.GetBoolean("ShowBookingConfirmations", defaultValue: true),
+            ShowBookingMetadata: entity.GetBoolean("ShowBookingMetadata", defaultValue: true),
             Notes: entity.GetString("Notes"));
     }
 

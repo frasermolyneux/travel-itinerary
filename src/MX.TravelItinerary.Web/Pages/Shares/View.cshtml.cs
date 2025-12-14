@@ -45,6 +45,8 @@ public sealed class ViewModel : PageModel
             return null;
         }
 
+        var shareLink = TripDetails.ShareLink;
+
         return new TripTimelineDisplayModel(
             TripDetails.Trip,
             Timeline,
@@ -53,7 +55,9 @@ public sealed class ViewModel : PageModel
             allowBookingCreation: false,
             allowBookingViewing: true,
             showEmptyStateMessage: true,
-            emptyStateMessage: "No shared plans yet.");
+            emptyStateMessage: "No shared plans yet.",
+            showBookingConfirmations: shareLink?.ShowBookingConfirmations ?? true,
+            showBookingMetadata: shareLink?.ShowBookingMetadata ?? true);
     }
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)

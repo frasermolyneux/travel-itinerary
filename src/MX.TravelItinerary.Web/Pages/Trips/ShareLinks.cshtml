@@ -78,6 +78,18 @@ else
                             <div class="form-text">Toggle to remove payment info and confirmation links.</div>
                         </div>
 
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="Input.ShowBookingConfirmations" class="form-check-input" type="checkbox" />
+                            <label asp-for="Input.ShowBookingConfirmations" class="form-check-label"></label>
+                            <div class="form-text">When disabled, confirmation codes, cancellation policies, and booking links stay hidden.</div>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="Input.ShowBookingMetadata" class="form-check-input" type="checkbox" />
+                            <label asp-for="Input.ShowBookingMetadata" class="form-check-label"></label>
+                            <div class="form-text">Controls stay-specific details such as room type, check-in/out, and included perks.</div>
+                        </div>
+
                         <div class="mb-3">
                             <label asp-for="Input.Notes" class="form-label"></label>
                             <textarea asp-for="Input.Notes" class="form-control" rows="3"
@@ -141,6 +153,12 @@ else
                                     </span>
                                     <span class="badge @(link.IncludeCost ? "text-bg-light text-dark" : "text-bg-warning")">
                                         @(link.IncludeCost ? "Costs visible" : "Costs hidden")
+                                    </span>
+                                    <span class="badge @(link.ShowBookingConfirmations ? "text-bg-light text-dark" : "text-bg-warning")">
+                                        @(link.ShowBookingConfirmations ? "Confirmations visible" : "Confirmations hidden")
+                                    </span>
+                                    <span class="badge @(link.ShowBookingMetadata ? "text-bg-light text-dark" : "text-bg-warning")">
+                                        @(link.ShowBookingMetadata ? "Metadata visible" : "Metadata hidden")
                                     </span>
                                     @if (!string.IsNullOrWhiteSpace(link.Notes))
                                     {

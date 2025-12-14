@@ -202,6 +202,12 @@ public sealed class ShareLinksModel : PageModel
         [Display(Name = "Show booking cost")]
         public bool IncludeCost { get; set; } = true;
 
+        [Display(Name = "Show booking confirmations")]
+        public bool ShowBookingConfirmations { get; set; } = true;
+
+        [Display(Name = "Show booking metadata")]
+        public bool ShowBookingMetadata { get; set; } = true;
+
         [StringLength(500)]
         public string? Notes { get; set; }
 
@@ -218,6 +224,8 @@ public sealed class ShareLinksModel : PageModel
                 expires,
                 MaskBookings,
                 IncludeCost,
+                ShowBookingConfirmations,
+                ShowBookingMetadata,
                 Normalize(Notes));
         }
 
@@ -229,6 +237,8 @@ public sealed class ShareLinksModel : PageModel
                 ExpiresOn = link.ExpiresOn?.LocalDateTime,
                 MaskBookings = link.MaskBookings,
                 IncludeCost = link.IncludeCost,
+                ShowBookingConfirmations = link.ShowBookingConfirmations,
+                ShowBookingMetadata = link.ShowBookingMetadata,
                 Notes = link.Notes
             };
 
