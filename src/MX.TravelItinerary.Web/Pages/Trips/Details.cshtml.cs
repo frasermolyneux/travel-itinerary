@@ -713,6 +713,7 @@ public sealed class DetailsModel : PageModel
     private static IReadOnlyDictionary<TimelineItemType, SelectListGroup> CreateTimelineItemGroups()
     {
         var travel = new SelectListGroup { Name = "Travel" };
+        var logistics = new SelectListGroup { Name = "Logistics" };
         var stay = new SelectListGroup { Name = "Stays" };
         var activity = new SelectListGroup { Name = "Activities" };
         var dining = new SelectListGroup { Name = "Dining" };
@@ -727,7 +728,7 @@ public sealed class DetailsModel : PageModel
             [TimelineItemType.Taxi] = travel,
             [TimelineItemType.PrivateCar] = travel,
             [TimelineItemType.RentalCar] = travel,
-            [TimelineItemType.Parking] = travel,
+            [TimelineItemType.Parking] = logistics,
             [TimelineItemType.Hotel] = stay,
             [TimelineItemType.Flat] = stay,
             [TimelineItemType.House] = stay,
