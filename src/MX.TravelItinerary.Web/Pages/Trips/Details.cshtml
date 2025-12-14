@@ -1,4 +1,4 @@
-@page "{tripId}"
+@page "{tripId?}"
 @model MX.TravelItinerary.Web.Pages.Trips.DetailsModel
 @using System.Linq
 @{
@@ -27,7 +27,7 @@
         </div>
     </div>
     <div class="d-flex gap-2">
-        <a class="btn btn-outline-secondary" asp-page="./Index">Back to Trips</a>
+        <a class="btn btn-outline-secondary" href="/trips">Back to Trips</a>
     </div>
 </div>
 

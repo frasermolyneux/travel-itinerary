@@ -25,6 +25,9 @@ public sealed class DetailsModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string TripId { get; set; } = string.Empty;
 
+    [BindProperty(SupportsGet = true)]
+    public string? TripSlug { get; set; }
+
     public TripDetails? TripDetails { get; private set; }
 
     public TimelineViewModel Timeline { get; private set; } = TimelineViewModel.Empty;
@@ -97,20 +100,20 @@ public sealed class DetailsModel : PageModel
             StatusMessage = "Itinerary entry updated.";
         }
 
-        return RedirectToPage(new { tripId = TripId });
+        return RedirectToTripPage();
     }
 
     public async Task<IActionResult> OnPostDeleteEntryAsync(string entryId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(entryId))
         {
-            return RedirectToPage(new { tripId = TripId });
+            return RedirectToTripPage();
         }
 
         var userId = GetUserId();
         await _repository.DeleteItineraryEntryAsync(userId, TripId, entryId, cancellationToken);
         StatusMessage = "Itinerary entry deleted.";
-        return RedirectToPage(new { tripId = TripId });
+        return RedirectToTripPage();
     }
 
     public async Task<IActionResult> OnPostSaveBookingAsync(CancellationToken cancellationToken)
@@ -172,42 +175,73 @@ public sealed class DetailsModel : PageModel
             return Page();
         }
 
-        return RedirectToPage(new { tripId = TripId });
+        return RedirectToTripPage();
     }
 
     public async Task<IActionResult> OnPostDeleteBookingAsync(string bookingId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(bookingId))
         {
-            return RedirectToPage(new { tripId = TripId });
+            return RedirectToTripPage();
         }
 
         var userId = GetUserId();
         await _repository.DeleteBookingAsync(userId, TripId, bookingId, cancellationToken);
         StatusMessage = "Booking confirmation deleted.";
-        return RedirectToPage(new { tripId = TripId });
+            return RedirectToTripPage();
     }
 
     private async Task<bool> LoadTripAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(TripId))
+        if (string.IsNullOrWhiteSpace(TripId) && string.IsNullOrWhiteSpace(TripSlug))
         {
             return false;
         }
 
         var userId = GetUserId();
-        var details = await _repository.GetTripAsync(userId, TripId, cancellationToken);
+        TripDetails? details = null;
+
+        if (!string.IsNullOrWhiteSpace(TripId))
+        {
+            details = await _repository.GetTripAsync(userId, TripId, cancellationToken);
+        }
+
+        if (details is null && !string.IsNullOrWhiteSpace(TripSlug))
+        {
+            details = await _repository.GetTripBySlugAsync(userId, TripSlug, cancellationToken);
+
+            if (details is null && Guid.TryParse(TripSlug, out _))
+            {
+                details = await _repository.GetTripAsync(userId, TripSlug, cancellationToken);
+            }
+        }
+
         if (details is null)
         {
             return false;
         }
 
+        ApplyTripContext(details);
+        return true;
+    }
+
+    private void ApplyTripContext(TripDetails details)
+    {
         TripDetails = details;
         Timeline = TimelineViewModel.From(details);
+        TripId = details.Trip.TripId;
+        TripSlug = details.Trip.Slug;
         EntryInput.TripId = details.Trip.TripId;
         BookingInput.TripId = details.Trip.TripId;
         EntryBookings = BuildBookingLookup(details.Bookings, booking => booking.EntryId);
-        return true;
+        ClearTripIdentifierModelState();
+    }
+
+    private void ClearTripIdentifierModelState()
+    {
+        ModelState.Remove($"{nameof(EntryInput)}.{nameof(ItineraryEntryForm.TripId)}");
+        ModelState.Remove($"{nameof(BookingInput)}.{nameof(BookingForm.TripId)}");
+        ModelState.Remove(nameof(TripId));
     }
 
     private void ValidateEntryInput()
@@ -272,6 +306,22 @@ public sealed class DetailsModel : PageModel
         {
             ModelState.AddModelError("BookingInput.EntryId", "Link the booking to a timeline entry.");
         }
+    }
+
+    private IActionResult RedirectToTripPage()
+    {
+        var slug = TripSlug;
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            slug = TripDetails?.Trip.Slug;
+        }
+
+        if (!string.IsNullOrWhiteSpace(slug))
+        {
+            return RedirectToPage(new { tripSlug = slug });
+        }
+
+        return RedirectToPage(new { tripId = TripId });
     }
 
     private static IReadOnlyDictionary<string, Booking> BuildBookingLookup(IEnumerable<Booking> bookings, Func<Booking, string?> keySelector)

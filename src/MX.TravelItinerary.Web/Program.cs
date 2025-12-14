@@ -47,6 +47,9 @@ builder.Services
         options.Conventions.AllowAnonymousToPage("/Index");
         options.Conventions.AllowAnonymousToPage("/Error");
         options.Conventions.AllowAnonymousToAreaFolder("MicrosoftIdentity", "/Account");
+        options.Conventions.AddPageRoute(
+            "/Trips/Details",
+            "trips/{tripSlug:regex(^(?!index$)(?!details$)[a-z0-9-]+$)}");
     })
     .AddMicrosoftIdentityUI();
 
@@ -63,6 +66,16 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+
+app.Use(async (context, next) =>
+{
+    if (string.Equals(context.Request.Path.Value, "/trips", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Request.Path = "/Trips/Index";
+    }
+
+    await next();
+});
 
 app.UseRouting();
 

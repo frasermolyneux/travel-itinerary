@@ -48,6 +48,36 @@ public sealed class TableItineraryRepository : IItineraryRepository
         return await BuildTripDetailsAsync(trip, shareLink: null, cancellationToken);
     }
 
+    public async Task<TripDetails?> GetTripBySlugAsync(string userId, string slug, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+
+        var rawSlug = slug.Trim();
+        var candidates = new List<string> { rawSlug };
+        var normalized = rawSlug.ToLowerInvariant();
+        if (!string.Equals(rawSlug, normalized, StringComparison.Ordinal))
+        {
+            candidates.Add(normalized);
+        }
+
+        foreach (var candidate in candidates)
+        {
+            var filter = TableClient.CreateQueryFilter($"PartitionKey eq {userId} and Slug eq {candidate}");
+
+            await foreach (var entity in _tables.Trips.QueryAsync<TableEntity>(
+                       filter: filter,
+                       maxPerPage: 1,
+                       cancellationToken: cancellationToken))
+            {
+                var trip = TableEntityMapper.ToTrip(entity);
+                return await BuildTripDetailsAsync(trip, shareLink: null, cancellationToken);
+            }
+        }
+
+        return null;
+    }
+
     public async Task<TripDetails?> GetTripByShareCodeAsync(string shareCode, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(shareCode);

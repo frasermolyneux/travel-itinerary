@@ -70,7 +70,7 @@
                         <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save Changes" : "Create                   Trip")</button>
                         @if (Model.IsEditing)
                         {
-                            <a class="btn btn-outline-secondary" asp-page="./Index">Cancel</a>
+                            <a class="btn btn-outline-secondary" href="/trips">Cancel</a>
                         }
                     </div>
                 </form>
@@ -125,7 +125,8 @@
                                         <td>@trip.HomeTimeZone</td>
                                         <td class="text-end">
                                             <a class="btn btn-sm btn-link" asp-page="./Details"
-                                                asp-route-tripId="@trip.TripId">View</a>
+                                                asp-route-tripSlug="@(string.IsNullOrWhiteSpace(trip.Slug) ? null : trip.Slug)"
+                                                asp-route-tripId="@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : null)">View</a>
                                             <a class="btn btn-sm btn-link" asp-page="./Index"
                                                 asp-route-edit="@trip.TripId">Edit</a>
                                             <form method="post" asp-page-handler="Delete" asp-route-tripId="@trip.TripId"
