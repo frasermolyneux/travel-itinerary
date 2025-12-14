@@ -1,4 +1,5 @@
 @model MX.TravelItinerary.Web.Pages.Trips.TripTimelineDisplayModel
+@using System
 @using System.Linq
 @using System.Collections.Generic
 @using MX.TravelItinerary.Web.Data.Models
@@ -9,6 +10,47 @@
     var spansByStartDate = timeline.Spans
     .GroupBy(block => block.StartDate)
     .ToDictionary(group => group.Key, group => group.ToList());
+}
+
+@functions {
+    private static IReadOnlyList<string> BuildBookingQuickFacts(Booking booking)
+    {
+        var facts = new List<string>();
+
+        if (booking.CancellationByDate is { } cancelBy)
+        {
+            facts.Add($"Cancel by {cancelBy:MMM dd}");
+        }
+
+        var stay = booking.Metadata?.Stay;
+        if (stay is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(stay.CheckInTime))
+            {
+                facts.Add($"{stay.CheckInTime} check-in");
+            }
+
+            if (!string.IsNullOrWhiteSpace(stay.CheckOutTime))
+            {
+                facts.Add($"{stay.CheckOutTime} check-out");
+            }
+
+            if (!string.IsNullOrWhiteSpace(stay.RoomType))
+            {
+                facts.Add(stay.RoomType);
+            }
+
+            if (stay.Includes is { Count: > 0 } includes)
+            {
+                foreach (var include in includes.Where(value => !string.IsNullOrWhiteSpace(value)))
+                {
+                    facts.Add(include.Trim());
+                }
+            }
+        }
+
+        return facts;
+    }
 }
 
 @if (!hasPlannedContent && Model.ShowEmptyStateMessage)
@@ -64,19 +106,23 @@
                     }
                     var bookingCancelByValue = entryBooking?.CancellationByDate?.ToString("yyyy-MM-dd") ?? string.Empty;
                     string? bookingMeta = null;
+                    IReadOnlyList<string> bookingQuickFacts = Array.Empty<string>();
                     if (canShowBookingInfo)
                     {
-                        if (!string.IsNullOrWhiteSpace(entryBooking!.Reference))
+                        var booking = entryBooking!;
+                        bookingQuickFacts = BuildBookingQuickFacts(booking);
+
+                        if (!string.IsNullOrWhiteSpace(booking.Reference))
                         {
-                            bookingMeta = entryBooking.Reference;
+                            bookingMeta = booking.Reference;
                         }
 
-                        if (entryBooking.Cost is not null)
+                        if (booking.Cost is not null)
                         {
-                            var formattedCost = entryBooking.Cost.Value.ToString("0.##");
-                            var costText = string.IsNullOrWhiteSpace(entryBooking.Currency)
+                            var formattedCost = booking.Cost.Value.ToString("0.##");
+                            var costText = string.IsNullOrWhiteSpace(booking.Currency)
                             ? formattedCost
-                            : $"{formattedCost} {entryBooking.Currency}";
+                            : $"{formattedCost} {booking.Currency}";
                             bookingMeta = string.IsNullOrWhiteSpace(bookingMeta)
                             ? costText
                             : $"{bookingMeta} • {costText}";
@@ -106,6 +152,15 @@
                                         }
                                     </div>
                                 </div>
+                                @if (bookingQuickFacts.Count > 0)
+                                {
+                                    <div class="booking-pill-facts">
+                                        @foreach (var fact in bookingQuickFacts)
+                                        {
+                                            <span class="booking-pill-chip">@fact</span>
+                                        }
+                                    </div>
+                                }
                             }
                             <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")
                             </div>
@@ -217,19 +272,23 @@
                     }
                     var bookingCancelByValue = entryBooking?.CancellationByDate?.ToString("yyyy-MM-dd") ?? string.Empty;
                     string? bookingMeta = null;
+                    IReadOnlyList<string> bookingQuickFacts = Array.Empty<string>();
                     if (canShowBookingInfo)
                     {
-                        if (!string.IsNullOrWhiteSpace(entryBooking!.Reference))
+                        var booking = entryBooking!;
+                        bookingQuickFacts = BuildBookingQuickFacts(booking);
+
+                        if (!string.IsNullOrWhiteSpace(booking.Reference))
                         {
-                            bookingMeta = entryBooking.Reference;
+                            bookingMeta = booking.Reference;
                         }
 
-                        if (entryBooking.Cost is not null)
+                        if (booking.Cost is not null)
                         {
-                            var formattedCost = entryBooking.Cost.Value.ToString("0.##");
-                            var costText = string.IsNullOrWhiteSpace(entryBooking.Currency)
+                            var formattedCost = booking.Cost.Value.ToString("0.##");
+                            var costText = string.IsNullOrWhiteSpace(booking.Currency)
                             ? formattedCost
-                            : $"{formattedCost} {entryBooking.Currency}";
+                            : $"{formattedCost} {booking.Currency}";
                             bookingMeta = string.IsNullOrWhiteSpace(bookingMeta)
                             ? costText
                             : $"{bookingMeta} • {costText}";
@@ -262,6 +321,15 @@
                                         }
                                     </div>
                                 </div>
+                                @if (bookingQuickFacts.Count > 0)
+                                {
+                                    <div class="booking-pill-facts">
+                                        @foreach (var fact in bookingQuickFacts)
+                                        {
+                                            <span class="booking-pill-chip">@fact</span>
+                                        }
+                                    </div>
+                                }
                             }
                         </div>
                         @if (Model.AllowEntryReordering)
@@ -416,19 +484,23 @@
         }
         var bookingCancelByValue = entryBooking?.CancellationByDate?.ToString("yyyy-MM-dd") ?? string.Empty;
         string? bookingMeta = null;
+        IReadOnlyList<string> bookingQuickFacts = Array.Empty<string>();
         if (canShowBookingInfo)
         {
-            if (!string.IsNullOrWhiteSpace(entryBooking!.Reference))
+            var booking = entryBooking!;
+            bookingQuickFacts = BuildBookingQuickFacts(booking);
+
+            if (!string.IsNullOrWhiteSpace(booking.Reference))
             {
-                bookingMeta = entryBooking.Reference;
+                bookingMeta = booking.Reference;
             }
 
-            if (entryBooking.Cost is not null)
+            if (booking.Cost is not null)
             {
-                var formattedCost = entryBooking.Cost.Value.ToString("0.##");
-                var costText = string.IsNullOrWhiteSpace(entryBooking.Currency)
+                var formattedCost = booking.Cost.Value.ToString("0.##");
+                var costText = string.IsNullOrWhiteSpace(booking.Currency)
                 ? formattedCost
-                : $"{formattedCost} {entryBooking.Currency}";
+                : $"{formattedCost} {booking.Currency}";
                 bookingMeta = string.IsNullOrWhiteSpace(bookingMeta)
                 ? costText
                 : $"{bookingMeta} • {costText}";
@@ -462,6 +534,15 @@
                                 }
                             </div>
                         </div>
+                        @if (bookingQuickFacts.Count > 0)
+                        {
+                            <div class="booking-pill-facts">
+                                @foreach (var fact in bookingQuickFacts)
+                                {
+                                    <span class="booking-pill-chip">@fact</span>
+                                }
+                            </div>
+                        }
                     }
                     <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")
                     </div>

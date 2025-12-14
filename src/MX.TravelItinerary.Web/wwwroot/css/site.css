@@ -298,6 +298,24 @@ body {
   color: var(--bs-secondary-color);
 }
 
+.booking-pill-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.booking-pill-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(13, 110, 253, 0.25);
+  background: #fff;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0d6efd;
+  text-transform: none;
+}
+
 .timeline-actions {
   display: flex;
   flex-wrap: wrap;
