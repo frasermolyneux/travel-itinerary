@@ -36,6 +36,8 @@
                     var entryDisplayTitle = string.IsNullOrWhiteSpace(entry.Title)
                     ? entry.ToString()
                     : entry.Title;
+                    var entryHasDetails = !string.IsNullOrWhiteSpace(entry.Details);
+                    var entryHasMetadata = entry.Metadata?.HasContent == true;
                     <div class="timeline-item" data-timeline-item data-item-type="entry" data-item-id="@entry.EntryId">
                         <div class="timeline-item-body">
                             <div class="timeline-item-heading">
@@ -48,10 +50,17 @@
                                 }
                             </div>
                         </div>
-                        @if (entry.Metadata?.HasContent == true)
+                        @if (entryHasDetails || entryHasMetadata)
                         {
                             <div class="timeline-item-details">
-                                <partial name="_EntryMetadata" model="entry.Metadata" />
+                                @if (entryHasDetails)
+                                {
+                                    <div class="timeline-item-notes">@entry.Details</div>
+                                }
+                                @if (entryHasMetadata)
+                                {
+                                    <partial name="_EntryMetadata" model="entry.Metadata" />
+                                }
                             </div>
                         }
                         @{
@@ -131,6 +140,8 @@
         var entryDisplayTitle = string.IsNullOrWhiteSpace(block.Entry.Title)
         ? block.Entry.ToString()
         : block.Entry.Title;
+        var entryHasDetails = !string.IsNullOrWhiteSpace(block.Entry.Details);
+        var entryHasMetadata = block.Entry.Metadata?.HasContent == true;
         <div class="timeline-segment"
             style="grid-row:@block.RowStart / @block.RowEnd; --lane-index:@block.LaneIndex; --lane-count:@block.LaneCount;"
             data-segment-type="@segmentType">
@@ -150,10 +161,17 @@
                     <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")
                     </div>
                 </div>
-                @if (block.Entry.Metadata?.HasContent == true)
+                @if (entryHasDetails || entryHasMetadata)
                 {
                     <div class="timeline-item-details">
-                        <partial name="_EntryMetadata" model="block.Entry.Metadata" />
+                        @if (entryHasDetails)
+                        {
+                            <div class="timeline-item-notes">@block.Entry.Details</div>
+                        }
+                        @if (entryHasMetadata)
+                        {
+                            <partial name="_EntryMetadata" model="block.Entry.Metadata" />
+                        }
                     </div>
                 }
                 @{

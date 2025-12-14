@@ -130,6 +130,12 @@ body {
   display: block;
 }
 
+.timeline-item-notes {
+  white-space: pre-line;
+  margin-bottom: 0.75rem;
+  color: #495057;
+}
+
 .timeline-item-heading {
   display: flex;
   align-items: center;
