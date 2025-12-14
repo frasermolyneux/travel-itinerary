@@ -8,7 +8,7 @@
 <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
     <div>
         <p class="text-uppercase text-muted small mb-1">Share your itinerary</p>
-        <h1 class="mb-1">@trip?.Name ?? "Trip share links"</h1>
+        <h1 class="mb-1">@(trip?.Name ?? "Trip share links")</h1>
         @if (trip?.StartDate is not null || trip?.EndDate is not null)
         {
             <div class="text-muted">
@@ -86,7 +86,7 @@ else
                         </div>
 
                         <div class="d-flex flex-wrap gap-2">
-                            <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save settings" : "Create                   link")</button>
+                            <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save settings" : "Create                           link")</button>
                             @if (Model.IsEditing)
                             {
                                 <a class="btn btn-outline-secondary" asp-page="./ShareLinks" asp-route-tripId="@Model.TripId"
