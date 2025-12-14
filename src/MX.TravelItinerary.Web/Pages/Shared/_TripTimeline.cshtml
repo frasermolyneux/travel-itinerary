@@ -51,7 +51,10 @@
                                 <partial name="_EntryMetadata" model="entry.Metadata" />
                             </div>
                         }
-                        @{ var showBookingButtons = (Model.AllowBookingCreation && entryBooking is null) || (Model.AllowBookingViewing && entryBooking is not null); }
+                        @{
+                            var showBookingButtons = (Model.AllowBookingCreation && entryBooking is null) ||
+                            (Model.AllowBookingViewing && entryBooking is not null);
+                        }
                         @if (Model.AllowEntryEditing || showBookingButtons)
                         {
                             <div class="timeline-actions">
@@ -138,7 +141,8 @@
                             <span class="booking-indicator" title="Booking attached">&#128206;</span>
                         }
                     </div>
-                    <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")</div>
+                    <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")
+                    </div>
                 </div>
                 @if (block.Entry.Metadata?.HasContent == true)
                 {
@@ -146,7 +150,10 @@
                         <partial name="_EntryMetadata" model="block.Entry.Metadata" />
                     </div>
                 }
-                @{ var showSpanBookingButtons = (Model.AllowBookingCreation && entryBooking is null) || (Model.AllowBookingViewing && entryBooking is not null); }
+                @{
+                    var showSpanBookingButtons = (Model.AllowBookingCreation && entryBooking is null) ||
+                    (Model.AllowBookingViewing && entryBooking is not null);
+                }
                 @if (Model.AllowEntryEditing || showSpanBookingButtons)
                 {
                     <div class="timeline-actions">

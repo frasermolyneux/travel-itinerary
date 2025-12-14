@@ -80,12 +80,13 @@ else
 
                         <div class="mb-3">
                             <label asp-for="Input.Notes" class="form-label"></label>
-                            <textarea asp-for="Input.Notes" class="form-control" rows="3" placeholder="Example: For family only"></textarea>
+                            <textarea asp-for="Input.Notes" class="form-control" rows="3"
+                            placeholder="Example: For family only"></textarea>
                             <span asp-validation-for="Input.Notes" class="text-danger"></span>
                         </div>
 
                         <div class="d-flex flex-wrap gap-2">
-                            <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save settings" : "Create link")</button>
+                            <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save settings" : "Create                   link")</button>
                             @if (Model.IsEditing)
                             {
                                 <a class="btn btn-outline-secondary" asp-page="./ShareLinks" asp-route-tripId="@Model.TripId"
@@ -155,9 +156,11 @@ else
                                     }
                                 </div>
                                 <div class="d-flex flex-wrap gap-2">
-                                    <a class="btn btn-sm btn-outline-primary" asp-page="./ShareLinks" asp-route-tripId="@Model.TripId"
-                                        asp-route-tripSlug="@Model.TripSlug" asp-route-edit="@link.ShareCode">Edit</a>
-                                    <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Delete this share link?');">
+                                    <a class="btn btn-sm btn-outline-primary" asp-page="./ShareLinks"
+                                        asp-route-tripId="@Model.TripId" asp-route-tripSlug="@Model.TripSlug"
+                                        asp-route-edit="@link.ShareCode">Edit</a>
+                                    <form method="post" asp-page-handler="Delete" class="d-inline"
+                                        onsubmit="return confirm('Delete this share link?');">
                                         <input type="hidden" name="tripId" value="@Model.TripId" />
                                         <input type="hidden" name="tripSlug" value="@Model.TripSlug" />
                                         <input type="hidden" name="shareCode" value="@link.ShareCode" />
