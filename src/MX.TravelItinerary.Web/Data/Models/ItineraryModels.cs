@@ -104,6 +104,7 @@ public sealed partial record ItineraryEntry(
     TimelineItemType ItemType,
     string Title,
     string? Details,
+    string? GooglePlaceId,
     string? Tags,
     TravelMetadata? Metadata,
     int? SortOrder);
@@ -115,6 +116,7 @@ public sealed record ItineraryEntryMutation(
     TimelineItemType ItemType,
     string Title,
     string? Details,
+    string? GooglePlaceId,
     string? Tags,
     TravelMetadata? Metadata,
     int? SortOrder);

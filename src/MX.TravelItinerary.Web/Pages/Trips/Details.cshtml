@@ -1,6 +1,7 @@
 @page "{tripId?}"
 @model MX.TravelItinerary.Web.Pages.Trips.DetailsModel
 @using System.Linq
+@using MX.TravelItinerary.Web.Pages.Shared.FormControls
 @{
     ViewData["Title"] = "Trip Timeline";
     var trip = Model.TripDetails?.Trip;
@@ -101,6 +102,16 @@ else
                 <span asp-validation-for="EntryInput.EndDate" class="text-danger"></span>
             </div>
 
+            @{
+                var placePickerModel = new GooglePlacePickerModel(
+                    Html.IdFor(m => m.EntryInput.GooglePlaceId).ToString(),
+                    Html.NameFor(m => m.EntryInput.GooglePlaceId).ToString(),
+                    "Google Place ID",
+                    Model.EntryInput.GooglePlaceId,
+                    Model.IsGoogleMapsConfigured);
+            }
+            <partial name="~/Pages/Shared/FormControls/_GooglePlacePicker.cshtml" model="@placePickerModel" />
+
             <div class="mb-3">
                 <label asp-for="EntryInput.Details" class="form-label"></label>
                 <textarea asp-for="EntryInput.Details" class="form-control" rows="4"></textarea>
@@ -173,6 +184,57 @@ else
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancel</button>
             </div>
         </form>
+    </div>
+</div>
+
+<div class="modal fade" id="googlePlacePickerModal" tabindex="-1" aria-labelledby="googlePlacePickerModalLabel"
+    aria-hidden="true" data-google-place-modal
+    data-google-place-enabled="@(Model.IsGoogleMapsConfigured ? "true" : "false")">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="googlePlacePickerModalLabel" class="modal-title">Find a place</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="googlePlacePickerSearch" class="form-label">Search Google Maps Places</label>
+                    <div class="input-group">
+                        <input type="text" id="googlePlacePickerSearch" class="form-control"
+                            placeholder="Start typing a place or address" data-place-picker-search autocomplete="off"
+                            spellcheck="false">
+                        <button type="button" class="btn btn-outline-secondary" data-place-picker-clear>Clear</button>
+                    </div>
+                    <div class="form-text" data-place-picker-hint>Look up hotels, airports, landmarks, or entire
+                        neighborhoods.</div>
+                </div>
+                <div class="row g-3 align-items-stretch">
+                    <div class="col-lg-7">
+                        <div class="place-picker-map" data-place-picker-map>
+                            <div class="place-picker-map-placeholder">Map preview loads after the Places API is ready.</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="place-picker-preview" data-place-picker-preview>
+                            <div class="text-muted text-uppercase small mb-2">Selection</div>
+                            <div class="place-picker-selection-name" data-place-picker-name>Search to preview a place.
+                            </div>
+                            <div class="place-picker-selection-address text-muted" data-place-picker-address>Full
+                                address will appear here.</div>
+                            <div class="mt-3">
+                                <div class="text-muted text-uppercase small">Place ID</div>
+                                <code class="place-picker-selection-id" data-place-picker-id>—</code>
+                            </div>
+                            <div class="mt-3 text-muted small" data-place-picker-status>Search to pick a place.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" data-place-picker-submit disabled>Use this place</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -377,4 +439,14 @@ else
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    @if (Model.IsGoogleMapsConfigured)
+    {
+        <script>
+            window.travelPlacePickerReady = function () {
+                document.dispatchEvent(new CustomEvent('travel-place-picker:loader-ready'));
+            };
+        </script>
+        <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=@Model.GoogleMapsApiKey&libraries=places&callback=travelPlacePickerReady"></script>
+    }
 }

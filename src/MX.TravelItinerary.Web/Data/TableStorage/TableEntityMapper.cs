@@ -31,6 +31,7 @@ internal static class TableEntityMapper
             ItemType: entity.GetString("ItemType").ToTimelineItemType(),
             Title: entity.GetString("Title") ?? entity.RowKey,
             Details: entity.GetString("Details"),
+            GooglePlaceId: entity.GetString("GooglePlaceId"),
             Tags: entity.GetString("Tags"),
             Metadata: metadata,
             SortOrder: entity.GetInt32("SortOrder"));

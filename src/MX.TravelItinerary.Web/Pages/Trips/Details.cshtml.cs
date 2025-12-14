@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Identity.Web;
+using Microsoft.Extensions.Options;
 using MX.TravelItinerary.Web.Data;
 using MX.TravelItinerary.Web.Data.Models;
+using MX.TravelItinerary.Web.Options;
 
 namespace MX.TravelItinerary.Web.Pages.Trips;
 
@@ -16,10 +18,11 @@ public sealed class DetailsModel : PageModel
     private readonly IItineraryRepository _repository;
     private readonly ILogger<DetailsModel> _logger;
 
-    public DetailsModel(IItineraryRepository repository, ILogger<DetailsModel> logger)
+    public DetailsModel(IItineraryRepository repository, ILogger<DetailsModel> logger, IOptions<GoogleMapsOptions> googleMapsOptions)
     {
         _repository = repository;
         _logger = logger;
+        GoogleMapsApiKey = googleMapsOptions?.Value.ApiKey?.Trim();
     }
 
     [BindProperty(SupportsGet = true)]
@@ -31,6 +34,10 @@ public sealed class DetailsModel : PageModel
     public TripDetails? TripDetails { get; private set; }
 
     public TimelineViewModel Timeline { get; private set; } = TimelineViewModel.Empty;
+
+    public string? GoogleMapsApiKey { get; }
+
+    public bool IsGoogleMapsConfigured => !string.IsNullOrWhiteSpace(GoogleMapsApiKey);
 
     [BindProperty]
     public ItineraryEntryForm EntryInput { get; set; } = new();
@@ -435,6 +442,9 @@ public sealed class DetailsModel : PageModel
         [DataType(DataType.MultilineText)]
         public string? Details { get; set; }
 
+        [Display(Name = "Google Place ID")]
+        public string? GooglePlaceId { get; set; }
+
         public FlightMetadataInput FlightMetadata { get; set; } = new();
 
         public StayMetadataInput StayMetadata { get; set; } = new();
@@ -447,6 +457,7 @@ public sealed class DetailsModel : PageModel
                 ItemType,
                 string.IsNullOrWhiteSpace(Title) ? "Untitled entry" : Title.Trim(),
                 string.IsNullOrWhiteSpace(Details) ? null : Details,
+            string.IsNullOrWhiteSpace(GooglePlaceId) ? null : GooglePlaceId?.Trim(),
                 Tags: null,
                 Metadata: BuildMetadata(),
                 SortOrder: null);

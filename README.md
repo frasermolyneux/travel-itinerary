@@ -28,6 +28,7 @@ dotnet user-secrets set "AzureAd:ClientId" "<entra_application_client_id>"
 dotnet user-secrets set "AzureAd:ClientSecret" "<entra_application_client_secret>"
 dotnet user-secrets set "AzureAd:Domain" "molyneux.io"
 dotnet user-secrets set "Storage:TableEndpoint" "https://<storage-account>.table.core.windows.net"
+dotnet user-secrets set "GoogleMaps:ApiKey" "<google-maps-places-api-key>"
 ```
 
 > Tip: `az account show --query tenantId -o tsv` returns the tenant GUID if you need to confirm it locally.
@@ -74,6 +75,7 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 | `ItemType`                     | `travel`, `lodging`, `activity`, `dining`, `transportation`, `note`, `other` | Drives icons/colors on the timeline.                     |
 | `Title`                        | `"Hotel Taj Resorts"`                                                        | Primary text.                                            |
 | `Details`                      | Multiline text                                                               | Narrative for the slot (activities, instructions, etc.). |
+| `GooglePlaceId`                | `ChIJ4dG0G4IJlQ0RjZ1qfG9aCBA`                                                | Optional link to Google Maps Places for map + address.   |
 | `LocationName` / `LocationUrl` | Name + map link                                                              | Used for cards and Google Maps deep links.               |
 | `Latitude` / `Longitude`       | `28.592` / `77.250`                                                          | Map markers.                                             |
 | `Tags`                         | `"hotel,luxury"`                                                             | Lightweight filtering.                                   |

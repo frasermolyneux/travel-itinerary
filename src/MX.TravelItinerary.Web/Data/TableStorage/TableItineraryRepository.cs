@@ -765,6 +765,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         entity["IsMultiDay"] = mutation.IsMultiDay;
         entity["ItemType"] = mutation.ItemType.ToStorageValue();
         SetOrRemove(entity, "Details", mutation.Details);
+        SetOrRemove(entity, "GooglePlaceId", mutation.GooglePlaceId);
         SetOrRemove(entity, "Tags", mutation.Tags);
 
         SetMetadata(entity, mutation.Metadata);

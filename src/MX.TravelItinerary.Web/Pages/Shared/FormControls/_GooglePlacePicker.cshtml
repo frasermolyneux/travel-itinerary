@@ -1,0 +1,25 @@
+@model MX.TravelItinerary.Web.Pages.Shared.FormControls.GooglePlacePickerModel
+
+@{
+    var isEnabled = Model.PickerEnabled;
+    var pickerState = isEnabled ? "true" : "false";
+    var disabledReason = isEnabled ? null : "Add a Google Maps API key in configuration to enable the picker.";
+}
+<div class="mb-3">
+    <label for="@Model.FieldId" class="form-label">@Model.Label</label>
+    <div class="input-group place-picker-control" data-place-picker>
+        <input type="text" id="@Model.FieldId" name="@Model.FieldName" value="@Model.Value"
+            class="form-control" placeholder="ChIJkRH..." data-place-picker-input autocomplete="off"
+            spellcheck="false">
+        <button type="button" class="btn btn-outline-secondary" data-place-picker-trigger
+            data-place-picker-target="@Model.FieldId" data-place-picker-enabled="@pickerState"
+            aria-label="Open map picker" @(isEnabled ? null : "disabled")>
+            <span class="bi bi-geo-alt"></span>
+        </button>
+    </div>
+    @Html.ValidationMessage(Model.FieldName, "", new { @class = "text-danger" })
+    @if (!string.IsNullOrWhiteSpace(disabledReason))
+    {
+        <div class="form-text text-warning">@disabledReason</div>
+    }
+</div>

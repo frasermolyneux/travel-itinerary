@@ -12,6 +12,7 @@ using MX.TravelItinerary.Web.Options;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
+builder.Services.Configure<GoogleMapsOptions>(builder.Configuration.GetSection("GoogleMaps"));
 
 builder.Services.AddSingleton<TableServiceClient>(sp =>
 {

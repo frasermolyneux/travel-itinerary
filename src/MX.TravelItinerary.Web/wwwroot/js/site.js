@@ -17,6 +17,7 @@
 
     let syncEntryBounds = () => { };
     let syncEntryMetadata = () => { };
+    let googlePlacesLoadPromise;
 
     document.addEventListener('DOMContentLoaded', () => {
         initTimelineSelection();
@@ -29,6 +30,7 @@
         initTimelineReorder();
         initCurrencyPicker();
         initBookingRefundableToggle();
+        initGooglePlacePicker();
         reopenOffcanvasOnValidation();
         const initialItemType = document.getElementById('BookingInput_ItemType')?.value || '';
         toggleBookingStaySection(initialItemType);
@@ -166,6 +168,7 @@
         setInputValue('EntryInput_EndDate', dataset.entryEnd ?? '');
         setInputValue('EntryInput_ItemType', dataset.entryType ?? 'Tour');
         setInputValue('EntryInput_Details', dataset.entryDetails ?? '');
+        setInputValue('EntryInput_GooglePlaceId', dataset.entryGooglePlace ?? '');
         setEntryMetadataFields(dataset);
 
         const multiDay = dataset.entryIsMultiDay === 'true';
@@ -190,6 +193,7 @@
         setInputValue('EntryInput_EndDate', '');
         setInputValue('EntryInput_ItemType', 'Tour');
         setInputValue('EntryInput_Details', '');
+        setInputValue('EntryInput_GooglePlaceId', '');
         setEntryMetadataFields({});
 
         const multiDayToggle = document.getElementById('EntryInput_IsMultiDay');
@@ -846,6 +850,263 @@
             const currentType = document.getElementById('BookingInput_ItemType')?.value || '';
             toggleBookingStaySection(currentType);
         }
+    }
+
+    function initGooglePlacePicker() {
+        const modalElement = document.querySelector('[data-google-place-modal]');
+        const triggers = Array.from(document.querySelectorAll('[data-place-picker-trigger]'));
+        if (!modalElement || triggers.length === 0) {
+            return;
+        }
+
+        if (modalElement.dataset.googlePlaceEnabled !== 'true') {
+            disablePlacePickerTriggers(triggers);
+            return;
+        }
+
+        const searchInput = modalElement.querySelector('[data-place-picker-search]');
+        const clearButton = modalElement.querySelector('[data-place-picker-clear]');
+        const submitButton = modalElement.querySelector('[data-place-picker-submit]');
+        const mapElement = modalElement.querySelector('[data-place-picker-map]');
+        const nameTarget = modalElement.querySelector('[data-place-picker-name]');
+        const addressTarget = modalElement.querySelector('[data-place-picker-address]');
+        const idTarget = modalElement.querySelector('[data-place-picker-id]');
+        const statusTarget = modalElement.querySelector('[data-place-picker-status]');
+
+        if (!searchInput || !submitButton || !mapElement || !nameTarget || !addressTarget || !idTarget || !statusTarget) {
+            disablePlacePickerTriggers(triggers);
+            return;
+        }
+
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        let pickerReadyPromise;
+        let map;
+        let marker;
+        let placesService;
+        let autocomplete;
+        let selectedPlace = null;
+        let targetInput;
+
+        const defaultStatus = 'Search to pick a place.';
+        statusTarget.textContent = defaultStatus;
+
+        const ensurePickerReady = () => {
+            if (pickerReadyPromise) {
+                return pickerReadyPromise;
+            }
+
+            pickerReadyPromise = waitForGooglePlaces()
+                .then(() => {
+                    map = new google.maps.Map(mapElement, {
+                        center: { lat: 20, lng: 0 },
+                        zoom: 2,
+                        mapTypeControl: false,
+                        streetViewControl: false,
+                        fullscreenControl: false,
+                        zoomControl: true
+                    });
+
+                    marker = new google.maps.Marker({
+                        map,
+                        visible: false
+                    });
+
+                    placesService = new google.maps.places.PlacesService(map);
+
+                    const placeholder = mapElement.querySelector('.place-picker-map-placeholder');
+                    placeholder?.remove();
+
+                    autocomplete = new google.maps.places.Autocomplete(searchInput, {
+                        fields: ['place_id', 'name', 'formatted_address', 'geometry']
+                    });
+
+                    autocomplete.addListener('place_changed', () => {
+                        const place = autocomplete.getPlace();
+                        if (!place || !place.place_id) {
+                            statusTarget.textContent = 'Select one of the suggestions to continue.';
+                            return;
+                        }
+
+                        applySelectedPlace(place);
+                        statusTarget.textContent = 'Press “Use this place” to link it to your entry.';
+                    });
+
+                    modalElement.addEventListener('shown.bs.modal', () => {
+                        google.maps.event.trigger(map, 'resize');
+                        if (marker?.getVisible()) {
+                            map.panTo(marker.getPosition());
+                        }
+                    });
+                })
+                .catch((error) => {
+                    console.warn('Google Places failed to initialize.', error);
+                    disablePlacePickerTriggers(triggers);
+                    throw error;
+                });
+
+            return pickerReadyPromise;
+        };
+
+        const applySelectedPlace = (place) => {
+            selectedPlace = place;
+            updatePreview(place);
+            submitButton.disabled = !(place && place.place_id);
+
+            if (place?.geometry?.location && map && marker) {
+                marker.setPosition(place.geometry.location);
+                marker.setVisible(true);
+                map.setCenter(place.geometry.location);
+                map.setZoom(13);
+            } else if (marker) {
+                marker.setVisible(false);
+            }
+        };
+
+        const updatePreview = (place) => {
+            const hasSelection = !!place?.place_id;
+            nameTarget.textContent = hasSelection
+                ? place?.name || 'Selected place'
+                : 'Search to preview a place.';
+            addressTarget.textContent = hasSelection
+                ? place?.formatted_address || 'Address unavailable'
+                : 'Full address will appear here.';
+            idTarget.textContent = hasSelection ? place?.place_id : '—';
+            submitButton.disabled = !hasSelection;
+        };
+
+        const hydrateExistingPlace = (placeId) => {
+            if (!placeId || !placesService) {
+                return;
+            }
+
+            statusTarget.textContent = 'Loading saved place…';
+            placesService.getDetails({ placeId, fields: ['place_id', 'name', 'formatted_address', 'geometry'] }, (place, status) => {
+                if (status !== google.maps.places.PlacesServiceStatus.OK || !place) {
+                    statusTarget.textContent = defaultStatus;
+                    selectedPlace = null;
+                    updatePreview(null);
+                    marker?.setVisible(false);
+                    return;
+                }
+
+                applySelectedPlace(place);
+                statusTarget.textContent = 'Press “Use this place” to keep it or search again.';
+            });
+        };
+
+        const openPicker = (targetFieldId) => {
+            if (!targetFieldId) {
+                return;
+            }
+
+            const input = document.getElementById(targetFieldId);
+            targetInput = input;
+            modalElement.dataset.placePickerTarget = targetFieldId;
+            searchInput.value = '';
+            selectedPlace = null;
+            updatePreview(null);
+            statusTarget.textContent = defaultStatus;
+            submitButton.disabled = true;
+
+            ensurePickerReady()
+                .then(() => {
+                    modal.show();
+                    const currentValue = input?.value || '';
+                    if (currentValue) {
+                        hydrateExistingPlace(currentValue);
+                    } else if (marker) {
+                        marker.setVisible(false);
+                        map?.setCenter({ lat: 20, lng: 0 });
+                        map?.setZoom(2);
+                    }
+                })
+                .catch(() => {
+                    window.alert('Google Places is unavailable right now. Try again later.');
+                });
+        };
+
+        const closeAndReset = () => {
+            searchInput.value = '';
+            selectedPlace = null;
+            updatePreview(null);
+            submitButton.disabled = true;
+            statusTarget.textContent = defaultStatus;
+            marker?.setVisible(false);
+        };
+
+        submitButton.addEventListener('click', () => {
+            if (!targetInput || !selectedPlace?.place_id) {
+                return;
+            }
+
+            targetInput.value = selectedPlace.place_id;
+            targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+            targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+            modal.hide();
+        });
+
+        clearButton?.addEventListener('click', () => {
+            closeAndReset();
+            searchInput.focus();
+        });
+
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            closeAndReset();
+        });
+
+        triggers.forEach((trigger) => {
+            if (trigger.dataset.placePickerEnabled !== 'true') {
+                trigger.disabled = true;
+                return;
+            }
+
+            trigger.addEventListener('click', (event) => {
+                event.preventDefault();
+                openPicker(trigger.dataset.placePickerTarget || '');
+            });
+        });
+    }
+
+    function disablePlacePickerTriggers(triggers) {
+        triggers.forEach((trigger) => {
+            trigger.disabled = true;
+            trigger.classList.add('disabled');
+        });
+    }
+
+    function waitForGooglePlaces() {
+        if (isGooglePlacesReady()) {
+            return Promise.resolve();
+        }
+
+        if (!googlePlacesLoadPromise) {
+            googlePlacesLoadPromise = new Promise((resolve, reject) => {
+                const readyHandler = () => {
+                    cleanup();
+                    resolve();
+                };
+
+                const timeoutId = setTimeout(() => {
+                    cleanup();
+                    reject(new Error('Google Places timed out.'));
+                }, 15000);
+
+                const cleanup = () => {
+                    document.removeEventListener('travel-place-picker:loader-ready', readyHandler);
+                    clearTimeout(timeoutId);
+                };
+
+                document.addEventListener('travel-place-picker:loader-ready', readyHandler, { once: true });
+            });
+        }
+
+        return googlePlacesLoadPromise;
+    }
+
+    function isGooglePlacesReady() {
+        return typeof window.google === 'object'
+            && typeof window.google.maps === 'object'
+            && typeof window.google.maps.places === 'object';
     }
 
     function initCurrencyPicker() {
