@@ -248,7 +248,7 @@ body {
   gap: 1.5rem;
 }
 
-.cost-summary-card table tbody tr + tr {
+.cost-summary-card table tbody tr+tr {
   border-top: 1px solid #f0f2f5;
 }
 
