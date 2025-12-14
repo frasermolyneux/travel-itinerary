@@ -1,0 +1,143 @@
+@page "{tripId?}"
+@model MX.TravelItinerary.Web.Pages.Trips.CostSummaryModel
+@using MX.TravelItinerary.Web.Data.Models
+@{
+    ViewData["Title"] = "Cost summary";
+    var trip = Model.TripDetails?.Trip;
+    var tripSlug = string.IsNullOrWhiteSpace(trip?.Slug) ? null : trip.Slug;
+    var tripId = trip?.TripId ?? Model.TripId;
+}
+
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+    <div>
+        <p class="text-uppercase text-muted small mb-1">Cost summary</p>
+        <h1 class="mb-1">@trip?.Name</h1>
+        <div class="text-muted">
+            @if (trip?.StartDate is not null || trip?.EndDate is not null)
+            {
+                <span>@trip?.StartDate?.ToString("MMM dd, yyyy")</span>
+                <span> – @trip?.EndDate?.ToString("MMM dd, yyyy")</span>
+            }
+            else
+            {
+                <span>Dates coming soon</span>
+            }
+        </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 justify-content-end">
+          <a class="btn btn-outline-primary"
+              asp-page="/Trips/Details"
+              asp-route-tripId="@(tripSlug is null ? tripId : null)"
+              asp-route-tripSlug="@tripSlug">
+            Back to timeline
+        </a>
+        <a class="btn btn-outline-secondary" href="/trips">Back to Trips</a>
+    </div>
+</div>
+
+@if (Model.CurrencySummaries.Count == 0)
+{
+    <div class="alert alert-info">No bookings linked to itinerary entries yet. Add bookings with cost details to see this summary.</div>
+}
+else
+{
+    <div class="cost-summary-grid">
+        @foreach (var group in Model.CurrencySummaries)
+        {
+            <div class="cost-summary-card">
+                <div class="cost-summary-card-header">
+                    <div>
+                        <div class="text-uppercase text-muted small">Currency</div>
+                        <h5 class="mb-0">@group.CurrencyDisplay</h5>
+                    </div>
+                    <div class="cost-summary-metrics">
+                        <div>
+                            <div class="text-muted text-uppercase small">Total booked</div>
+                            <div class="fw-semibold">@FormatAmount(group.Total, group.CurrencyDisplay)</div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-uppercase small">Paid</div>
+                            <div class="fw-semibold text-success">@FormatAmount(group.PaidTotal, group.CurrencyDisplay)</div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-uppercase small">Outstanding</div>
+                            <div class="fw-semibold text-danger">@FormatAmount(group.UnpaidTotal, group.CurrencyDisplay)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">Itinerary entry</th>
+                                <th scope="col">Booking</th>
+                                <th scope="col" class="text-end">Cost</th>
+                                <th scope="col" class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var booking in group.Bookings)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">@booking.EntryTitle</div>
+                                        <div class="text-muted small">@booking.EntryDateLabel · @booking.EntryType.GetDisplayName()</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">@booking.BookingLabel</div>
+                                        @if (!string.IsNullOrWhiteSpace(booking.BookingReference))
+                                        {
+                                            <div class="text-muted small">Ref: @booking.BookingReference</div>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        @if (booking.Cost is decimal amount)
+                                        {
+                                            <span>@FormatAmount(amount, group.CurrencyDisplay)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge rounded-pill @GetStatusBadgeClass(booking.IsPaid)">@GetStatusLabel(booking.IsPaid)</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@functions {
+    private static string FormatAmount(decimal amount, string currencyLabel)
+    {
+        var formatted = amount.ToString("0.##");
+        if (string.IsNullOrWhiteSpace(currencyLabel) || currencyLabel.Equals("Unspecified", StringComparison.OrdinalIgnoreCase))
+        {
+            return formatted;
+        }
+
+        return $"{currencyLabel} {formatted}";
+    }
+
+    private static string GetStatusLabel(bool? isPaid)
+        => isPaid switch
+        {
+            true => "Paid",
+            false => "Not paid",
+            _ => "Unknown"
+        };
+
+    private static string GetStatusBadgeClass(bool? isPaid)
+        => isPaid switch
+        {
+            true => "text-bg-success",
+            false => "text-bg-warning",
+            _ => "text-bg-secondary"
+        };
+}
