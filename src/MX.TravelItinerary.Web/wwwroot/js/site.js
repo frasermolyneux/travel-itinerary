@@ -25,6 +25,7 @@
         initEntryDateBounds();
         initMetadataSections();
         initTimelineReorder();
+        initCurrencyPicker();
         reopenOffcanvasOnValidation();
     });
 
@@ -88,6 +89,9 @@
             return;
         }
 
+        const timelineRoot = document.querySelector('[data-timeline-root]');
+        const tripDefaultCurrency = timelineRoot?.dataset.tripDefaultCurrency || '';
+
         document.querySelectorAll('[data-booking-action="add"]').forEach((button) => {
             button.addEventListener('click', (event) => {
                 event.stopPropagation();
@@ -96,7 +100,8 @@
                     parentType: button.dataset.parentType,
                     entryId: button.dataset.entryId,
                     categoryLabel: button.dataset.entryTypeLabel,
-                    title: button.dataset.entryTitle || button.dataset.segmentTitle || ''
+                    title: button.dataset.entryTitle || button.dataset.segmentTitle || '',
+                    defaultCurrency: button.dataset.defaultCurrency || tripDefaultCurrency
                 });
             });
         });
@@ -255,7 +260,9 @@
         setInputValue('BookingInput_Vendor', options.vendor ?? '');
         setInputValue('BookingInput_Reference', options.reference ?? '');
         setInputValue('BookingInput_Cost', options.cost ?? '');
-        setInputValue('BookingInput_Currency', options.currency ?? '');
+        const currencyValueRaw = options.currency ?? options.defaultCurrency ?? '';
+        const currencyValue = currencyValueRaw ? currencyValueRaw.toString().trim().toUpperCase() : '';
+        setInputValue('BookingInput_Currency', currencyValue);
         setInputValue('BookingInput_CancellationPolicy', options.cancellation ?? '');
         setInputValue('BookingInput_ConfirmationDetails', options.details ?? '');
         setInputValue('BookingInput_ConfirmationUrl', options.confirmationUrl ?? '');
@@ -683,5 +690,273 @@
             }
             openOffcanvas('bookingFlyout');
         }
+    }
+
+    function initCurrencyPicker() {
+        const inputs = Array.from(document.querySelectorAll('[data-currency-input]'));
+        if (inputs.length === 0) {
+            return;
+        }
+
+        const dataElement = document.getElementById('currencyCatalogData');
+        if (!dataElement) {
+            console.warn('Currency picker catalog data was not found.');
+            return;
+        }
+
+        let catalogRaw;
+        try {
+            catalogRaw = JSON.parse(dataElement.textContent || '[]');
+        } catch (error) {
+            console.warn('Unable to parse currency catalog data.', error);
+            return;
+        }
+
+        if (!Array.isArray(catalogRaw) || catalogRaw.length === 0) {
+            return;
+        }
+
+        const catalog = catalogRaw
+            .map((item) => normalizeCurrencyItem(item))
+            .filter((item) => !!item);
+
+        if (catalog.length === 0) {
+            return;
+        }
+
+        const catalogByCode = new Map(catalog.map((item) => [item.code, item]));
+
+        inputs.forEach((input) => setupCurrencyPicker(input, catalog, catalogByCode));
+    }
+
+    function normalizeCurrencyItem(item) {
+        if (!item) {
+            return null;
+        }
+
+        const rawCode = item.code ?? item.Code ?? '';
+        const code = rawCode.toString().trim().toUpperCase();
+        if (!code) {
+            return null;
+        }
+
+        const rawDisplayName = item.displayName ?? item.DisplayName ?? item.name ?? item.Name ?? code;
+        const displayName = rawDisplayName.toString().trim();
+        const rawTerms = item.searchTerms ?? item.SearchTerms ?? [];
+        const searchTerms = Array.isArray(rawTerms) ? rawTerms : [];
+        const combined = [code, displayName, ...searchTerms]
+            .map((term) => (term || '').toString().trim())
+            .filter((term) => term.length > 0);
+
+        return {
+            code,
+            name: displayName,
+            search: combined.join(' ').toLowerCase()
+        };
+    }
+
+    function setupCurrencyPicker(input, catalog, catalogByCode) {
+        if (!input || input.dataset.currencyReady === 'true') {
+            return;
+        }
+
+        input.dataset.currencyReady = 'true';
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('spellcheck', 'false');
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'currency-picker';
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'currency-picker-dropdown';
+        wrapper.appendChild(dropdown);
+
+        let suggestions = [];
+        let highlightedIndex = -1;
+
+        const renderSuggestions = () => {
+            suggestions = filterCurrencyCatalog(input.value, catalog, catalogByCode);
+            dropdown.innerHTML = '';
+            highlightedIndex = -1;
+
+            if (suggestions.length === 0) {
+                dropdown.classList.remove('is-open');
+                return;
+            }
+
+            suggestions.forEach((option, index) => {
+                const row = document.createElement('div');
+                row.className = 'currency-picker-option';
+                row.setAttribute('role', 'button');
+                row.tabIndex = -1;
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'currency-picker-option-name';
+                nameSpan.textContent = option.name;
+
+                const codeSpan = document.createElement('span');
+                codeSpan.className = 'currency-picker-option-code';
+                codeSpan.textContent = option.code;
+
+                row.appendChild(nameSpan);
+                row.appendChild(codeSpan);
+
+                row.addEventListener('mousedown', (event) => {
+                    event.preventDefault();
+                    selectSuggestion(option);
+                });
+
+                dropdown.appendChild(row);
+
+                if (index === 0) {
+                    row.classList.add('is-highlighted');
+                    highlightedIndex = 0;
+                }
+            });
+
+            dropdown.classList.add('is-open');
+        };
+
+        const selectSuggestion = (option) => {
+            input.value = option.code;
+            dropdown.classList.remove('is-open');
+        };
+
+        const moveHighlight = (direction) => {
+            if (!dropdown.classList.contains('is-open') || suggestions.length === 0) {
+                return;
+            }
+
+            highlightedIndex = (highlightedIndex + direction + suggestions.length) % suggestions.length;
+            const rows = dropdown.querySelectorAll('.currency-picker-option');
+            rows.forEach((row, index) => {
+                const isActive = index === highlightedIndex;
+                row.classList.toggle('is-highlighted', isActive);
+                if (isActive) {
+                    row.scrollIntoView({ block: 'nearest' });
+                }
+            });
+        };
+
+        const closeDropdown = () => {
+            dropdown.classList.remove('is-open');
+        };
+
+        input.addEventListener('focus', () => {
+            renderSuggestions();
+        });
+
+        input.addEventListener('input', () => {
+            renderSuggestions();
+        });
+
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                moveHighlight(1);
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                moveHighlight(-1);
+            } else if (event.key === 'Enter') {
+                if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
+                    event.preventDefault();
+                    selectSuggestion(suggestions[highlightedIndex]);
+                }
+            } else if (event.key === 'Escape') {
+                closeDropdown();
+            }
+        });
+
+        input.addEventListener('blur', () => {
+            setTimeout(() => {
+                closeDropdown();
+                input.value = coerceCurrencyValue(input.value, catalog, catalogByCode);
+            }, 150);
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!wrapper.contains(event.target)) {
+                closeDropdown();
+            }
+        });
+    }
+
+    function filterCurrencyCatalog(query, catalog, catalogByCode) {
+        const trimmed = (query || '').trim();
+        if (!trimmed) {
+            return catalog.slice(0, 10);
+        }
+
+        const queryUpper = trimmed.toUpperCase();
+        const queryLower = trimmed.toLowerCase();
+        const directHit = catalogByCode.get(queryUpper);
+
+        const ranked = catalog
+            .map((item) => ({ item, score: scoreCurrencyMatch(item, queryLower, queryUpper) }))
+            .filter((entry) => entry.score !== Number.POSITIVE_INFINITY)
+            .sort((a, b) => {
+                if (a.score === b.score) {
+                    return a.item.name.localeCompare(b.item.name, undefined, { sensitivity: 'base' });
+                }
+                return a.score - b.score;
+            })
+            .map((entry) => entry.item);
+
+        let results = ranked;
+        if (results.length === 0) {
+            results = catalog.slice(0, 10);
+        }
+
+        if (directHit) {
+            results = [directHit, ...results.filter((item) => item.code !== directHit.code)];
+        }
+
+        return results.slice(0, 10);
+    }
+
+    function scoreCurrencyMatch(item, queryLower, queryUpper) {
+        if (!queryLower) {
+            return 50;
+        }
+
+        if (item.code === queryUpper) {
+            return 0;
+        }
+
+        if (item.code.startsWith(queryUpper)) {
+            return 1;
+        }
+
+        if (item.name.toLowerCase().startsWith(queryLower)) {
+            return 2;
+        }
+
+        if (item.search.includes(queryLower)) {
+            return 5;
+        }
+
+        return Number.POSITIVE_INFINITY;
+    }
+
+    function coerceCurrencyValue(value, catalog, catalogByCode) {
+        const trimmed = (value || '').trim();
+        if (!trimmed) {
+            return '';
+        }
+
+        const upper = trimmed.toUpperCase();
+        if (catalogByCode.has(upper)) {
+            return upper;
+        }
+
+        const matches = filterCurrencyCatalog(trimmed, catalog, catalogByCode);
+        const normalized = matches.find((match) => match.search.includes(trimmed.toLowerCase()));
+        if (normalized) {
+            return normalized.code;
+        }
+
+        return upper;
     }
 })();

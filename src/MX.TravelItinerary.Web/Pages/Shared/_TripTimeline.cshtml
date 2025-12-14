@@ -17,7 +17,8 @@
 }
 
 <div class="timeline-grid" style="--segment-lane-multiplier:@laneMultiplier;" data-timeline-root
-    data-trip-id="@Model.Trip.TripId" data-allow-reorder="@Model.AllowEntryReordering.ToString().ToLowerInvariant()">
+    data-trip-id="@Model.Trip.TripId" data-trip-default-currency="@(Model.Trip.DefaultCurrency ?? string.Empty)"
+    data-allow-reorder="@Model.AllowEntryReordering.ToString().ToLowerInvariant()">
     @foreach (var day in timeline.Days)
     {
         var dayDateIso = day.Date.ToString("yyyy-MM-dd");

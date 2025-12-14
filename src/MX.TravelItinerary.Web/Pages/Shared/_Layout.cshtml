@@ -1,10 +1,12 @@
 ﻿@using System.Text.Json
+@using MX.TravelItinerary.Web.Infrastructure
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
     var aiClientConnection = Configuration["ApplicationInsights:ClientConnectionString"];
     var aiClientConnectionJson = string.IsNullOrWhiteSpace(aiClientConnection)
     ? null
     : JsonSerializer.Serialize(aiClientConnection);
+    var currencyCatalogJson = JsonSerializer.Serialize(CurrencyCatalog.All);
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -78,6 +80,9 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script id="currencyCatalogData" type="application/json">
+        @Html.Raw(currencyCatalogJson)
+    </script>
     @if (aiClientConnectionJson is not null)
     {
         <script type="text/javascript">
