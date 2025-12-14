@@ -33,12 +33,15 @@
                 {
                     var entryBooking = Model.GetBookingForEntry(entry.EntryId);
                     var entryTypeToken = entry.ItemType.ToCssToken();
+                    var entryDisplayTitle = string.IsNullOrWhiteSpace(entry.Title)
+                    ? entry.ToString()
+                    : entry.Title;
                     <div class="timeline-item" data-timeline-item data-item-type="entry" data-item-id="@entry.EntryId">
                         <div class="timeline-item-body">
                             <div class="timeline-item-heading">
                                 <span class="timeline-item-icon bi @entry.ItemType.GetIconClass() segment-type-@entryTypeToken"
                                     aria-hidden="true"></span>
-                                <span class="timeline-item-title">@entry</span>
+                                <span class="timeline-item-title">@entryDisplayTitle</span>
                                 @if (entryBooking is not null)
                                 {
                                     <span class="booking-indicator" title="Booking attached">&#128206;</span>
@@ -108,7 +111,7 @@
                                         data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
                                         data-booking-details="@(entryBooking.ConfirmationDetails ?? string.Empty)"
                                         data-booking-confirmation-url="@(entryBooking.ConfirmationUrl?.ToString() ?? string.Empty)"
-                                        data-booking-parent-label="@entry" data-booking-parent-type="entry"
+                                        data-booking-parent-label="@entryDisplayTitle" data-booking-parent-type="entry"
                                         data-parent-entry="@entry.EntryId">
                                         View booking
                                     </button>
@@ -125,6 +128,9 @@
     {
         var segmentType = block.Entry.ItemType.ToCssToken();
         var entryBooking = Model.GetBookingForEntry(block.Entry.EntryId);
+        var entryDisplayTitle = string.IsNullOrWhiteSpace(block.Entry.Title)
+        ? block.Entry.ToString()
+        : block.Entry.Title;
         <div class="timeline-segment"
             style="grid-row:@block.RowStart / @block.RowEnd; --lane-index:@block.LaneIndex; --lane-count:@block.LaneCount;"
             data-segment-type="@segmentType">
@@ -135,7 +141,7 @@
                     <div class="timeline-item-heading">
                         <span class="timeline-item-icon bi @block.Entry.ItemType.GetIconClass() segment-type-@segmentType"
                             aria-hidden="true"></span>
-                        <span class="timeline-item-title">@block.Entry</span>
+                        <span class="timeline-item-title">@entryDisplayTitle</span>
                         @if (entryBooking is not null)
                         {
                             <span class="booking-indicator" title="Booking attached">&#128206;</span>
@@ -209,7 +215,7 @@
                                 data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
                                 data-booking-details="@(entryBooking.ConfirmationDetails ?? string.Empty)"
                                 data-booking-confirmation-url="@(entryBooking.ConfirmationUrl?.ToString() ?? string.Empty)"
-                                data-booking-parent-label="@block.Entry" data-booking-parent-type="entry"
+                                data-booking-parent-label="@entryDisplayTitle" data-booking-parent-type="entry"
                                 data-parent-entry="@block.Entry.EntryId">
                                 View booking
                             </button>
