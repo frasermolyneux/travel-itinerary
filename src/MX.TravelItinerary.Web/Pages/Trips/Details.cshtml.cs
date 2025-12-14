@@ -40,6 +40,8 @@ public sealed class DetailsModel : PageModel
 
     public IReadOnlyList<SelectListItem> EntryTypeOptions { get; } = BuildSelectList<TimelineItemType>(TimelineItemGroupSelector);
 
+    public IReadOnlyList<SelectListItem> BookingInclusionOptions { get; } = BuildStayInclusionOptions();
+
     [TempData]
     public string? StatusMessage { get; set; }
 
@@ -499,30 +501,16 @@ public sealed class DetailsModel : PageModel
             [Display(Name = "Property name")]
             public string? PropertyName { get; set; }
 
-            [Display(Name = "Address / neighborhood")]
-            public string? Address { get; set; }
-
-            [Display(Name = "Check-in time")]
-            public string? CheckInTime { get; set; }
-
-            [Display(Name = "Check-out time")]
-            public string? CheckOutTime { get; set; }
-
-            [Display(Name = "Room type / notes")]
-            public string? RoomType { get; set; }
-
-            [Display(Name = "Confirmation number")]
-            public string? ConfirmationNumber { get; set; }
+            [Display(Name = "Property link")]
+            [DataType(DataType.Url)]
+            [Url]
+            public string? PropertyLink { get; set; }
 
             public StayMetadata? ToDomain()
             {
                 var metadata = new StayMetadata(
                     Normalize(PropertyName),
-                    Normalize(Address),
-                    Normalize(CheckInTime),
-                    Normalize(CheckOutTime),
-                    Normalize(RoomType),
-                    Normalize(ConfirmationNumber));
+                    Normalize(PropertyLink));
 
                 return metadata.HasContent ? metadata : null;
             }
@@ -573,6 +561,21 @@ public sealed class DetailsModel : PageModel
         [Url]
         public string? ConfirmationUrl { get; set; }
 
+        [Display(Name = "Check-in time")]
+        [StringLength(100)]
+        public string? StayCheckInTime { get; set; }
+
+        [Display(Name = "Check-out time")]
+        [StringLength(100)]
+        public string? StayCheckOutTime { get; set; }
+
+        [Display(Name = "Room type")]
+        [StringLength(150)]
+        public string? StayRoomType { get; set; }
+
+        [Display(Name = "Includes")]
+        public List<string> StayIncludes { get; set; } = new();
+
         public BookingMutation ToMutation()
             => new(
                 Normalize(EntryId),
@@ -585,7 +588,8 @@ public sealed class DetailsModel : PageModel
                 IsPaid,
                 Normalize(CancellationPolicy),
                 string.IsNullOrWhiteSpace(ConfirmationDetails) ? null : ConfirmationDetails.Trim(),
-                ParseUri(ConfirmationUrl));
+                ParseUri(ConfirmationUrl),
+                BuildMetadata());
 
         private static string? Normalize(string? value)
             => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -599,6 +603,36 @@ public sealed class DetailsModel : PageModel
 
             return Uri.TryCreate(value.Trim(), UriKind.Absolute, out var uri) ? uri : null;
         }
+
+        private BookingMetadata? BuildMetadata()
+        {
+            var stay = new StayBookingMetadata(
+                Normalize(StayCheckInTime),
+                Normalize(StayCheckOutTime),
+                Normalize(StayRoomType),
+                NormalizeIncludes(StayIncludes));
+
+            return stay.HasContent ? new BookingMetadata(stay) : null;
+        }
+
+        private static IReadOnlyList<string>? NormalizeIncludes(IEnumerable<string>? values)
+        {
+            if (values is null)
+            {
+                return null;
+            }
+
+            var normalized = values
+                .Select(value => Normalize(value))
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Select(value => StayInclusionLabels.FirstOrDefault(option => option.Equals(value!, StringComparison.OrdinalIgnoreCase)))
+                .Where(value => value is not null)
+                .Select(value => value!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            return normalized.Count > 0 ? normalized : null;
+        }
     }
 
     public sealed class ReorderEntriesRequest
@@ -611,6 +645,14 @@ public sealed class DetailsModel : PageModel
     }
 
     private static IReadOnlyDictionary<TimelineItemType, SelectListGroup> TimelineItemGroups { get; } = CreateTimelineItemGroups();
+
+    private static readonly IReadOnlyList<string> StayInclusionLabels = new[]
+    {
+        "Breakfast",
+        "Lunch",
+        "Dinner",
+        "Lounge Access"
+    };
 
     private static SelectListGroup? TimelineItemGroupSelector(TimelineItemType type)
         => TimelineItemGroups.TryGetValue(type, out var group) ? group : null;
@@ -640,6 +682,11 @@ public sealed class DetailsModel : PageModel
         items.AddRange(BuildSelectList(groupSelector));
         return items;
     }
+
+    private static IReadOnlyList<SelectListItem> BuildStayInclusionOptions()
+        => StayInclusionLabels
+            .Select(value => new SelectListItem(value, value))
+            .ToList();
 
     private static IReadOnlyDictionary<TimelineItemType, SelectListGroup> CreateTimelineItemGroups()
     {

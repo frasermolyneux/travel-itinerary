@@ -100,11 +100,7 @@ public sealed partial record FlightMetadata(
 
 public sealed partial record StayMetadata(
     string? PropertyName,
-    string? Address,
-    string? CheckInTime,
-    string? CheckOutTime,
-    string? RoomType,
-    string? ConfirmationNumber);
+    string? PropertyLink);
 
 public sealed partial record ItineraryEntry(
     string TripId,
@@ -145,7 +141,8 @@ public sealed record Booking(
     bool? IsPaid,
     string? CancellationPolicy,
     string? ConfirmationDetails,
-    Uri? ConfirmationUrl);
+    Uri? ConfirmationUrl,
+    BookingMetadata? Metadata);
 
 public sealed record BookingMutation(
     string? EntryId,
@@ -158,7 +155,17 @@ public sealed record BookingMutation(
     bool? IsPaid,
     string? CancellationPolicy,
     string? ConfirmationDetails,
-    Uri? ConfirmationUrl);
+    Uri? ConfirmationUrl,
+    BookingMetadata? Metadata);
+
+public sealed partial record BookingMetadata(
+    StayBookingMetadata? Stay);
+
+public sealed partial record StayBookingMetadata(
+    string? CheckInTime,
+    string? CheckOutTime,
+    string? RoomType,
+    IReadOnlyList<string>? Includes);
 
 public sealed record ShareLink(
     string TripId,
@@ -298,9 +305,18 @@ public sealed partial record FlightMetadata
 public sealed partial record StayMetadata
 {
     public bool HasContent => !string.IsNullOrWhiteSpace(PropertyName)
-        || !string.IsNullOrWhiteSpace(Address)
-        || !string.IsNullOrWhiteSpace(CheckInTime)
+    || !string.IsNullOrWhiteSpace(PropertyLink);
+}
+
+public sealed partial record BookingMetadata
+{
+    public bool HasContent => Stay?.HasContent == true;
+}
+
+public sealed partial record StayBookingMetadata
+{
+    public bool HasContent => !string.IsNullOrWhiteSpace(CheckInTime)
         || !string.IsNullOrWhiteSpace(CheckOutTime)
-        || !string.IsNullOrWhiteSpace(RoomType)
-        || !string.IsNullOrWhiteSpace(ConfirmationNumber);
+    || !string.IsNullOrWhiteSpace(RoomType)
+    || (Includes?.Count > 0);
 }

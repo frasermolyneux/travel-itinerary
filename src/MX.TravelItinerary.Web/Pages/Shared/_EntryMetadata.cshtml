@@ -68,6 +68,13 @@
 @if (Model.HasStayDetails)
 {
     var stay = Model.Stay!;
+    var stayLinkValue = stay.PropertyLink;
+    System.Uri? stayLinkUri = null;
+    if (!string.IsNullOrWhiteSpace(stayLinkValue) && System.Uri.TryCreate(stayLinkValue, System.UriKind.Absolute, out var
+    parsedStayLink))
+    {
+        stayLinkUri = parsedStayLink;
+    }
     <div class="metadata-block">
         <div class="metadata-block-title">
             <span class="bi bi-buildings me-2" aria-hidden="true"></span>
@@ -79,30 +86,18 @@
                 <dt>Property</dt>
                 <dd>@stay.PropertyName</dd>
             }
-            @if (!string.IsNullOrWhiteSpace(stay.Address))
+            @if (stayLinkUri is not null)
             {
-                <dt>Address</dt>
-                <dd>@stay.Address</dd>
+                var linkText = string.IsNullOrWhiteSpace(stayLinkUri.Host) ? stayLinkUri.ToString() : stayLinkUri.Host;
+                <dt>Property link</dt>
+                <dd>
+                    <a href="@stayLinkUri" target="_blank" rel="noopener">@linkText</a>
+                </dd>
             }
-            @if (!string.IsNullOrWhiteSpace(stay.CheckInTime))
+            else if (!string.IsNullOrWhiteSpace(stayLinkValue))
             {
-                <dt>Check-in</dt>
-                <dd>@stay.CheckInTime</dd>
-            }
-            @if (!string.IsNullOrWhiteSpace(stay.CheckOutTime))
-            {
-                <dt>Check-out</dt>
-                <dd>@stay.CheckOutTime</dd>
-            }
-            @if (!string.IsNullOrWhiteSpace(stay.RoomType))
-            {
-                <dt>Room</dt>
-                <dd>@stay.RoomType</dd>
-            }
-            @if (!string.IsNullOrWhiteSpace(stay.ConfirmationNumber))
-            {
-                <dt>Confirmation</dt>
-                <dd>@stay.ConfirmationNumber</dd>
+                <dt>Property link</dt>
+                <dd>@stayLinkValue</dd>
             }
         </dl>
     </div>

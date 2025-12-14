@@ -160,32 +160,10 @@ else
                         <span asp-validation-for="EntryInput.StayMetadata.PropertyName" class="text-danger"></span>
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="EntryInput.StayMetadata.RoomType" class="form-label"></label>
-                        <input asp-for="EntryInput.StayMetadata.RoomType" class="form-control" />
-                        <span asp-validation-for="EntryInput.StayMetadata.RoomType" class="text-danger"></span>
-                    </div>
-                    <div class="col-12">
-                        <label asp-for="EntryInput.StayMetadata.Address" class="form-label"></label>
-                        <input asp-for="EntryInput.StayMetadata.Address" class="form-control" />
-                        <span asp-validation-for="EntryInput.StayMetadata.Address" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="EntryInput.StayMetadata.CheckInTime" class="form-label"></label>
-                        <input asp-for="EntryInput.StayMetadata.CheckInTime" class="form-control"
-                            placeholder="e.g. After 3 PM" />
-                        <span asp-validation-for="EntryInput.StayMetadata.CheckInTime" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="EntryInput.StayMetadata.CheckOutTime" class="form-label"></label>
-                        <input asp-for="EntryInput.StayMetadata.CheckOutTime" class="form-control"
-                            placeholder="e.g. Before 11 AM" />
-                        <span asp-validation-for="EntryInput.StayMetadata.CheckOutTime" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="EntryInput.StayMetadata.ConfirmationNumber" class="form-label"></label>
-                        <input asp-for="EntryInput.StayMetadata.ConfirmationNumber" class="form-control" />
-                        <span asp-validation-for="EntryInput.StayMetadata.ConfirmationNumber"
-                            class="text-danger"></span>
+                        <label asp-for="EntryInput.StayMetadata.PropertyLink" class="form-label"></label>
+                        <input asp-for="EntryInput.StayMetadata.PropertyLink" class="form-control" type="url"
+                            placeholder="https://" />
+                        <span asp-validation-for="EntryInput.StayMetadata.PropertyLink" class="text-danger"></span>
                     </div>
                 </div>
             </div>
@@ -270,6 +248,42 @@ else
                 <span asp-validation-for="BookingInput.ConfirmationDetails" class="text-danger"></span>
             </div>
 
+            <div class="mb-3 pt-3 border-top">
+                <div class="d-flex justify-content-between flex-wrap align-items-center mb-2">
+                    <div>
+                        <div class="text-muted text-uppercase small">Stay metadata</div>
+                        <div class="form-text">Optional details that appear on the booking timeline.</div>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="BookingInput.StayCheckInTime" class="form-label"></label>
+                        <input asp-for="BookingInput.StayCheckInTime" class="form-control"
+                            placeholder="e.g. After 3 PM" />
+                        <span asp-validation-for="BookingInput.StayCheckInTime" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="BookingInput.StayCheckOutTime" class="form-label"></label>
+                        <input asp-for="BookingInput.StayCheckOutTime" class="form-control"
+                            placeholder="e.g. Before 11 AM" />
+                        <span asp-validation-for="BookingInput.StayCheckOutTime" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="BookingInput.StayRoomType" class="form-label"></label>
+                        <input asp-for="BookingInput.StayRoomType" class="form-control"
+                            placeholder="e.g. Deluxe king with lounge access" />
+                        <span asp-validation-for="BookingInput.StayRoomType" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="BookingInput.StayIncludes" class="form-label"></label>
+                        <select asp-for="BookingInput.StayIncludes" asp-items="Model.BookingInclusionOptions"
+                            class="form-select" multiple size="4"></select>
+                        <span asp-validation-for="BookingInput.StayIncludes" class="text-danger"></span>
+                        <div class="form-text">Select all features included with this stay.</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Save booking</button>
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancel</button>
@@ -297,6 +311,14 @@ else
             <dd class="col-sm-8" data-booking-detail="reference">—</dd>
             <dt class="col-sm-4">Cost</dt>
             <dd class="col-sm-8" data-booking-detail="cost">—</dd>
+            <dt class="col-sm-4">Check-in</dt>
+            <dd class="col-sm-8" data-booking-detail="checkin">—</dd>
+            <dt class="col-sm-4">Check-out</dt>
+            <dd class="col-sm-8" data-booking-detail="checkout">—</dd>
+            <dt class="col-sm-4">Room</dt>
+            <dd class="col-sm-8" data-booking-detail="room">—</dd>
+            <dt class="col-sm-4">Includes</dt>
+            <dd class="col-sm-8" data-booking-detail="includes">—</dd>
             <dt class="col-sm-4">Refundable</dt>
             <dd class="col-sm-8" data-booking-detail="refundable">—</dd>
             <dt class="col-sm-4">Paid</dt>

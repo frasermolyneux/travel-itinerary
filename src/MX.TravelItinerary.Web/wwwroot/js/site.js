@@ -101,7 +101,8 @@
                     entryId: button.dataset.entryId,
                     categoryLabel: button.dataset.entryTypeLabel,
                     title: button.dataset.entryTitle || button.dataset.segmentTitle || '',
-                    defaultCurrency: button.dataset.defaultCurrency || tripDefaultCurrency
+                    defaultCurrency: button.dataset.defaultCurrency || tripDefaultCurrency,
+                    includes: ''
                 });
             });
         });
@@ -135,7 +136,11 @@
                 paid: detailPane.dataset.bookingPaid,
                 cancellation: detailPane.dataset.bookingCancellation,
                 details: detailPane.dataset.bookingDetails,
-                confirmationUrl: detailPane.dataset.bookingConfirmationUrl
+                confirmationUrl: detailPane.dataset.bookingConfirmationUrl,
+                checkIn: detailPane.dataset.bookingCheckIn,
+                checkOut: detailPane.dataset.bookingCheckOut,
+                room: detailPane.dataset.bookingRoom,
+                includes: detailPane.dataset.bookingIncludes
             });
         });
     }
@@ -202,6 +207,10 @@
         setInputValue('BookingInput_CancellationPolicy', '');
         setInputValue('BookingInput_ConfirmationDetails', '');
         setInputValue('BookingInput_ConfirmationUrl', '');
+        setInputValue('BookingInput_StayCheckInTime', '');
+        setInputValue('BookingInput_StayCheckOutTime', '');
+        setInputValue('BookingInput_StayRoomType', '');
+        setMultiSelectValues('BookingInput_StayIncludes', []);
         setBookingCategoryDisplay('—');
 
         const refundable = document.getElementById('BookingInput_IsRefundable');
@@ -229,6 +238,25 @@
         input.value = value ?? '';
     }
 
+    function setMultiSelectValues(id, values) {
+        const select = document.getElementById(id);
+        if (!select) {
+            return;
+        }
+
+        const normalizedValues = Array.isArray(values)
+            ? values
+                .map((value) => (value ?? '').toString().trim().toLowerCase())
+                .filter((value) => value.length > 0)
+            : [];
+
+        const lookup = new Set(normalizedValues);
+        Array.from(select.options).forEach((option) => {
+            const optionValue = (option.value ?? '').toString().trim().toLowerCase();
+            option.selected = lookup.size > 0 && lookup.has(optionValue);
+        });
+    }
+
     function setEntryMetadataFields(dataset) {
         setInputValue('EntryInput_FlightMetadata_Airline', dataset.entryFlightAirline ?? '');
         setInputValue('EntryInput_FlightMetadata_FlightNumber', dataset.entryFlightNumber ?? '');
@@ -238,11 +266,7 @@
         setInputValue('EntryInput_FlightMetadata_ArrivalTime', dataset.entryFlightArrivalTime ?? '');
 
         setInputValue('EntryInput_StayMetadata_PropertyName', dataset.entryStayProperty ?? '');
-        setInputValue('EntryInput_StayMetadata_Address', dataset.entryStayAddress ?? '');
-        setInputValue('EntryInput_StayMetadata_CheckInTime', dataset.entryStayCheckIn ?? '');
-        setInputValue('EntryInput_StayMetadata_CheckOutTime', dataset.entryStayCheckOut ?? '');
-        setInputValue('EntryInput_StayMetadata_RoomType', dataset.entryStayRoom ?? '');
-        setInputValue('EntryInput_StayMetadata_ConfirmationNumber', dataset.entryStayConfirmation ?? '');
+        setInputValue('EntryInput_StayMetadata_PropertyLink', dataset.entryStayLink ?? '');
     }
 
     function openBookingForm(options) {
@@ -267,6 +291,10 @@
         setInputValue('BookingInput_ConfirmationDetails', options.details ?? '');
         setInputValue('BookingInput_ConfirmationUrl', options.confirmationUrl ?? '');
         setBookingCategoryDisplay(options.categoryLabel || 'Linked itinerary entry');
+        setInputValue('BookingInput_StayCheckInTime', options.checkIn ?? '');
+        setInputValue('BookingInput_StayCheckOutTime', options.checkOut ?? '');
+        setInputValue('BookingInput_StayRoomType', options.room ?? '');
+        setMultiSelectValues('BookingInput_StayIncludes', parseBookingIncludes(options.includes));
 
         const refundable = document.getElementById('BookingInput_IsRefundable');
         if (refundable) {
@@ -294,6 +322,10 @@
         setBookingDetail(panel, 'vendor', dataset.bookingVendor || '—');
         setBookingDetail(panel, 'reference', dataset.bookingReference || '—');
         setBookingDetail(panel, 'cost', costText);
+        setBookingDetail(panel, 'checkin', dataset.bookingCheckIn || '—');
+        setBookingDetail(panel, 'checkout', dataset.bookingCheckOut || '—');
+        setBookingDetail(panel, 'room', dataset.bookingRoom || '—');
+        setBookingDetail(panel, 'includes', formatBookingIncludes(dataset.bookingIncludes));
         setBookingDetail(panel, 'refundable', formatBooleanFlag(dataset.bookingRefundable));
         setBookingDetail(panel, 'paid', formatBooleanFlag(dataset.bookingPaid));
         setBookingDetail(panel, 'cancellation', dataset.bookingCancellation || '—');
@@ -310,6 +342,10 @@
         panel.dataset.bookingReference = dataset.bookingReference ?? '';
         panel.dataset.bookingCost = dataset.bookingCost ?? '';
         panel.dataset.bookingCurrency = dataset.bookingCurrency ?? '';
+        panel.dataset.bookingCheckIn = dataset.bookingCheckIn ?? '';
+        panel.dataset.bookingCheckOut = dataset.bookingCheckOut ?? '';
+        panel.dataset.bookingRoom = dataset.bookingRoom ?? '';
+        panel.dataset.bookingIncludes = dataset.bookingIncludes ?? '';
         panel.dataset.bookingRefundable = dataset.bookingRefundable ?? '';
         panel.dataset.bookingPaid = dataset.bookingPaid ?? '';
         panel.dataset.bookingCancellation = dataset.bookingCancellation ?? '';
@@ -461,6 +497,22 @@
         }
 
         return amount;
+    }
+
+    function parseBookingIncludes(value) {
+        if (!value || typeof value !== 'string') {
+            return [];
+        }
+
+        return value
+            .split('|')
+            .map((part) => part.trim())
+            .filter((part) => part.length > 0);
+    }
+
+    function formatBookingIncludes(value) {
+        const includes = parseBookingIncludes(value);
+        return includes.length > 0 ? includes.join(', ') : '—';
     }
 
     function formatBooleanFlag(value) {

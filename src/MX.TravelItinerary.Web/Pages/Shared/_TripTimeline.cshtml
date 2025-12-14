@@ -7,8 +7,8 @@
     var hasPlannedContent = timeline.Spans.Any() || timeline.Days.Any(day => day.Entries.Count > 0);
     var laneMultiplier = Math.Max(1, timeline.MaxSegmentLaneCount);
     var spansByStartDate = timeline.Spans
-        .GroupBy(block => block.StartDate)
-        .ToDictionary(group => group.Key, group => group.ToList());
+    .GroupBy(block => block.StartDate)
+    .ToDictionary(group => group.Key, group => group.ToList());
 }
 
 @if (!hasPlannedContent && Model.ShowEmptyStateMessage)
@@ -34,8 +34,8 @@
             </div>
         </div>
         var mobileSpans = spansByStartDate.TryGetValue(day.Date, out var foundSpans)
-            ? foundSpans
-            : null;
+        ? foundSpans
+        : null;
         <div class="timeline-content" style="grid-row:@day.RowLine;" @Html.Raw(dayDataAttributes)>
             <div class="timeline-day-mobile-header">
                 <span class="timeline-day-mobile-dot" aria-hidden="true"></span>
@@ -56,6 +56,12 @@
                     var entryHasDetails = !string.IsNullOrWhiteSpace(block.Entry.Details);
                     var entryHasMetadata = block.Entry.Metadata?.HasContent == true;
                     var canShowBookingInfo = Model.AllowBookingViewing && entryBooking is not null;
+                    var bookingIncludesValue = string.Empty;
+                    if (entryBooking?.Metadata?.Stay?.Includes is { Count: > 0 } stayIncludes)
+                    {
+                        var sanitizedIncludes = stayIncludes.Where(value => !string.IsNullOrWhiteSpace(value)).ToArray();
+                        bookingIncludesValue = sanitizedIncludes.Length > 0 ? string.Join("|", sanitizedIncludes) : string.Empty;
+                    }
                     string? bookingMeta = null;
                     if (canShowBookingInfo)
                     {
@@ -76,10 +82,12 @@
                         }
                     }
                     var showDetailsPanel = entryHasDetails || entryHasMetadata || canShowBookingInfo;
-                    <div class="timeline-item timeline-item--segment timeline-segment-mobile segment-type-@segmentType" data-timeline-item data-item-type="entry" data-item-id="@block.Entry.EntryId">
+                    <div class="timeline-item timeline-item--segment timeline-segment-mobile segment-type-@segmentType"
+                        data-timeline-item data-item-type="entry" data-item-id="@block.Entry.EntryId">
                         <div class="timeline-item-body">
                             <div class="timeline-item-heading">
-                                <span class="timeline-item-icon bi @block.Entry.ItemType.GetIconClass() segment-type-@segmentType" aria-hidden="true"></span>
+                                <span class="timeline-item-icon bi @block.Entry.ItemType.GetIconClass() segment-type-@segmentType"
+                                    aria-hidden="true"></span>
                                 <span class="timeline-item-title">@entryDisplayTitle</span>
                             </div>
                             @if (canShowBookingInfo)
@@ -89,7 +97,8 @@
                                         <span class="bi @entryBooking.ItemType.GetIconClass()" aria-hidden="true"></span>
                                     </div>
                                     <div class="booking-pill-body">
-                                        <div class="booking-pill-label">@(entryBooking.Vendor ?? entryBooking.ItemType.GetDisplayName())</div>
+                                        <div class="booking-pill-label">@(entryBooking.Vendor ?? entryBooking.ItemType.GetDisplayName())
+                                        </div>
                                         @if (!string.IsNullOrWhiteSpace(bookingMeta))
                                         {
                                             <div class="booking-pill-meta">@bookingMeta</div>
@@ -97,7 +106,8 @@
                                     </div>
                                 </div>
                             }
-                            <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")</div>
+                            <div class="small text-muted">@block.StartDate.ToString("MMM dd") – @block.EndDate.ToString("MMM dd")
+                            </div>
                         </div>
                         @if (showDetailsPanel)
                         {
@@ -146,6 +156,10 @@
                                                 data-booking-reference="@(entryBooking.Reference ?? string.Empty)"
                                                 data-booking-cost="@(entryBooking.Cost?.ToString("0.##") ?? string.Empty)"
                                                 data-booking-currency="@(entryBooking.Currency ?? string.Empty)"
+                                                data-booking-check-in="@(entryBooking.Metadata?.Stay?.CheckInTime ?? string.Empty)"
+                                                data-booking-check-out="@(entryBooking.Metadata?.Stay?.CheckOutTime ?? string.Empty)"
+                                                data-booking-room="@(entryBooking.Metadata?.Stay?.RoomType ?? string.Empty)"
+                                                data-booking-includes="@bookingIncludesValue"
                                                 data-booking-refundable="@(entryBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
                                                 data-booking-paid="@(entryBooking.IsPaid?.ToString().ToLowerInvariant() ?? string.Empty)"
                                                 data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
@@ -188,6 +202,12 @@
                     var entryHasDetails = !string.IsNullOrWhiteSpace(entry.Details);
                     var entryHasMetadata = entry.Metadata?.HasContent == true;
                     var canShowBookingInfo = Model.AllowBookingViewing && entryBooking is not null;
+                    var bookingIncludesValue = string.Empty;
+                    if (entryBooking?.Metadata?.Stay?.Includes is { Count: > 0 } stayIncludes)
+                    {
+                        var sanitizedIncludes = stayIncludes.Where(value => !string.IsNullOrWhiteSpace(value)).ToArray();
+                        bookingIncludesValue = sanitizedIncludes.Length > 0 ? string.Join("|", sanitizedIncludes) : string.Empty;
+                    }
                     string? bookingMeta = null;
                     if (canShowBookingInfo)
                     {
@@ -290,6 +310,10 @@
                                                 data-booking-reference="@(entryBooking.Reference ?? string.Empty)"
                                                 data-booking-cost="@(entryBooking.Cost?.ToString("0.##") ?? string.Empty)"
                                                 data-booking-currency="@(entryBooking.Currency ?? string.Empty)"
+                                                data-booking-check-in="@(entryBooking.Metadata?.Stay?.CheckInTime ?? string.Empty)"
+                                                data-booking-check-out="@(entryBooking.Metadata?.Stay?.CheckOutTime ?? string.Empty)"
+                                                data-booking-room="@(entryBooking.Metadata?.Stay?.RoomType ?? string.Empty)"
+                                                data-booking-includes="@bookingIncludesValue"
                                                 data-booking-refundable="@(entryBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
                                                 data-booking-paid="@(entryBooking.IsPaid?.ToString().ToLowerInvariant() ?? string.Empty)"
                                                 data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
@@ -336,11 +360,7 @@
                                         data-entry-flight-arrival-airport="@(entry.Metadata?.Flight?.ArrivalAirport ?? string.Empty)"
                                         data-entry-flight-arrival-time="@(entry.Metadata?.Flight?.ArrivalTime ?? string.Empty)"
                                         data-entry-stay-property="@(entry.Metadata?.Stay?.PropertyName ?? string.Empty)"
-                                        data-entry-stay-address="@(entry.Metadata?.Stay?.Address ?? string.Empty)"
-                                        data-entry-stay-check-in="@(entry.Metadata?.Stay?.CheckInTime ?? string.Empty)"
-                                        data-entry-stay-check-out="@(entry.Metadata?.Stay?.CheckOutTime ?? string.Empty)"
-                                        data-entry-stay-room="@(entry.Metadata?.Stay?.RoomType ?? string.Empty)"
-                                        data-entry-stay-confirmation="@(entry.Metadata?.Stay?.ConfirmationNumber ?? string.Empty)">
+                                        data-entry-stay-link="@(entry.Metadata?.Stay?.PropertyLink ?? string.Empty)">
                                         Edit
                                     </button>
                                     <form method="post" asp-page-handler="DeleteEntry" class="d-inline">
@@ -374,6 +394,12 @@
         var entryHasDetails = !string.IsNullOrWhiteSpace(block.Entry.Details);
         var entryHasMetadata = block.Entry.Metadata?.HasContent == true;
         var canShowBookingInfo = Model.AllowBookingViewing && entryBooking is not null;
+        var bookingIncludesValue = string.Empty;
+        if (entryBooking?.Metadata?.Stay?.Includes is { Count: > 0 } stayIncludes)
+        {
+            var sanitizedIncludes = stayIncludes.Where(value => !string.IsNullOrWhiteSpace(value)).ToArray();
+            bookingIncludesValue = sanitizedIncludes.Length > 0 ? string.Join("|", sanitizedIncludes) : string.Empty;
+        }
         string? bookingMeta = null;
         if (canShowBookingInfo)
         {
@@ -472,6 +498,10 @@
                                         data-booking-reference="@(entryBooking.Reference ?? string.Empty)"
                                         data-booking-cost="@(entryBooking.Cost?.ToString("0.##") ?? string.Empty)"
                                         data-booking-currency="@(entryBooking.Currency ?? string.Empty)"
+                                        data-booking-check-in="@(entryBooking.Metadata?.Stay?.CheckInTime ?? string.Empty)"
+                                        data-booking-check-out="@(entryBooking.Metadata?.Stay?.CheckOutTime ?? string.Empty)"
+                                        data-booking-room="@(entryBooking.Metadata?.Stay?.RoomType ?? string.Empty)"
+                                        data-booking-includes="@bookingIncludesValue"
                                         data-booking-refundable="@(entryBooking.IsRefundable?.ToString().ToLowerInvariant() ?? string.Empty)"
                                         data-booking-paid="@(entryBooking.IsPaid?.ToString().ToLowerInvariant() ?? string.Empty)"
                                         data-booking-cancellation="@(entryBooking.CancellationPolicy ?? string.Empty)"
@@ -518,11 +548,7 @@
                                 data-entry-flight-arrival-airport="@(block.Entry.Metadata?.Flight?.ArrivalAirport ?? string.Empty)"
                                 data-entry-flight-arrival-time="@(block.Entry.Metadata?.Flight?.ArrivalTime ?? string.Empty)"
                                 data-entry-stay-property="@(block.Entry.Metadata?.Stay?.PropertyName ?? string.Empty)"
-                                data-entry-stay-address="@(block.Entry.Metadata?.Stay?.Address ?? string.Empty)"
-                                data-entry-stay-check-in="@(block.Entry.Metadata?.Stay?.CheckInTime ?? string.Empty)"
-                                data-entry-stay-check-out="@(block.Entry.Metadata?.Stay?.CheckOutTime ?? string.Empty)"
-                                data-entry-stay-room="@(block.Entry.Metadata?.Stay?.RoomType ?? string.Empty)"
-                                data-entry-stay-confirmation="@(block.Entry.Metadata?.Stay?.ConfirmationNumber ?? string.Empty)">
+                                data-entry-stay-link="@(block.Entry.Metadata?.Stay?.PropertyLink ?? string.Empty)">
                                 Edit
                             </button>
                             <form method="post" asp-page-handler="DeleteEntry" class="d-inline">

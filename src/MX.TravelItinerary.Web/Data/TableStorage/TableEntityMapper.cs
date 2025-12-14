@@ -60,7 +60,8 @@ internal static class TableEntityMapper
             IsPaid: entity.GetBoolean("IsPaid", defaultValue: false),
             CancellationPolicy: entity.GetString("CancellationPolicy"),
             ConfirmationDetails: entity.GetString("ConfirmationDetails"),
-            ConfirmationUrl: TryGetUri(entity.GetString("ConfirmationUrl")));
+            ConfirmationUrl: TryGetUri(entity.GetString("ConfirmationUrl")),
+            Metadata: GetBookingMetadata(entity));
 
     public static ShareLink ToShareLink(TableEntity entity)
     {
@@ -91,6 +92,24 @@ internal static class TableEntityMapper
         try
         {
             return JsonSerializer.Deserialize<TravelMetadata>(json, TableStorageJsonOptions.Metadata);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static BookingMetadata? GetBookingMetadata(TableEntity entity)
+    {
+        var json = entity.GetString("BookingMetadataJson");
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<BookingMetadata>(json, TableStorageJsonOptions.Metadata);
         }
         catch (JsonException)
         {

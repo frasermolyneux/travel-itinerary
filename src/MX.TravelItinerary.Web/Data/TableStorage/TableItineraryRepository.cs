@@ -789,6 +789,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         SetOrRemove(entity, "CancellationPolicy", mutation.CancellationPolicy);
         SetOrRemove(entity, "ConfirmationDetails", mutation.ConfirmationDetails);
         SetOrRemove(entity, "ConfirmationUrl", mutation.ConfirmationUrl?.ToString());
+        SetBookingMetadata(entity, mutation.Metadata);
     }
 
     private static void SetItineraryLocation(TableEntity entity, LocationInfo? location)
@@ -822,6 +823,17 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
 
         entity["MetadataJson"] = JsonSerializer.Serialize(metadata, TableStorageJsonOptions.Metadata);
+    }
+
+    private static void SetBookingMetadata(TableEntity entity, BookingMetadata? metadata)
+    {
+        if (metadata is null || metadata.HasContent is false)
+        {
+            RemoveIfExists(entity, "BookingMetadataJson");
+            return;
+        }
+
+        entity["BookingMetadataJson"] = JsonSerializer.Serialize(metadata, TableStorageJsonOptions.Metadata);
     }
 
     private static string? NormalizeCurrency(string? value)
