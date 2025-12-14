@@ -96,6 +96,24 @@ internal static class TableEntityExtensions
         };
     }
 
+    public static int? GetInt32(this TableEntity entity, string propertyName)
+    {
+        if (!entity.TryGetValue(propertyName, out var value) || value is null)
+        {
+            return null;
+        }
+
+        return value switch
+        {
+            int i => i,
+            long l => unchecked((int)l),
+            double d => (int)d,
+            decimal dec => (int)dec,
+            string s when int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) => parsed,
+            _ => null
+        };
+    }
+
     public static T? GetJson<T>(this TableEntity entity, string propertyName)
     {
         var json = entity.GetString(propertyName);

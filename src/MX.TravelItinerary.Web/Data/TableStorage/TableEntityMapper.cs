@@ -42,7 +42,8 @@ internal static class TableEntityMapper
             Details: entity.GetString("Details"),
             Location: location,
             Tags: entity.GetString("Tags"),
-            Metadata: metadata);
+            Metadata: metadata,
+            SortOrder: entity.GetInt32("SortOrder"));
     }
 
     public static Booking ToBooking(TableEntity entity)

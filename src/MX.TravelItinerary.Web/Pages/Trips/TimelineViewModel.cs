@@ -45,7 +45,8 @@ public sealed class TimelineViewModel
             {
                 var entries = singleDayEntries
                     .Where(entry => entry.Date == date)
-                    .OrderBy(entry => (int)entry.ItemType)
+                    .OrderBy(entry => entry.SortOrder ?? int.MaxValue)
+                    .ThenBy(entry => (int)entry.ItemType)
                     .ThenBy(entry => entry.Title)
                     .ToList();
 

@@ -10,6 +10,7 @@ public sealed class TripTimelineDisplayModel
         TimelineViewModel timeline,
         Func<string, Booking?> bookingSelector,
         bool allowEntryEditing = false,
+        bool allowEntryReordering = false,
         bool allowBookingCreation = false,
         bool allowBookingViewing = false,
         bool showEmptyStateMessage = true,
@@ -19,6 +20,7 @@ public sealed class TripTimelineDisplayModel
         Timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
         BookingSelector = bookingSelector ?? (_ => null);
         AllowEntryEditing = allowEntryEditing;
+        AllowEntryReordering = allowEntryReordering;
         AllowBookingCreation = allowBookingCreation;
         AllowBookingViewing = allowBookingViewing;
         ShowEmptyStateMessage = showEmptyStateMessage;
@@ -34,6 +36,8 @@ public sealed class TripTimelineDisplayModel
     public Func<string, Booking?> BookingSelector { get; }
 
     public bool AllowEntryEditing { get; }
+
+    public bool AllowEntryReordering { get; }
 
     public bool AllowBookingCreation { get; }
 

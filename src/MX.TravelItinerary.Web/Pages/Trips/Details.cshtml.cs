@@ -57,6 +57,7 @@ public sealed class DetailsModel : PageModel
             Timeline,
             GetBookingForEntry,
             allowEntryEditing: true,
+            allowEntryReordering: true,
             allowBookingCreation: true,
             allowBookingViewing: true);
     }
@@ -130,6 +131,31 @@ public sealed class DetailsModel : PageModel
         await _repository.DeleteItineraryEntryAsync(userId, TripId, entryId, cancellationToken);
         StatusMessage = "Itinerary entry deleted.";
         return RedirectToTripPage();
+    }
+
+    public async Task<IActionResult> OnPostReorderEntriesAsync([FromBody] ReorderEntriesRequest request, CancellationToken cancellationToken)
+    {
+        if (request is null || string.IsNullOrWhiteSpace(request.TripId) || string.IsNullOrWhiteSpace(request.Date))
+        {
+            return BadRequest(new { error = "Invalid reorder payload." });
+        }
+
+        TripId = request.TripId;
+        if (!await LoadTripAsync(cancellationToken))
+        {
+            return NotFound();
+        }
+
+        if (!DateOnly.TryParse(request.Date, out var day))
+        {
+            return BadRequest(new { error = "Invalid date." });
+        }
+
+        var entryIds = request.EntryIds?.Where(id => !string.IsNullOrWhiteSpace(id)).ToList() ?? new List<string>();
+        var userId = GetUserId();
+        await _repository.ReorderItineraryEntriesAsync(userId, TripId, day, entryIds, cancellationToken);
+
+        return new JsonResult(new { success = true });
     }
 
     public async Task<IActionResult> OnPostSaveBookingAsync(CancellationToken cancellationToken)
@@ -416,7 +442,8 @@ public sealed class DetailsModel : PageModel
                 string.IsNullOrWhiteSpace(Details) ? null : Details,
                 Location: null,
                 Tags: null,
-                Metadata: BuildMetadata());
+                Metadata: BuildMetadata(),
+                SortOrder: null);
 
         private TravelMetadata? BuildMetadata()
         {
@@ -572,6 +599,15 @@ public sealed class DetailsModel : PageModel
 
             return Uri.TryCreate(value.Trim(), UriKind.Absolute, out var uri) ? uri : null;
         }
+    }
+
+    public sealed class ReorderEntriesRequest
+    {
+        public string TripId { get; set; } = string.Empty;
+
+        public string Date { get; set; } = string.Empty;
+
+        public List<string> EntryIds { get; set; } = new();
     }
 
     private static IReadOnlyDictionary<TimelineItemType, SelectListGroup> TimelineItemGroups { get; } = CreateTimelineItemGroups();

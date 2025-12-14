@@ -1,3 +1,4 @@
+using System;
 using MX.TravelItinerary.Web.Data.Models;
 
 namespace MX.TravelItinerary.Web.Data;
@@ -31,6 +32,8 @@ public interface IItineraryRepository
     Task<ItineraryEntry?> UpdateItineraryEntryAsync(string userId, string tripId, string entryId, ItineraryEntryMutation mutation, CancellationToken cancellationToken = default);
 
     Task<bool> DeleteItineraryEntryAsync(string userId, string tripId, string entryId, CancellationToken cancellationToken = default);
+
+    Task ReorderItineraryEntriesAsync(string userId, string tripId, DateOnly date, IReadOnlyList<string> orderedEntryIds, CancellationToken cancellationToken = default);
 
     Task<Booking> CreateBookingAsync(string userId, string tripId, BookingMutation mutation, CancellationToken cancellationToken = default);
 

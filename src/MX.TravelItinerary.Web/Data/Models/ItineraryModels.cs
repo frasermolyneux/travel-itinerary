@@ -117,7 +117,8 @@ public sealed partial record ItineraryEntry(
     string? Details,
     LocationInfo? Location,
     string? Tags,
-    TravelMetadata? Metadata);
+    TravelMetadata? Metadata,
+    int? SortOrder);
 
 public sealed record ItineraryEntryMutation(
     DateOnly? Date,
@@ -128,7 +129,8 @@ public sealed record ItineraryEntryMutation(
     string? Details,
     LocationInfo? Location,
     string? Tags,
-    TravelMetadata? Metadata);
+    TravelMetadata? Metadata,
+    int? SortOrder);
 
 public sealed record Booking(
     string TripId,

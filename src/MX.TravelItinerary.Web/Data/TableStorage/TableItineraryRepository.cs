@@ -13,6 +13,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
 {
     private readonly ITableContext _tables;
     private const string DateFormat = "yyyy-MM-dd";
+    private const int SortOrderIncrement = 10;
 
     public TableItineraryRepository(ITableContext tables)
     {
@@ -283,7 +284,14 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
         var entryId = Guid.NewGuid().ToString("N");
         var entity = new TableEntity(tripId, entryId);
-        ApplyItineraryEntryMutation(entity, mutation);
+        var entryMutation = mutation;
+        var sortOrder = await GetSortOrderForMutationAsync(tripId, existingEntity: null, mutation, cancellationToken);
+        if (sortOrder.HasValue)
+        {
+            entryMutation = entryMutation with { SortOrder = sortOrder };
+        }
+
+        ApplyItineraryEntryMutation(entity, entryMutation);
 
         await _tables.ItineraryEntries.AddEntityAsync(entity, cancellationToken);
         return TableEntityMapper.ToItineraryEntry(entity);
@@ -309,7 +317,14 @@ public sealed class TableItineraryRepository : IItineraryRepository
         {
             return null;
         }
-        ApplyItineraryEntryMutation(entity, mutation);
+        var entryMutation = mutation;
+        var sortOrder = await GetSortOrderForMutationAsync(tripId, entity, mutation, cancellationToken);
+        if (sortOrder.HasValue)
+        {
+            entryMutation = entryMutation with { SortOrder = sortOrder };
+        }
+
+        ApplyItineraryEntryMutation(entity, entryMutation);
         await _tables.ItineraryEntries.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
 
         return TableEntityMapper.ToItineraryEntry(entity);
@@ -331,6 +346,87 @@ public sealed class TableItineraryRepository : IItineraryRepository
         catch (RequestFailedException ex) when (ex.Status == 404)
         {
             return false;
+        }
+    }
+
+    public async Task ReorderItineraryEntriesAsync(string userId, string tripId, DateOnly date, IReadOnlyList<string> orderedEntryIds, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+        ArgumentNullException.ThrowIfNull(orderedEntryIds);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+
+        var dateText = date.ToString(DateFormat);
+        var filter = TableClient.CreateQueryFilter($"PartitionKey eq {tripId} and Date eq {dateText}");
+        var comparer = StringComparer.OrdinalIgnoreCase;
+        var entries = new Dictionary<string, TableEntity>(comparer);
+
+        await foreach (var entity in _tables.ItineraryEntries.QueryAsync<TableEntity>(
+                   filter: filter,
+                   cancellationToken: cancellationToken))
+        {
+            if (entity.GetBoolean("IsMultiDay", false))
+            {
+                continue;
+            }
+
+            entries[entity.RowKey] = entity;
+        }
+
+        if (entries.Count == 0)
+        {
+            return;
+        }
+
+        var normalizedOrder = new List<string>(entries.Count);
+        var seen = new HashSet<string>(comparer);
+
+        foreach (var entryId in orderedEntryIds)
+        {
+            if (string.IsNullOrWhiteSpace(entryId))
+            {
+                continue;
+            }
+
+            var trimmed = entryId.Trim();
+            if (entries.ContainsKey(trimmed) && seen.Add(trimmed))
+            {
+                normalizedOrder.Add(trimmed);
+            }
+        }
+
+        foreach (var entryId in entries.Keys)
+        {
+            if (seen.Add(entryId))
+            {
+                normalizedOrder.Add(entryId);
+            }
+        }
+
+        var updates = new List<TableEntity>();
+        for (var index = 0; index < normalizedOrder.Count; index++)
+        {
+            var entryId = normalizedOrder[index];
+            if (!entries.TryGetValue(entryId, out var entity))
+            {
+                continue;
+            }
+
+            var desiredOrder = (index + 1) * SortOrderIncrement;
+            var currentOrder = entity.GetInt32("SortOrder");
+            if (currentOrder == desiredOrder)
+            {
+                continue;
+            }
+
+            entity["SortOrder"] = desiredOrder;
+            updates.Add(entity);
+        }
+
+        foreach (var entity in updates)
+        {
+            await _tables.ItineraryEntries.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Merge, cancellationToken);
         }
     }
 
@@ -456,6 +552,58 @@ public sealed class TableItineraryRepository : IItineraryRepository
         return false;
     }
 
+    private async Task<int?> GetSortOrderForMutationAsync(string tripId, TableEntity? existingEntity, ItineraryEntryMutation mutation, CancellationToken cancellationToken)
+    {
+        if (!IsSingleDayEntry(mutation))
+        {
+            return null;
+        }
+
+        var targetDate = mutation.Date!.Value;
+
+        if (existingEntity is not null)
+        {
+            var existingDate = existingEntity.GetDateOnly("Date");
+            var existingSort = existingEntity.GetInt32("SortOrder");
+            var wasMultiDay = existingEntity.GetBoolean("IsMultiDay", false);
+
+            if (!wasMultiDay && existingDate == targetDate)
+            {
+                return existingSort;
+            }
+        }
+
+        return await GetNextSortOrderAsync(tripId, targetDate, cancellationToken);
+    }
+
+    private static bool IsSingleDayEntry(ItineraryEntryMutation mutation)
+        => !mutation.IsMultiDay
+           && mutation.Date is not null
+           && (mutation.EndDate is null || mutation.EndDate == mutation.Date);
+
+    private async Task<int> GetNextSortOrderAsync(string tripId, DateOnly date, CancellationToken cancellationToken)
+    {
+        var dateText = date.ToString(DateFormat);
+        var filter = TableClient.CreateQueryFilter($"PartitionKey eq {tripId} and Date eq {dateText} and IsMultiDay eq false");
+        var maxOrder = 0;
+        var count = 0;
+
+        await foreach (var entity in _tables.ItineraryEntries.QueryAsync<TableEntity>(
+                   filter: filter,
+                   cancellationToken: cancellationToken))
+        {
+            count++;
+            var existingOrder = entity.GetInt32("SortOrder");
+            if (existingOrder.HasValue)
+            {
+                maxOrder = Math.Max(maxOrder, existingOrder.Value);
+            }
+        }
+
+        var baseline = maxOrder == 0 ? count * SortOrderIncrement : maxOrder;
+        return baseline + SortOrderIncrement;
+    }
+
     private static void ApplyItineraryEntryMutation(TableEntity entity, ItineraryEntryMutation mutation)
     {
         var title = string.IsNullOrWhiteSpace(mutation.Title) ? "Untitled entry" : mutation.Title.Trim();
@@ -486,6 +634,11 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
         SetItineraryLocation(entity, mutation.Location);
         SetMetadata(entity, mutation.Metadata);
+
+        if (mutation.SortOrder.HasValue)
+        {
+            entity["SortOrder"] = mutation.SortOrder.Value;
+        }
     }
 
     private static void ApplyBookingMutation(TableEntity entity, BookingMutation mutation)

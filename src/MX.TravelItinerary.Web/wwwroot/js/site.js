@@ -10,6 +10,7 @@
         initMultiDayToggle();
         initEntryDateBounds();
         initMetadataSections();
+        initTimelineReorder();
         reopenOffcanvasOnValidation();
     });
 
@@ -23,6 +24,10 @@
         items.forEach((item) => {
             item.addEventListener('click', (event) => {
                 if (event.target.closest('.timeline-actions')) {
+                    return;
+                }
+
+                if (event.target.closest('[data-drag-handle]')) {
                     return;
                 }
 
@@ -466,6 +471,156 @@
         }
 
         target.textContent = label && label.trim().length > 0 ? label : '—';
+    }
+
+    function initTimelineReorder() {
+        const root = document.querySelector('[data-timeline-root][data-allow-reorder="true"]');
+        if (!root || root.dataset.allowReorder !== 'true') {
+            return;
+        }
+
+        const tripId = root.dataset.tripId || '';
+        const dayContainers = Array.from(root.querySelectorAll('[data-day-sortable]'));
+        if (!tripId || dayContainers.length === 0) {
+            return;
+        }
+
+        const token = getAntiForgeryToken();
+        if (!token) {
+            console.warn('Timeline reorder disabled because no anti-forgery token was found.');
+            return;
+        }
+
+        const reorderUrl = root.dataset.reorderUrl || '?handler=ReorderEntries';
+        let draggedEntry;
+        let originContainer;
+
+        root.querySelectorAll('[data-sortable-entry]').forEach((entry) => {
+            entry.addEventListener('dragstart', (event) => {
+                draggedEntry = entry;
+                originContainer = entry.closest('[data-day-sortable]') || null;
+                entry.classList.add('is-dragging');
+                if (event.dataTransfer) {
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', entry.dataset.entryId || '');
+                }
+            });
+
+            entry.addEventListener('dragend', () => {
+                if (!draggedEntry) {
+                    return;
+                }
+
+                const currentEntry = draggedEntry;
+                const container = originContainer;
+                draggedEntry = null;
+                originContainer = null;
+                currentEntry.classList.remove('is-dragging');
+
+                if (!container) {
+                    return;
+                }
+
+                if (currentEntry.closest('[data-day-sortable]') !== container) {
+                    restoreOrder(container, container.dataset.currentOrder || '');
+                    return;
+                }
+
+                persistDayOrder(container);
+            });
+        });
+
+        dayContainers.forEach((container) => {
+            container.addEventListener('dragover', (event) => {
+                if (!draggedEntry || originContainer !== container) {
+                    return;
+                }
+
+                event.preventDefault();
+                const target = event.target.closest('[data-sortable-entry]');
+                if (!target) {
+                    container.appendChild(draggedEntry);
+                    return;
+                }
+
+                if (target === draggedEntry) {
+                    return;
+                }
+
+                const rect = target.getBoundingClientRect();
+                const shouldInsertAfter = (event.clientY - rect.top) > rect.height / 2;
+                if (shouldInsertAfter) {
+                    container.insertBefore(draggedEntry, target.nextElementSibling);
+                } else {
+                    container.insertBefore(draggedEntry, target);
+                }
+            });
+
+            container.addEventListener('drop', (event) => {
+                event.preventDefault();
+            });
+        });
+
+        function persistDayOrder(container) {
+            const entryIds = collectEntryIds(container);
+            const nextOrder = entryIds.join(',');
+            const previousOrder = container.dataset.currentOrder || '';
+            const date = container.dataset.dayDate || '';
+
+            if (!date || nextOrder === previousOrder) {
+                return;
+            }
+
+            container.classList.add('is-saving');
+
+            fetch(reorderUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({ tripId, date, entryIds })
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Failed to persist order.');
+                    }
+                    container.dataset.currentOrder = nextOrder;
+                })
+                .catch((error) => {
+                    console.error(error);
+                    restoreOrder(container, previousOrder);
+                    window.alert('We could not save the new order. Please try again.');
+                })
+                .finally(() => {
+                    container.classList.remove('is-saving');
+                });
+        }
+
+        function collectEntryIds(container) {
+            return Array.from(container.querySelectorAll('[data-sortable-entry]'))
+                .map((entry) => entry.dataset.entryId)
+                .filter((id) => !!id);
+        }
+
+        function restoreOrder(container, order) {
+            if (!order) {
+                return;
+            }
+
+            const entryIds = order.split(',').filter((id) => id);
+            entryIds.forEach((entryId) => {
+                const entry = container.querySelector(`[data-entry-id="${entryId}"]`);
+                if (entry) {
+                    container.appendChild(entry);
+                }
+            });
+        }
+    }
+
+    function getAntiForgeryToken() {
+        const input = document.querySelector('input[name="__RequestVerificationToken"]');
+        return input?.value || '';
     }
 
     function closeOffcanvas(id) {

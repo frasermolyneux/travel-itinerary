@@ -13,9 +13,15 @@
     <div class="alert alert-info">@Model.EmptyStateMessage</div>
 }
 
-<div class="timeline-grid" style="--segment-lane-multiplier:@laneMultiplier;">
+<div class="timeline-grid" style="--segment-lane-multiplier:@laneMultiplier;" data-timeline-root
+    data-trip-id="@Model.Trip.TripId" data-allow-reorder="@Model.AllowEntryReordering.ToString().ToLowerInvariant()">
     @foreach (var day in timeline.Days)
     {
+        var dayDateIso = day.Date.ToString("yyyy-MM-dd");
+        var dayOrder = string.Join(",", day.Entries.Select(entry => entry.EntryId));
+        var dayDataAttributes = Model.AllowEntryReordering
+        ? $" data-day-sortable=\"true\" data-day-date=\"{dayDateIso}\" data-current-order=\"{dayOrder}\""
+        : string.Empty;
         <div class="timeline-axis" style="grid-row:@day.RowLine;">
             <div class="timeline-axis-dot"></div>
             <div>
@@ -23,7 +29,7 @@
                 <div class="timeline-day-weekday">@day.Date.ToString("dddd")</div>
             </div>
         </div>
-        <div class="timeline-content" style="grid-row:@day.RowLine;">
+        <div class="timeline-content" style="grid-row:@day.RowLine;" @Html.Raw(dayDataAttributes)>
             @if (day.Entries.Count == 0)
             {
                 <div class="timeline-empty text-muted">No entries for this day.</div>
@@ -35,8 +41,8 @@
                     var entryBooking = Model.GetBookingForEntry(entry.EntryId);
                     var entryTypeToken = entry.ItemType.ToCssToken();
                     var entryDisplayTitle = string.IsNullOrWhiteSpace(entry.Title)
-                        ? entry.ToString()
-                        : entry.Title;
+                    ? entry.ToString()
+                    : entry.Title;
                     var entryHasDetails = !string.IsNullOrWhiteSpace(entry.Details);
                     var entryHasMetadata = entry.Metadata?.HasContent == true;
                     var canShowBookingInfo = Model.AllowBookingViewing && entryBooking is not null;
@@ -52,15 +58,19 @@
                         {
                             var formattedCost = entryBooking.Cost.Value.ToString("0.##");
                             var costText = string.IsNullOrWhiteSpace(entryBooking.Currency)
-                                ? formattedCost
-                                : $"{formattedCost} {entryBooking.Currency}";
+                            ? formattedCost
+                            : $"{formattedCost} {entryBooking.Currency}";
                             bookingMeta = string.IsNullOrWhiteSpace(bookingMeta)
-                                ? costText
-                                : $"{bookingMeta} • {costText}";
+                            ? costText
+                            : $"{bookingMeta} • {costText}";
                         }
                     }
                     var showDetailsPanel = entryHasDetails || entryHasMetadata || canShowBookingInfo;
-                    <div class="timeline-item" data-timeline-item data-item-type="entry" data-item-id="@entry.EntryId">
+                    var entryDataAttributes = Model.AllowEntryReordering
+                    ? " data-sortable-entry=\"true\" draggable=\"true\""
+                    : string.Empty;
+                    <div class="timeline-item" data-timeline-item data-item-type="entry" data-item-id="@entry.EntryId"
+                        data-entry-id="@entry.EntryId" @Html.Raw(entryDataAttributes)>
                         <div class="timeline-item-body">
                             <div class="timeline-item-heading">
                                 <span class="timeline-item-icon bi @entry.ItemType.GetIconClass() segment-type-@entryTypeToken"
@@ -74,7 +84,8 @@
                                         <span class="bi @entryBooking.ItemType.GetIconClass()" aria-hidden="true"></span>
                                     </div>
                                     <div class="booking-pill-body">
-                                        <div class="booking-pill-label">@(entryBooking.Vendor ?? entryBooking.ItemType.GetDisplayName())</div>
+                                        <div class="booking-pill-label">@(entryBooking.Vendor ?? entryBooking.ItemType.GetDisplayName())
+                                        </div>
                                         @if (!string.IsNullOrWhiteSpace(bookingMeta))
                                         {
                                             <div class="booking-pill-meta">@bookingMeta</div>
@@ -83,6 +94,13 @@
                                 </div>
                             }
                         </div>
+                        @if (Model.AllowEntryReordering)
+                        {
+                            <button type="button" class="timeline-drag-handle" data-drag-handle aria-label="Drag to reorder entry">
+                                <span class="bi bi-grip-vertical" aria-hidden="true"></span>
+                                <span class="visually-hidden">Drag to reorder entry</span>
+                            </button>
+                        }
                         @if (showDetailsPanel)
                         {
                             <div class="timeline-item-details">
@@ -123,8 +141,7 @@
                                             }
                                         </dl>
                                         <div class="booking-summary-actions">
-                                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                                data-booking-action="view"
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-booking-action="view"
                                                 data-booking-id="@entryBooking.BookingId" data-booking-type="@entryBooking.ItemType"
                                                 data-booking-type-label="@entryBooking.ItemType.GetDisplayName()"
                                                 data-booking-vendor="@(entryBooking.Vendor ?? string.Empty)"
@@ -227,11 +244,11 @@
             {
                 var formattedCost = entryBooking.Cost.Value.ToString("0.##");
                 var costText = string.IsNullOrWhiteSpace(entryBooking.Currency)
-                    ? formattedCost
-                    : $"{formattedCost} {entryBooking.Currency}";
+                ? formattedCost
+                : $"{formattedCost} {entryBooking.Currency}";
                 bookingMeta = string.IsNullOrWhiteSpace(bookingMeta)
-                    ? costText
-                    : $"{bookingMeta} • {costText}";
+                ? costText
+                : $"{bookingMeta} • {costText}";
             }
         }
         var showDetailsPanel = entryHasDetails || entryHasMetadata || canShowBookingInfo;
@@ -254,7 +271,8 @@
                                 <span class="bi @entryBooking.ItemType.GetIconClass()" aria-hidden="true"></span>
                             </div>
                             <div class="booking-pill-body">
-                                <div class="booking-pill-label">@(entryBooking.Vendor ?? entryBooking.ItemType.GetDisplayName())</div>
+                                <div class="booking-pill-label">@(entryBooking.Vendor ?? entryBooking.ItemType.GetDisplayName())
+                                </div>
                                 @if (!string.IsNullOrWhiteSpace(bookingMeta))
                                 {
                                     <div class="booking-pill-meta">@bookingMeta</div>
@@ -305,8 +323,7 @@
                                     }
                                 </dl>
                                 <div class="booking-summary-actions">
-                                    <button type="button" class="btn btn-sm btn-outline-primary"
-                                        data-booking-action="view"
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-booking-action="view"
                                         data-booking-id="@entryBooking.BookingId" data-booking-type="@entryBooking.ItemType"
                                         data-booking-type-label="@entryBooking.ItemType.GetDisplayName()"
                                         data-booking-vendor="@(entryBooking.Vendor ?? string.Empty)"
