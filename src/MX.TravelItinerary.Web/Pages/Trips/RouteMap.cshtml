@@ -1,0 +1,113 @@
+@page "{tripId?}"
+@model MX.TravelItinerary.Web.Pages.Trips.RouteMapModel
+@{
+    ViewData["Title"] = "Route map";
+    var trip = Model.TripDetails?.Trip;
+    var tripSlug = string.IsNullOrWhiteSpace(trip?.Slug) ? null : trip.Slug;
+    var tripId = trip?.TripId ?? Model.TripId;
+}
+
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+    <div>
+        <p class="text-uppercase text-muted small mb-1">Route overview</p>
+        <h1 class="mb-1">@trip?.Name</h1>
+        <div class="text-muted">
+            @if (trip?.StartDate is not null || trip?.EndDate is not null)
+            {
+                <span>@trip?.StartDate?.ToString("MMM dd, yyyy")</span>
+                <span> – @trip?.EndDate?.ToString("MMM dd, yyyy")</span>
+            }
+            else
+            {
+                <span>Dates coming soon</span>
+            }
+        </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 justify-content-end">
+        <a class="btn btn-outline-primary"
+           asp-page="/Trips/Details"
+           asp-route-tripId="@(tripSlug is null ? tripId : null)"
+           asp-route-tripSlug="@tripSlug">
+            Timeline
+        </a>
+        <a class="btn btn-outline-primary"
+           asp-page="/Trips/CostSummary"
+           asp-route-tripId="@(tripSlug is null ? tripId : null)"
+           asp-route-tripSlug="@tripSlug">
+            Cost summary
+        </a>
+        <a class="btn btn-outline-secondary" href="/trips">Back to Trips</a>
+    </div>
+</div>
+
+@if (!Model.HasRoutePoints)
+{
+    <div class="alert alert-info">Add itinerary entries with Google locations or travel segment metadata to plot this route.</div>
+}
+else
+{
+    <div class="route-map-card">
+        @if (Model.IsGoogleMapsConfigured)
+        {
+            <div class="route-map-viewport" data-route-map data-route-source="route-map-data">
+                <div class="route-map-loading" data-route-map-loading>
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading map...</span>
+                    </div>
+                    <div>Loading map...</div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="route-map-viewport route-map-viewport--disabled">
+                <div class="route-map-placeholder">
+                    Configure a Google Maps API key to render the interactive map.
+                </div>
+            </div>
+        }
+
+        <div class="route-stop-panel">
+            <div class="route-stop-panel-header">
+                <div class="text-uppercase text-muted small">Stops</div>
+                <h5 class="mb-0">Route sequence</h5>
+            </div>
+            <ol class="route-stop-list" data-route-stop-list>
+                @foreach (var stop in Model.RoutePoints)
+                {
+                    <li class="route-stop" data-route-stop-id="@stop.StopId" tabindex="0" role="button">
+                        <div class="route-stop-sequence">@stop.Sequence</div>
+                        <div class="route-stop-body">
+                            <div class="route-stop-label">@stop.StopLabel</div>
+                            <div class="route-stop-meta">@stop.StopType · @stop.EntryTypeLabel</div>
+                            @if (!string.IsNullOrWhiteSpace(stop.DateLabel))
+                            {
+                                <div class="route-stop-date">@stop.DateLabel</div>
+                            }
+                        </div>
+                    </li>
+                }
+            </ol>
+        </div>
+    </div>
+
+    @if (Model.IsGoogleMapsConfigured)
+    {
+        <script type="application/json" id="route-map-data">
+            @Html.Raw(Model.GetSerializedRoutePoints())
+        </script>
+    }
+}
+
+@section Scripts {
+    @if (Model.IsGoogleMapsConfigured && Model.HasRoutePoints)
+    {
+        <script>
+            window.travelRouteMapReady = function () {
+                document.dispatchEvent(new CustomEvent('travel-route-map:loader-ready'));
+            };
+        </script>
+        <script async defer
+                src="https://maps.googleapis.com/maps/api/js?key=@Model.GoogleMapsApiKey&libraries=places&callback=travelRouteMapReady"></script>
+    }
+}

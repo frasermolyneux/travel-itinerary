@@ -56,6 +56,9 @@ builder.Services
         options.Conventions.AddPageRoute(
             "/Trips/CostSummary",
             "trips/{tripSlug:regex(^(?!index$)(?!details$)[a-z0-9-]+$)}/cost-summary");
+        options.Conventions.AddPageRoute(
+            "/Trips/RouteMap",
+            "trips/{tripSlug:regex(^(?!index$)(?!details$)[a-z0-9-]+$)}/route");
     })
     .AddMicrosoftIdentityUI();
 

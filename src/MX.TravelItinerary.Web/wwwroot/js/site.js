@@ -33,6 +33,7 @@
         initBookingRefundableToggle();
         initGooglePlacePicker();
         reopenOffcanvasOnValidation();
+        initRouteMapPage();
         const initialItemType = document.getElementById('BookingInput_ItemType')?.value || '';
         toggleBookingStaySection(initialItemType);
     });
@@ -1313,6 +1314,326 @@
                 closeDropdown();
             }
         });
+    }
+
+    function initRouteMapPage() {
+        const mapRoot = document.querySelector('[data-route-map]');
+        if (!mapRoot) {
+            return;
+        }
+
+        const sourceId = mapRoot.dataset.routeSource;
+        if (!sourceId) {
+            return;
+        }
+
+        const dataNode = document.getElementById(sourceId);
+        if (!dataNode) {
+            return;
+        }
+
+        let payload;
+        try {
+            payload = JSON.parse(dataNode.textContent || '[]');
+        } catch (error) {
+            console.warn('Unable to parse route map payload', error);
+            showRouteMapFallback(mapRoot, 'Route map data unavailable.');
+            return;
+        }
+
+        if (!Array.isArray(payload) || payload.length === 0) {
+            showRouteMapFallback(mapRoot, 'Route map data unavailable.');
+            return;
+        }
+
+        const normalizedPoints = payload
+            .map((point) => ({
+                ...point,
+                placeId: ((point.placeId ?? '')).toString().trim()
+            }))
+            .filter((point) => point.placeId.length > 0);
+
+        if (normalizedPoints.length === 0) {
+            showRouteMapFallback(mapRoot, 'Route map data unavailable.');
+            return;
+        }
+
+        const render = () => drawRouteMap(mapRoot, normalizedPoints);
+        if (window.google?.maps?.places) {
+            render();
+        } else {
+            document.addEventListener('travel-route-map:loader-ready', render, { once: true });
+        }
+    }
+
+    function drawRouteMap(root, points) {
+        if (!window.google || !window.google.maps || !window.google.maps.places) {
+            return;
+        }
+
+        const loadingOverlay = root.querySelector('[data-route-map-loading]');
+        const service = new google.maps.places.PlacesService(root);
+
+        Promise.all(points.map((point) => loadRouteMapPlace(service, point)))
+            .then((results) => {
+                const resolved = results.filter((result) => !!result);
+                if (resolved.length === 0) {
+                    showRouteMapFallback(root, 'Unable to resolve these locations.');
+                    return;
+                }
+
+                const map = new google.maps.Map(root, {
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: true,
+                    gestureHandling: 'greedy'
+                });
+                root.dataset.routeMapRendered = 'true';
+
+                const bounds = new google.maps.LatLngBounds();
+                const infoWindow = new google.maps.InfoWindow();
+                const path = [];
+                const markerLookup = new Map();
+                const stopController = createRouteStopController(root);
+
+                const focusStop = (stopId, options = {}) => {
+                    const target = markerLookup.get(stopId);
+                    if (!target) {
+                        return;
+                    }
+
+                    const { marker, location, point, placeName, address } = target;
+
+                    stopController?.setActive(stopId, {
+                        scrollIntoView: options.scrollList ?? true
+                    });
+
+                    if (options.panTo !== false) {
+                        map.panTo(location);
+                    }
+
+                    if (options.openInfo !== false) {
+                        infoWindow.setContent(buildRouteMarkerContent(point, placeName, address));
+                        infoWindow.open(map, marker);
+                    }
+                };
+
+                resolved.forEach((entry) => {
+                    const { point, location, placeName, address } = entry;
+                    path.push(location);
+                    bounds.extend(location);
+
+                    const marker = new google.maps.Marker({
+                        map,
+                        position: location,
+                        title: `${point.sequence}. ${placeName}`,
+                        label: {
+                            text: point.sequence.toString(),
+                            color: '#fff',
+                            fontWeight: 'bold'
+                        },
+                        icon: buildRouteMarkerIcon(point.markerColor),
+                        zIndex: point.sequence
+                    });
+
+                    marker.addListener('click', () => {
+                        focusStop(point.stopId, { panTo: false, scrollList: true });
+                    });
+
+                    markerLookup.set(point.stopId, { marker, location, point, placeName, address });
+                });
+
+                stopController?.bindInteractions((stopId) => {
+                    focusStop(stopId, { scrollList: false });
+                });
+
+                if (path.length > 1) {
+                    new google.maps.Polyline({
+                        map,
+                        path,
+                        strokeColor: '#0d6efd',
+                        strokeOpacity: 0.9,
+                        strokeWeight: 4,
+                        geodesic: true
+                    });
+                }
+
+                if (typeof bounds.isEmpty === 'function' && !bounds.isEmpty()) {
+                    map.fitBounds(bounds, 64);
+                } else if (path.length > 0) {
+                    map.setCenter(path[0]);
+                    map.setZoom(8);
+                }
+
+                loadingOverlay?.remove();
+            })
+            .catch((error) => {
+                console.warn('Unable to render route map', error);
+                if (root.dataset.routeMapRendered !== 'true') {
+                    showRouteMapFallback(root, 'Unable to load map data.');
+                }
+            });
+    }
+
+    function createRouteStopController(root) {
+        const card = root.closest('.route-map-card');
+        if (!card) {
+            return null;
+        }
+
+        const list = card.querySelector('[data-route-stop-list]');
+        if (!list) {
+            return null;
+        }
+
+        const items = Array.from(list.querySelectorAll('[data-route-stop-id]'));
+        if (items.length === 0) {
+            return null;
+        }
+
+        const lookup = new Map();
+        items.forEach((item) => {
+            const stopId = item.dataset.routeStopId;
+            if (!stopId) {
+                return;
+            }
+
+            lookup.set(stopId, item);
+            if (!item.hasAttribute('tabindex')) {
+                item.setAttribute('tabindex', '0');
+            }
+        });
+
+        let activeItem;
+
+        const setActive = (stopId, options = {}) => {
+            const target = lookup.get(stopId);
+            if (!target || target === activeItem) {
+                return;
+            }
+
+            activeItem?.classList.remove('is-active');
+            activeItem = target;
+            target.classList.add('is-active');
+
+            const shouldScroll = options.scrollIntoView ?? true;
+            if (shouldScroll) {
+                target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        };
+
+        const bindInteractions = (callback) => {
+            if (typeof callback !== 'function') {
+                return;
+            }
+
+            items.forEach((item) => {
+                const stopId = item.dataset.routeStopId;
+                if (!stopId) {
+                    return;
+                }
+
+                item.addEventListener('click', () => callback(stopId));
+                item.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        callback(stopId);
+                    }
+                });
+            });
+        };
+
+        return {
+            setActive,
+            bindInteractions
+        };
+    }
+
+    function loadRouteMapPlace(service, point) {
+        return new Promise((resolve) => {
+            service.getDetails(
+                {
+                    placeId: point.placeId,
+                    fields: ['geometry', 'name', 'formatted_address']
+                },
+                (place, status) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+                        resolve({
+                            point,
+                            location: place.geometry.location,
+                            placeName: place.name || point.stopLabel || 'Route stop',
+                            address: place.formatted_address || ''
+                        });
+                        return;
+                    }
+
+                    resolve(null);
+                });
+        });
+    }
+
+    function buildRouteMarkerIcon(color) {
+        const fill = sanitizeColor(color);
+        return {
+            path: 'M12 2C7.03 2 3 6.03 3 11c0 5.25 7.2 11.23 8.6 12.33a1 1 0 0 0 1.2 0C15.8 22.23 23 16.25 23 11c0-4.97-4.03-9-9-9z',
+            fillColor: fill,
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+            scale: 1.15,
+            anchor: new google.maps.Point(12, 24)
+        };
+    }
+
+    function buildRouteMarkerContent(point, placeName, address) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'route-marker-info';
+
+        const title = document.createElement('div');
+        title.className = 'route-marker-title';
+        title.textContent = `${point.sequence}. ${placeName}`;
+        wrapper.appendChild(title);
+
+        if (address) {
+            const addressEl = document.createElement('div');
+            addressEl.className = 'route-marker-address';
+            addressEl.textContent = address;
+            wrapper.appendChild(addressEl);
+        }
+
+        const meta = document.createElement('div');
+        meta.className = 'route-marker-meta';
+        meta.textContent = `${point.stopType} - ${point.entryTypeLabel}`;
+        wrapper.appendChild(meta);
+
+        if (point.dateLabel) {
+            const dateEl = document.createElement('div');
+            dateEl.className = 'route-marker-date';
+            dateEl.textContent = point.dateLabel;
+            wrapper.appendChild(dateEl);
+        }
+
+        if (point.details) {
+            const detailsEl = document.createElement('div');
+            detailsEl.className = 'route-marker-details';
+            detailsEl.textContent = point.details;
+            wrapper.appendChild(detailsEl);
+        }
+
+        return wrapper;
+    }
+
+    function showRouteMapFallback(root, message) {
+        root.innerHTML = `<div class="route-map-placeholder">${message}</div>`;
+    }
+
+    function sanitizeColor(color) {
+        const candidate = (color || '').toString().trim();
+        if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(candidate)) {
+            return candidate;
+        }
+
+        return '#0d6efd';
     }
 
     function filterCurrencyCatalog(query, catalog, catalogByCode) {
