@@ -1,15 +1,16 @@
 name: Code Quality
 
 on:
-  pull_request:
-    branches:
-      - 'main'
-      - 'feature/**'
-      - 'copilot/**'
   push:
     branches:
-      - 'main'
-      - 'feature/**'
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write
 
 jobs:
   quality:
