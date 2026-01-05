@@ -839,15 +839,6 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
     }
 
-    private async Task EnsureTripOwnershipAsync(string userId, string tripId, CancellationToken cancellationToken)
-    {
-        var tripEntity = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(userId, tripId, cancellationToken: cancellationToken);
-        if (tripEntity.HasValue is false)
-        {
-            throw new InvalidOperationException($"Trip '{tripId}' is not available for the current user.");
-        }
-    }
-
     private async Task<TimelineItemType> ResolveBookingItemTypeAsync(string tripId, BookingMutation mutation, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(mutation.EntryId))
