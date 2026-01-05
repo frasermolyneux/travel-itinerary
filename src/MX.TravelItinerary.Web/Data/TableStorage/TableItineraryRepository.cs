@@ -1316,7 +1316,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
 
         var emailFilter = TableClient.CreateQueryFilter($"NormalizedEmail eq {normalizedEmail}");
-        return TableClient.CreateQueryFilter($"{userFilter} or {emailFilter}");
+        return $"{userFilter} or {emailFilter}";
     }
 
     private static string? NormalizeEmail(string? value)
