@@ -42,6 +42,8 @@ public sealed class DetailsModel : PageModel
 
     public bool CanEditTrip => TripDetails?.CurrentUserPermission.HasWriteAccess() ?? false;
 
+    public bool IsTripOwner => TripDetails?.CurrentUserPermission.IsOwner() ?? false;
+
     public bool IsReadOnlyTrip => TripDetails?.CurrentUserPermission == TripPermission.ReadOnly;
 
     [BindProperty]

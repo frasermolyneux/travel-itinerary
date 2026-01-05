@@ -1,0 +1,151 @@
+@page
+@model MX.TravelItinerary.Web.Pages.Trips.AccessModel
+@{
+    ViewData["Title"] = "Manage access";
+    var trip = Model.TripDetails?.Trip;
+    var tripSlug = string.IsNullOrWhiteSpace(trip?.Slug) ? null : trip.Slug;
+}
+
+<div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
+    <div>
+        <p class="text-uppercase text-muted small mb-1">Share with collaborators</p>
+        <h1 class="mb-1">@(trip?.Name ?? "Trip access")</h1>
+        @if (trip?.StartDate is not null || trip?.EndDate is not null)
+        {
+            <div class="text-muted">
+                @trip?.StartDate?.ToString("MMM dd")
+                @if (trip?.EndDate is not null)
+                {
+                    <text> – @trip?.EndDate?.ToString("MMM dd")</text>
+                }
+            </div>
+        }
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-secondary" href="/trips">Back to trips</a>
+        @if (trip is not null)
+        {
+            <a class="btn btn-outline-secondary"
+               asp-page="./Details"
+               asp-route-tripSlug="@tripSlug"
+               asp-route-tripId="@(tripSlug is null ? trip?.TripId : null)">View timeline</a>
+            <a class="btn btn-outline-primary"
+               asp-page="./ShareLinks"
+               asp-route-tripSlug="@tripSlug"
+               asp-route-tripId="@(tripSlug is null ? trip?.TripId : null)">Share links</a>
+        }
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="alert">
+        @Model.StatusMessage
+    </div>
+}
+
+@if (Model.TripDetails is null)
+{
+    <div class="alert alert-warning">Trip could not be loaded.</div>
+}
+else
+{
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <div class="fw-semibold">@(Model.IsEditing ? "Update access" : "Invite someone new")</div>
+                    <div class="text-muted small">Full control lets them edit the itinerary; read only keeps it view-only.</div>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="Save">
+                        <input type="hidden" asp-for="TripId" />
+                        <input type="hidden" asp-for="TripSlug" />
+                        <input type="hidden" asp-for="Input.TripId" />
+                        <input type="hidden" asp-for="Input.AccessId" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.Email" class="form-label"></label>
+                            <input asp-for="Input.Email" class="form-control" />
+                            <span asp-validation-for="Input.Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.Permission" class="form-label"></label>
+                            <select asp-for="Input.Permission" class="form-select" asp-items="Model.PermissionOptions"></select>
+                            <div class="form-text">Full control can edit entries and bookings; read only can just view.</div>
+                            <span asp-validation-for="Input.Permission" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save access" : "Invite")</button>
+                            @if (Model.IsEditing)
+                            {
+                                <a class="btn btn-outline-secondary" asp-page="./Access" asp-route-tripId="@Model.TripId"
+                                   asp-route-tripSlug="@Model.TripSlug">Cancel edit</a>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <div class="fw-semibold">People with access</div>
+                    <div class="text-muted small">Only you can manage access. Read-only guests cannot make changes.</div>
+                </div>
+                <div class="card-body d-flex flex-column gap-3">
+                    @if (Model.AccessList.Count == 0)
+                    {
+                        <div class="text-muted">No one else has access yet. Invite someone to collaborate.</div>
+                    }
+                    else
+                    {
+                        @foreach (var access in Model.AccessList)
+                        {
+                            <div class="border rounded-3 p-3">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                    <div>
+                                        <div class="text-uppercase small text-muted">Email</div>
+                                        <div class="fw-semibold">@access.Email</div>
+                                    </div>
+                                    <span class="badge @(access.Permission.HasWriteAccess() ? "text-bg-primary" : "text-bg-secondary")">
+                                        @(access.Permission == TripPermission.FullControl ? "Full control" : "Read only")
+                                    </span>
+                                </div>
+                                <div class="text-muted small mb-3">
+                                    @if (access.InvitedOn is { } invitedOn)
+                                    {
+                                        <span>Invited @invitedOn.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Invitation date unavailable</span>
+                                    }
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a class="btn btn-sm btn-outline-primary" asp-page="./Access"
+                                       asp-route-tripId="@Model.TripId" asp-route-tripSlug="@Model.TripSlug"
+                                       asp-route-edit="@access.AccessId">Edit</a>
+                                    <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Remove access for this person?');">
+                                        <input type="hidden" name="tripId" value="@Model.TripId" />
+                                        <input type="hidden" name="tripSlug" value="@Model.TripSlug" />
+                                        <input type="hidden" name="accessId" value="@access.AccessId" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

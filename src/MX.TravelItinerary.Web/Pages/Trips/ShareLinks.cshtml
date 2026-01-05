@@ -24,6 +24,9 @@
         <a class="btn btn-outline-secondary" href="/trips">Back to trips</a>
         @if (trip is not null)
         {
+            <a class="btn btn-outline-primary" asp-page="./Access"
+                asp-route-tripSlug="@(string.IsNullOrWhiteSpace(trip.Slug) ? null : trip.Slug)"
+                asp-route-tripId="@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : null)">Manage access</a>
             <a class="btn btn-outline-secondary" asp-page="./Details"
                 asp-route-tripSlug="@(string.IsNullOrWhiteSpace(trip.Slug) ? null : trip.Slug)"
                 asp-route-tripId="@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : null)">View timeline</a>
