@@ -18,4 +18,6 @@ public sealed class StorageTableNames
     public string Bookings { get; set; } = "Bookings";
 
     public string ShareLinks { get; set; } = "ShareLinks";
+
+    public string TripAccess { get; set; } = "TripAccess";
 }

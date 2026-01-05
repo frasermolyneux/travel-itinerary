@@ -18,43 +18,74 @@ public sealed class TableItineraryRepository : IItineraryRepository
     private const string DateFormat = "yyyy-MM-dd";
     private const int SortOrderIncrement = 10;
 
+    private sealed record TripAccessContext(Trip Trip, TripPermission Permission, TableEntity? AccessEntity);
+
     public TableItineraryRepository(ITableContext tables, TelemetryClient telemetry)
     {
         _tables = tables;
         _telemetry = telemetry;
     }
 
-    public async Task<IReadOnlyList<Trip>> GetTripsForUserAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Trip>> GetTripsForUserAsync(string userId, string? userEmail, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
 
-        var trips = new List<Trip>();
+        var normalizedEmail = NormalizeEmail(userEmail);
+        var trips = new Dictionary<string, Trip>(StringComparer.OrdinalIgnoreCase);
+
         await foreach (var entity in _tables.Trips.QueryAsync<TableEntity>(
                    filter: CreatePartitionFilter(userId),
                    cancellationToken: cancellationToken))
         {
-            trips.Add(TableEntityMapper.ToTrip(entity));
+            var trip = TableEntityMapper.ToTrip(entity);
+            trips[trip.TripId] = trip;
         }
 
-        return trips;
+        var accessFilter = CreateAccessFilterForUser(userId, normalizedEmail);
+        await foreach (var entity in _tables.TripAccess.QueryAsync<TableEntity>(
+                   filter: accessFilter,
+                   cancellationToken: cancellationToken))
+        {
+            var tripId = entity.PartitionKey;
+            if (trips.ContainsKey(tripId))
+            {
+                continue;
+            }
+
+            var ownerUserId = entity.GetString("OwnerUserId");
+            if (string.IsNullOrWhiteSpace(ownerUserId))
+            {
+                continue;
+            }
+
+            var tripEntity = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(ownerUserId, tripId, cancellationToken: cancellationToken);
+            if (tripEntity.HasValue)
+            {
+                trips[tripId] = TableEntityMapper.ToTrip(tripEntity.Value);
+            }
+        }
+
+        return trips.Values
+            .OrderBy(trip => trip.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow))
+            .ThenBy(trip => trip.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
-    public async Task<TripDetails?> GetTripAsync(string userId, string tripId, CancellationToken cancellationToken = default)
+    public async Task<TripDetails?> GetTripAsync(string userId, string? userEmail, string tripId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
 
-        var tripEntity = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(userId, tripId, cancellationToken: cancellationToken);
-        if (tripEntity.HasValue is false)
+        var context = await GetTripContextAsync(userId, userEmail, tripId, cancellationToken);
+        if (context is null)
         {
             return null;
         }
 
-        var trip = TableEntityMapper.ToTrip(tripEntity.Value!);
-        return await BuildTripDetailsAsync(trip, shareLink: null, cancellationToken);
+        return await BuildTripDetailsAsync(context.Trip, shareLink: null, context.Permission, cancellationToken);
     }
 
-    public async Task<TripDetails?> GetTripBySlugAsync(string userId, string slug, CancellationToken cancellationToken = default)
+    public async Task<TripDetails?> GetTripBySlugAsync(string userId, string? userEmail, string slug, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(slug);
@@ -67,18 +98,32 @@ public sealed class TableItineraryRepository : IItineraryRepository
             candidates.Add(normalized);
         }
 
-        foreach (var candidate in candidates)
+        var ownedTrip = await FindTripBySlugForUserAsync(userId, candidates, cancellationToken);
+        if (ownedTrip is not null)
         {
-            var filter = TableClient.CreateQueryFilter($"PartitionKey eq {userId} and Slug eq {candidate}");
+            return await BuildTripDetailsAsync(ownedTrip, shareLink: null, TripPermission.Owner, cancellationToken);
+        }
 
-            await foreach (var entity in _tables.Trips.QueryAsync<TableEntity>(
-                       filter: filter,
-                       maxPerPage: 1,
-                       cancellationToken: cancellationToken))
+        var accessFilter = CreateAccessFilterForUser(userId, NormalizeEmail(userEmail));
+        await foreach (var accessEntity in _tables.TripAccess.QueryAsync<TableEntity>(
+                   filter: accessFilter,
+                   cancellationToken: cancellationToken))
+        {
+            var tripId = accessEntity.PartitionKey;
+            var ownerUserId = accessEntity.GetString("OwnerUserId");
+            if (string.IsNullOrWhiteSpace(ownerUserId))
             {
-                var trip = TableEntityMapper.ToTrip(entity);
-                return await BuildTripDetailsAsync(trip, shareLink: null, cancellationToken);
+                continue;
             }
+
+            var tripCandidate = await FindTripBySlugForUserAsync(ownerUserId, candidates, cancellationToken, tripId);
+            if (tripCandidate is null)
+            {
+                continue;
+            }
+
+            var permission = TripPermissionExtensions.FromStorage(accessEntity.GetString("Permission"));
+            return await BuildTripDetailsAsync(tripCandidate, shareLink: null, permission, cancellationToken);
         }
 
         return null;
@@ -147,7 +192,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
             properties["IncludeCost"] = FormatBool(shareLink.IncludeCost);
             properties["ExpiresOnUtc"] = FormatDateTimeOffset(shareLink.ExpiresOn);
         });
-        return await BuildTripDetailsAsync(trip, shareLink, cancellationToken);
+        return await BuildTripDetailsAsync(trip, shareLink, TripPermission.ReadOnly, cancellationToken);
     }
 
     public async Task<IReadOnlyList<ShareLink>> GetShareLinksAsync(string userId, string tripId, CancellationToken cancellationToken = default)
@@ -169,6 +214,155 @@ public sealed class TableItineraryRepository : IItineraryRepository
             .OrderByDescending(link => link.CreatedOn)
             .ThenBy(link => link.ShareCode)
             .ToList();
+    }
+
+    public async Task<IReadOnlyList<TripAccess>> GetTripAccessListAsync(string userId, string tripId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+
+        var results = new List<TripAccess>();
+        await foreach (var entity in _tables.TripAccess.QueryAsync<TableEntity>(
+                   filter: CreatePartitionFilter(tripId),
+                   cancellationToken: cancellationToken))
+        {
+            results.Add(TableEntityMapper.ToTripAccess(entity));
+        }
+
+        return results
+            .OrderBy(access => access.Permission == TripPermission.FullControl ? 0 : 1)
+            .ThenBy(access => access.Email, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public async Task<TripAccess> GrantTripAccessAsync(string userId, string tripId, TripAccessMutation mutation, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+        ArgumentNullException.ThrowIfNull(mutation);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+
+        var normalizedEmail = NormalizeEmail(mutation.Email);
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            throw new InvalidOperationException("Enter a valid email address.");
+        }
+
+        var accessId = normalizedEmail;
+        var existing = await _tables.TripAccess.GetEntityIfExistsAsync<TableEntity>(tripId, accessId, cancellationToken: cancellationToken);
+        var entity = existing.HasValue ? existing.Value : new TableEntity(tripId, accessId)
+        {
+            ["OwnerUserId"] = userId,
+            ["InvitedByUserId"] = userId,
+            ["InvitedOn"] = DateTimeOffset.UtcNow
+        };
+
+        entity["Email"] = mutation.Email.Trim();
+        entity["NormalizedEmail"] = normalizedEmail;
+        entity["Permission"] = mutation.Permission.ToStorageValue();
+
+        await _tables.TripAccess.UpsertEntityAsync(entity, TableUpdateMode.Replace, cancellationToken);
+
+        var access = TableEntityMapper.ToTripAccess(entity);
+        TrackEvent("TripAccessGranted", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripId"] = tripId;
+            properties["AccessId"] = access.AccessId;
+            properties["Permission"] = access.Permission.ToString();
+        });
+
+        return access;
+    }
+
+    public async Task<TripAccess?> UpdateTripAccessAsync(string userId, string tripId, string accessId, TripAccessMutation mutation, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(accessId);
+        ArgumentNullException.ThrowIfNull(mutation);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+
+        var normalizedEmail = NormalizeEmail(mutation.Email);
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            throw new InvalidOperationException("Enter a valid email address.");
+        }
+
+        var existing = await _tables.TripAccess.GetEntityIfExistsAsync<TableEntity>(tripId, accessId, cancellationToken: cancellationToken);
+        if (existing.HasValue is false)
+        {
+            return null;
+        }
+
+        var entity = existing.Value;
+        var targetRowKey = normalizedEmail;
+
+        entity["Email"] = mutation.Email.Trim();
+        entity["NormalizedEmail"] = normalizedEmail;
+        entity["Permission"] = mutation.Permission.ToStorageValue();
+
+        if (!string.Equals(entity.RowKey, targetRowKey, StringComparison.OrdinalIgnoreCase))
+        {
+            var newEntity = new TableEntity(tripId, targetRowKey)
+            {
+                ["OwnerUserId"] = entity.GetString("OwnerUserId") ?? userId,
+                ["InvitedByUserId"] = entity.GetString("InvitedByUserId") ?? userId,
+                ["InvitedOn"] = entity.GetDateTimeOffset("InvitedOn") ?? DateTimeOffset.UtcNow,
+                ["Email"] = entity["Email"],
+                ["NormalizedEmail"] = entity["NormalizedEmail"],
+                ["Permission"] = entity["Permission"],
+                ["UserId"] = entity.GetString("UserId") ?? string.Empty
+            };
+
+            await _tables.TripAccess.UpsertEntityAsync(newEntity, TableUpdateMode.Replace, cancellationToken);
+            await _tables.TripAccess.DeleteEntityAsync(tripId, accessId, cancellationToken: cancellationToken);
+            entity = newEntity;
+        }
+        else
+        {
+            await _tables.TripAccess.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
+        }
+
+        var access = TableEntityMapper.ToTripAccess(entity);
+        TrackEvent("TripAccessUpdated", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripId"] = tripId;
+            properties["AccessId"] = access.AccessId;
+            properties["Permission"] = access.Permission.ToString();
+        });
+
+        return access;
+    }
+
+    public async Task<bool> RevokeTripAccessAsync(string userId, string tripId, string accessId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(accessId);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+
+        try
+        {
+            await _tables.TripAccess.DeleteEntityAsync(tripId, accessId, cancellationToken: cancellationToken);
+            TrackEvent("TripAccessRevoked", properties =>
+            {
+                properties["UserId"] = userId;
+                properties["TripId"] = tripId;
+                properties["AccessId"] = accessId;
+            });
+            return true;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return false;
+        }
     }
 
     public async Task<ShareLink> CreateShareLinkAsync(string userId, string tripId, ShareLinkMutation mutation, CancellationToken cancellationToken = default)
@@ -299,13 +493,16 @@ public sealed class TableItineraryRepository : IItineraryRepository
         return trip;
     }
 
-    public async Task<Trip?> UpdateTripAsync(string userId, string tripId, TripMutation mutation, CancellationToken cancellationToken = default)
+    public async Task<Trip?> UpdateTripAsync(string userId, string? userEmail, string tripId, TripMutation mutation, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
         ArgumentNullException.ThrowIfNull(mutation);
 
-        var existing = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(userId, tripId, cancellationToken: cancellationToken);
+        var context = await EnsureTripAccessAsync(userId, userEmail, tripId, requireWrite: true, cancellationToken: cancellationToken);
+        var ownerUserId = context.Trip.UserId;
+
+        var existing = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(ownerUserId, tripId, cancellationToken: cancellationToken);
         if (existing.HasValue is false)
         {
             return null;
@@ -316,6 +513,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         {
             return null;
         }
+
         ApplyTripMutation(entity, mutation);
         await _tables.Trips.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
 
@@ -329,10 +527,12 @@ public sealed class TableItineraryRepository : IItineraryRepository
         return trip;
     }
 
-    public async Task<bool> DeleteTripAsync(string userId, string tripId, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteTripAsync(string userId, string? userEmail, string tripId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
+
+        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
 
         try
         {
@@ -350,13 +550,13 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
     }
 
-    public async Task<ItineraryEntry> CreateItineraryEntryAsync(string userId, string tripId, ItineraryEntryMutation mutation, CancellationToken cancellationToken = default)
+    public async Task<ItineraryEntry> CreateItineraryEntryAsync(string userId, string? userEmail, string tripId, ItineraryEntryMutation mutation, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
         ArgumentNullException.ThrowIfNull(mutation);
 
-        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+        await EnsureTripAccessAsync(userId, userEmail, tripId, requireWrite: true, cancellationToken: cancellationToken);
 
         var entryId = Guid.NewGuid().ToString("N");
         var entity = new TableEntity(tripId, entryId);
@@ -382,14 +582,14 @@ public sealed class TableItineraryRepository : IItineraryRepository
         return entry;
     }
 
-    public async Task<ItineraryEntry?> UpdateItineraryEntryAsync(string userId, string tripId, string entryId, ItineraryEntryMutation mutation, CancellationToken cancellationToken = default)
+    public async Task<ItineraryEntry?> UpdateItineraryEntryAsync(string userId, string? userEmail, string tripId, string entryId, ItineraryEntryMutation mutation, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
         ArgumentException.ThrowIfNullOrWhiteSpace(entryId);
         ArgumentNullException.ThrowIfNull(mutation);
 
-        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+        await EnsureTripAccessAsync(userId, userEmail, tripId, requireWrite: true, cancellationToken: cancellationToken);
 
         var existing = await _tables.ItineraryEntries.GetEntityIfExistsAsync<TableEntity>(tripId, entryId, cancellationToken: cancellationToken);
         if (existing.HasValue is false)
@@ -425,13 +625,13 @@ public sealed class TableItineraryRepository : IItineraryRepository
         return entry;
     }
 
-    public async Task<bool> DeleteItineraryEntryAsync(string userId, string tripId, string entryId, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteItineraryEntryAsync(string userId, string? userEmail, string tripId, string entryId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
         ArgumentException.ThrowIfNullOrWhiteSpace(entryId);
 
-        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+        await EnsureTripAccessAsync(userId, userEmail, tripId, requireWrite: true, cancellationToken: cancellationToken);
 
         try
         {
@@ -450,13 +650,13 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
     }
 
-    public async Task ReorderItineraryEntriesAsync(string userId, string tripId, DateOnly date, IReadOnlyList<string> orderedEntryIds, CancellationToken cancellationToken = default)
+    public async Task ReorderItineraryEntriesAsync(string userId, string? userEmail, string tripId, DateOnly date, IReadOnlyList<string> orderedEntryIds, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
         ArgumentNullException.ThrowIfNull(orderedEntryIds);
 
-        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+        await EnsureTripAccessAsync(userId, userEmail, tripId, requireWrite: true, cancellationToken: cancellationToken);
 
         var dateText = date.ToString(DateFormat);
         var filter = TableClient.CreateQueryFilter($"PartitionKey eq {tripId} and Date eq {dateText}");
@@ -540,13 +740,13 @@ public sealed class TableItineraryRepository : IItineraryRepository
         });
     }
 
-    public async Task<Booking> CreateBookingAsync(string userId, string tripId, BookingMutation mutation, CancellationToken cancellationToken = default)
+    public async Task<Booking> CreateBookingAsync(string userId, string? userEmail, string tripId, BookingMutation mutation, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
         ArgumentNullException.ThrowIfNull(mutation);
 
-        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+        await EnsureTripAccessAsync(userId, userEmail, tripId, requireWrite: true, cancellationToken: cancellationToken);
         var itemType = await ResolveBookingItemTypeAsync(tripId, mutation, cancellationToken);
         if (await BookingExistsForLinkAsync(tripId, mutation, excludeBookingId: null, cancellationToken))
         {
@@ -571,14 +771,14 @@ public sealed class TableItineraryRepository : IItineraryRepository
         return booking;
     }
 
-    public async Task<Booking?> UpdateBookingAsync(string userId, string tripId, string bookingId, BookingMutation mutation, CancellationToken cancellationToken = default)
+    public async Task<Booking?> UpdateBookingAsync(string userId, string? userEmail, string tripId, string bookingId, BookingMutation mutation, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
         ArgumentException.ThrowIfNullOrWhiteSpace(bookingId);
         ArgumentNullException.ThrowIfNull(mutation);
 
-        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+        await EnsureTripAccessAsync(userId, userEmail, tripId, requireWrite: true, cancellationToken: cancellationToken);
         var itemType = await ResolveBookingItemTypeAsync(tripId, mutation, cancellationToken);
         if (await BookingExistsForLinkAsync(tripId, mutation, bookingId, cancellationToken))
         {
@@ -614,13 +814,13 @@ public sealed class TableItineraryRepository : IItineraryRepository
         return booking;
     }
 
-    public async Task<bool> DeleteBookingAsync(string userId, string tripId, string bookingId, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteBookingAsync(string userId, string? userEmail, string tripId, string bookingId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
         ArgumentException.ThrowIfNullOrWhiteSpace(bookingId);
 
-        await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
+        await EnsureTripAccessAsync(userId, userEmail, tripId, requireWrite: true, cancellationToken: cancellationToken);
 
         try
         {
@@ -819,7 +1019,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
     private static string? NormalizeCurrency(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToUpperInvariant();
 
-    private async Task<TripDetails> BuildTripDetailsAsync(Trip trip, ShareLink? shareLink, CancellationToken cancellationToken)
+    private async Task<TripDetails> BuildTripDetailsAsync(Trip trip, ShareLink? shareLink, TripPermission permission, CancellationToken cancellationToken)
     {
         var entriesTask = QueryItineraryEntriesAsync(trip.TripId, cancellationToken);
         var bookingsTask = QueryBookingsAsync(trip.TripId, cancellationToken);
@@ -867,7 +1067,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
             bookings = new List<Booking>();
         }
 
-        return new TripDetails(trip, entries, bookings, shareLink);
+        return new TripDetails(trip, entries, bookings, shareLink, permission);
     }
 
     private async Task<List<ItineraryEntry>> QueryItineraryEntriesAsync(string tripId, CancellationToken cancellationToken)
@@ -988,6 +1188,148 @@ public sealed class TableItineraryRepository : IItineraryRepository
             entity[propertyName] = value.Value;
         }
     }
+
+    private async Task<TripAccessContext?> GetTripContextAsync(string userId, string? userEmail, string tripId, CancellationToken cancellationToken)
+    {
+        var ownedTrip = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(userId, tripId, cancellationToken: cancellationToken);
+        if (ownedTrip.HasValue)
+        {
+            return new TripAccessContext(TableEntityMapper.ToTrip(ownedTrip.Value), TripPermission.Owner, null);
+        }
+
+        var accessEntity = await FindAccessEntityAsync(tripId, userId, userEmail, cancellationToken);
+        if (accessEntity is null)
+        {
+            return null;
+        }
+
+        var ownerUserId = accessEntity.GetString("OwnerUserId");
+        if (string.IsNullOrWhiteSpace(ownerUserId))
+        {
+            return null;
+        }
+
+        var tripEntity = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(ownerUserId, tripId, cancellationToken: cancellationToken);
+        if (tripEntity.HasValue is false)
+        {
+            return null;
+        }
+
+        await MaybeStampUserIdOnAccessAsync(accessEntity, userId, cancellationToken);
+        var permission = TripPermissionExtensions.FromStorage(accessEntity.GetString("Permission"));
+        return new TripAccessContext(TableEntityMapper.ToTrip(tripEntity.Value), permission, accessEntity);
+    }
+
+    private async Task<TableEntity?> FindAccessEntityAsync(string tripId, string userId, string? userEmail, CancellationToken cancellationToken)
+    {
+        var userFilter = TableClient.CreateQueryFilter($"PartitionKey eq {tripId} and UserId eq {userId}");
+        await foreach (var entity in _tables.TripAccess.QueryAsync<TableEntity>(
+                   filter: userFilter,
+                   maxPerPage: 1,
+                   cancellationToken: cancellationToken))
+        {
+            return entity;
+        }
+
+        var normalizedEmail = NormalizeEmail(userEmail);
+        if (!string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            var emailFilter = TableClient.CreateQueryFilter($"PartitionKey eq {tripId} and NormalizedEmail eq {normalizedEmail}");
+            await foreach (var entity in _tables.TripAccess.QueryAsync<TableEntity>(
+                       filter: emailFilter,
+                       maxPerPage: 1,
+                       cancellationToken: cancellationToken))
+            {
+                return entity;
+            }
+        }
+
+        return null;
+    }
+
+    private async Task MaybeStampUserIdOnAccessAsync(TableEntity accessEntity, string userId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return;
+        }
+
+        var existingUserId = accessEntity.GetString("UserId");
+        if (!string.IsNullOrWhiteSpace(existingUserId))
+        {
+            return;
+        }
+
+        accessEntity["UserId"] = userId;
+        try
+        {
+            await _tables.TripAccess.UpdateEntityAsync(accessEntity, accessEntity.ETag, TableUpdateMode.Merge, cancellationToken);
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            // The access entry disappeared between lookup and update; ignore.
+        }
+    }
+
+    private async Task<TripAccessContext> EnsureTripAccessAsync(string userId, string? userEmail, string tripId, bool requireWrite, CancellationToken cancellationToken)
+    {
+        var context = await GetTripContextAsync(userId, userEmail, tripId, cancellationToken);
+        if (context is null)
+        {
+            throw new InvalidOperationException($"Trip '{tripId}' is not available for the current user.");
+        }
+
+        if (requireWrite && !context.Permission.HasWriteAccess())
+        {
+            throw new InvalidOperationException("You only have read-only access to this trip.");
+        }
+
+        return context;
+    }
+
+    private async Task EnsureTripOwnershipAsync(string userId, string tripId, CancellationToken cancellationToken)
+    {
+        var tripEntity = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(userId, tripId, cancellationToken: cancellationToken);
+        if (tripEntity.HasValue is false)
+        {
+            throw new InvalidOperationException("Only the itinerary owner can perform this action.");
+        }
+    }
+
+    private async Task<Trip?> FindTripBySlugForUserAsync(string ownerUserId, IReadOnlyList<string> slugCandidates, CancellationToken cancellationToken, string? specificTripId = null)
+    {
+        foreach (var candidate in slugCandidates)
+        {
+            string filter = string.IsNullOrWhiteSpace(specificTripId)
+                ? TableClient.CreateQueryFilter($"PartitionKey eq {ownerUserId} and Slug eq {candidate}")
+                : TableClient.CreateQueryFilter($"PartitionKey eq {ownerUserId} and RowKey eq {specificTripId} and Slug eq {candidate}");
+
+            await foreach (var entity in _tables.Trips.QueryAsync<TableEntity>(
+                       filter: filter,
+                       maxPerPage: 1,
+                       cancellationToken: cancellationToken))
+            {
+                return TableEntityMapper.ToTrip(entity);
+            }
+        }
+
+        return null;
+    }
+
+    private static string CreateAccessFilterForUser(string userId, string? normalizedEmail)
+    {
+        var userFilter = TableClient.CreateQueryFilter($"UserId eq {userId}");
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            return userFilter;
+        }
+
+        var emailFilter = TableClient.CreateQueryFilter($"NormalizedEmail eq {normalizedEmail}");
+        return TableClient.CreateQueryFilter($"{userFilter} or {emailFilter}");
+    }
+
+    private static string? NormalizeEmail(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant();
 
     private static void ApplyShareLinkMutation(TableEntity entity, ShareLinkMutation mutation)
     {

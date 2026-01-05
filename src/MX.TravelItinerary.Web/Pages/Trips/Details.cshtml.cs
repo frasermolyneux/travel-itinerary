@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -39,6 +40,10 @@ public sealed class DetailsModel : PageModel
 
     public bool IsGoogleMapsConfigured => !string.IsNullOrWhiteSpace(GoogleMapsApiKey);
 
+    public bool CanEditTrip => TripDetails?.CurrentUserPermission.HasWriteAccess() ?? false;
+
+    public bool IsReadOnlyTrip => TripDetails?.CurrentUserPermission == TripPermission.ReadOnly;
+
     [BindProperty]
     public ItineraryEntryForm EntryInput { get; set; } = new();
 
@@ -61,13 +66,15 @@ public sealed class DetailsModel : PageModel
             return null;
         }
 
+        var allowEdit = TripDetails.CurrentUserPermission.HasWriteAccess();
+
         return new TripTimelineDisplayModel(
             TripDetails.Trip,
             Timeline,
             GetBookingForEntry,
-            allowEntryEditing: true,
-            allowEntryReordering: true,
-            allowBookingCreation: true,
+            allowEntryEditing: allowEdit,
+            allowEntryReordering: allowEdit,
+            allowBookingCreation: allowEdit,
             allowBookingViewing: true);
     }
 
@@ -93,6 +100,11 @@ public sealed class DetailsModel : PageModel
             return NotFound();
         }
 
+        if (!CanEditTrip)
+        {
+            return Forbid();
+        }
+
         ModelState.Clear();
         TryValidateModel(EntryInput, nameof(EntryInput));
         ValidateEntryInput();
@@ -102,16 +114,17 @@ public sealed class DetailsModel : PageModel
         }
 
         var userId = GetUserId();
+        var userEmail = GetUserEmail();
         var mutation = EntryInput.ToMutation();
 
         if (string.IsNullOrWhiteSpace(EntryInput.EntryId))
         {
-            await _repository.CreateItineraryEntryAsync(userId, TripId, mutation, cancellationToken);
+            await _repository.CreateItineraryEntryAsync(userId, userEmail, TripId, mutation, cancellationToken);
             StatusMessage = "Itinerary entry added.";
         }
         else
         {
-            var updated = await _repository.UpdateItineraryEntryAsync(userId, TripId, EntryInput.EntryId, mutation, cancellationToken);
+            var updated = await _repository.UpdateItineraryEntryAsync(userId, userEmail, TripId, EntryInput.EntryId, mutation, cancellationToken);
             if (updated is null)
             {
                 ModelState.AddModelError(string.Empty, "Unable to find the selected entry.");
@@ -136,8 +149,19 @@ public sealed class DetailsModel : PageModel
             return RedirectToTripPage();
         }
 
+        if (!await LoadTripAsync(cancellationToken))
+        {
+            return NotFound();
+        }
+
+        if (!CanEditTrip)
+        {
+            return Forbid();
+        }
+
         var userId = GetUserId();
-        await _repository.DeleteItineraryEntryAsync(userId, TripId, entryId, cancellationToken);
+        var userEmail = GetUserEmail();
+        await _repository.DeleteItineraryEntryAsync(userId, userEmail, TripId, entryId, cancellationToken);
         StatusMessage = "Itinerary entry deleted.";
         return RedirectToTripPage();
     }
@@ -155,6 +179,11 @@ public sealed class DetailsModel : PageModel
             return NotFound();
         }
 
+        if (!CanEditTrip)
+        {
+            return Forbid();
+        }
+
         if (!DateOnly.TryParse(request.Date, out var day))
         {
             return BadRequest(new { error = "Invalid date." });
@@ -162,7 +191,8 @@ public sealed class DetailsModel : PageModel
 
         var entryIds = request.EntryIds?.Where(id => !string.IsNullOrWhiteSpace(id)).ToList() ?? new List<string>();
         var userId = GetUserId();
-        await _repository.ReorderItineraryEntriesAsync(userId, TripId, day, entryIds, cancellationToken);
+        var userEmail = GetUserEmail();
+        await _repository.ReorderItineraryEntriesAsync(userId, userEmail, TripId, day, entryIds, cancellationToken);
 
         return new JsonResult(new { success = true });
     }
@@ -188,19 +218,30 @@ public sealed class DetailsModel : PageModel
             return Page();
         }
 
+        if (!await LoadTripAsync(cancellationToken))
+        {
+            return NotFound();
+        }
+
+        if (!CanEditTrip)
+        {
+            return Forbid();
+        }
+
         var userId = GetUserId();
+        var userEmail = GetUserEmail();
         var mutation = BookingInput.ToMutation();
 
         try
         {
             if (string.IsNullOrWhiteSpace(BookingInput.BookingId))
             {
-                await _repository.CreateBookingAsync(userId, TripId, mutation, cancellationToken);
+                await _repository.CreateBookingAsync(userId, userEmail, TripId, mutation, cancellationToken);
                 StatusMessage = "Booking confirmation added.";
             }
             else
             {
-                var updated = await _repository.UpdateBookingAsync(userId, TripId, BookingInput.BookingId, mutation, cancellationToken);
+                var updated = await _repository.UpdateBookingAsync(userId, userEmail, TripId, BookingInput.BookingId, mutation, cancellationToken);
                 if (updated is null)
                 {
                     ModelState.AddModelError(string.Empty, "Unable to find the selected booking.");
@@ -236,8 +277,19 @@ public sealed class DetailsModel : PageModel
             return RedirectToTripPage();
         }
 
+        if (!await LoadTripAsync(cancellationToken))
+        {
+            return NotFound();
+        }
+
+        if (!CanEditTrip)
+        {
+            return Forbid();
+        }
+
         var userId = GetUserId();
-        await _repository.DeleteBookingAsync(userId, TripId, bookingId, cancellationToken);
+        var userEmail = GetUserEmail();
+        await _repository.DeleteBookingAsync(userId, userEmail, TripId, bookingId, cancellationToken);
         StatusMessage = "Booking confirmation deleted.";
         return RedirectToTripPage();
     }
@@ -250,20 +302,21 @@ public sealed class DetailsModel : PageModel
         }
 
         var userId = GetUserId();
+        var userEmail = GetUserEmail();
         TripDetails? details = null;
 
         if (!string.IsNullOrWhiteSpace(TripId))
         {
-            details = await _repository.GetTripAsync(userId, TripId, cancellationToken);
+            details = await _repository.GetTripAsync(userId, userEmail, TripId, cancellationToken);
         }
 
         if (details is null && !string.IsNullOrWhiteSpace(TripSlug))
         {
-            details = await _repository.GetTripBySlugAsync(userId, TripSlug, cancellationToken);
+            details = await _repository.GetTripBySlugAsync(userId, userEmail, TripSlug, cancellationToken);
 
             if (details is null && Guid.TryParse(TripSlug, out _))
             {
-                details = await _repository.GetTripAsync(userId, TripSlug, cancellationToken);
+                details = await _repository.GetTripAsync(userId, userEmail, TripSlug, cancellationToken);
             }
         }
 
@@ -413,6 +466,12 @@ public sealed class DetailsModel : PageModel
         }
 
         return userId;
+    }
+
+    private string? GetUserEmail()
+    {
+        var email = User.FindFirstValue("preferred_username") ?? User.FindFirstValue(ClaimTypes.Email);
+        return string.IsNullOrWhiteSpace(email) ? null : email;
     }
 
     public sealed class ItineraryEntryForm

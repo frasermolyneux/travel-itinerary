@@ -10,6 +10,7 @@ public interface ITableContext
     TableClient ItineraryEntries { get; }
     TableClient Bookings { get; }
     TableClient ShareLinks { get; }
+    TableClient TripAccess { get; }
 }
 
 internal sealed class TableContext : ITableContext
@@ -22,6 +23,7 @@ internal sealed class TableContext : ITableContext
         ItineraryEntries = tableServiceClient.GetTableClient(tableNames.ItineraryEntries);
         Bookings = tableServiceClient.GetTableClient(tableNames.Bookings);
         ShareLinks = tableServiceClient.GetTableClient(tableNames.ShareLinks);
+        TripAccess = tableServiceClient.GetTableClient(tableNames.TripAccess);
     }
 
     public TableClient Trips { get; }
@@ -31,4 +33,6 @@ internal sealed class TableContext : ITableContext
     public TableClient Bookings { get; }
 
     public TableClient ShareLinks { get; }
+
+    public TableClient TripAccess { get; }
 }

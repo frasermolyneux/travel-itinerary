@@ -18,5 +18,6 @@ locals {
     itinerary_entries = "ItineraryEntries"
     bookings          = "Bookings"
     share_links       = "ShareLinks"
+    trip_access       = "TripAccess"
   }
 }

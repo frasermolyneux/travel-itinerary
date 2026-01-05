@@ -72,6 +72,21 @@ internal static class TableEntityMapper
             Notes: entity.GetString("Notes"));
     }
 
+    public static TripAccess ToTripAccess(TableEntity entity)
+    {
+        var permission = TripPermissionExtensions.FromStorage(entity.GetString("Permission"));
+        return new TripAccess(
+            TripId: entity.PartitionKey,
+            AccessId: entity.RowKey,
+            OwnerUserId: entity.GetString("OwnerUserId") ?? string.Empty,
+            Permission: permission,
+            Email: entity.GetString("Email") ?? entity.RowKey,
+            NormalizedEmail: entity.GetString("NormalizedEmail") ?? entity.RowKey,
+            UserId: entity.GetString("UserId"),
+            InvitedByUserId: entity.GetString("InvitedByUserId"),
+            InvitedOn: entity.GetDateTimeOffset("InvitedOn"));
+    }
+
     private static TimelineItemType GetBookingItemType(TableEntity entity)
         => entity.GetString("ItemType").ToTimelineItemType();
 

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -33,7 +34,7 @@ public sealed class IndexModel : PageModel
     public async Task<IActionResult> OnGetAsync(string? edit, CancellationToken cancellationToken)
     {
         var userId = GetUserId();
-        Trips = await _repository.GetTripsForUserAsync(userId, cancellationToken);
+        Trips = await _repository.GetTripsForUserAsync(userId, GetUserEmail(), cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(edit))
         {
@@ -53,7 +54,7 @@ public sealed class IndexModel : PageModel
         await ValidateDatesAsync();
         if (!ModelState.IsValid)
         {
-            Trips = await _repository.GetTripsForUserAsync(userId, cancellationToken);
+            Trips = await _repository.GetTripsForUserAsync(userId, GetUserEmail(), cancellationToken);
             return Page();
         }
 
@@ -66,11 +67,11 @@ public sealed class IndexModel : PageModel
         }
         else
         {
-            var updated = await _repository.UpdateTripAsync(userId, Input.TripId, mutation, cancellationToken);
+            var updated = await _repository.UpdateTripAsync(userId, GetUserEmail(), Input.TripId, mutation, cancellationToken);
             if (updated is null)
             {
                 ModelState.AddModelError(string.Empty, "Unable to find the selected trip.");
-                Trips = await _repository.GetTripsForUserAsync(userId, cancellationToken);
+                Trips = await _repository.GetTripsForUserAsync(userId, GetUserEmail(), cancellationToken);
                 return Page();
             }
 
@@ -88,7 +89,7 @@ public sealed class IndexModel : PageModel
         }
 
         var userId = GetUserId();
-        await _repository.DeleteTripAsync(userId, tripId, cancellationToken);
+        await _repository.DeleteTripAsync(userId, GetUserEmail(), tripId, cancellationToken);
         StatusMessage = "Trip deleted.";
         return RedirectToPage();
     }
@@ -103,6 +104,12 @@ public sealed class IndexModel : PageModel
         }
 
         return userId;
+    }
+
+    private string? GetUserEmail()
+    {
+        var email = User.FindFirstValue("preferred_username") ?? User.FindFirstValue(ClaimTypes.Email);
+        return string.IsNullOrWhiteSpace(email) ? null : email;
     }
 
     private Task ValidateDatesAsync()

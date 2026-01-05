@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -140,23 +141,24 @@ public sealed class ShareLinksModel : PageModel
         }
 
         var userId = GetUserId();
+        var userEmail = GetUserEmail();
         TripDetails? details = null;
 
         if (!string.IsNullOrWhiteSpace(TripId))
         {
-            details = await _repository.GetTripAsync(userId, TripId, cancellationToken);
+            details = await _repository.GetTripAsync(userId, userEmail, TripId, cancellationToken);
         }
 
         if (details is null && !string.IsNullOrWhiteSpace(TripSlug))
         {
-            details = await _repository.GetTripBySlugAsync(userId, TripSlug, cancellationToken);
+            details = await _repository.GetTripBySlugAsync(userId, userEmail, TripSlug, cancellationToken);
             if (details is null && Guid.TryParse(TripSlug, out _))
             {
-                details = await _repository.GetTripAsync(userId, TripSlug, cancellationToken);
+                details = await _repository.GetTripAsync(userId, userEmail, TripSlug, cancellationToken);
             }
         }
 
-        if (details is null)
+        if (details is null || details.CurrentUserPermission != TripPermission.Owner)
         {
             return false;
         }
@@ -184,6 +186,12 @@ public sealed class ShareLinksModel : PageModel
         }
 
         return userId;
+    }
+
+    private string? GetUserEmail()
+    {
+        var email = User.FindFirstValue("preferred_username") ?? User.FindFirstValue(ClaimTypes.Email);
+        return string.IsNullOrWhiteSpace(email) ? null : email;
     }
 
     public sealed class ShareLinkForm

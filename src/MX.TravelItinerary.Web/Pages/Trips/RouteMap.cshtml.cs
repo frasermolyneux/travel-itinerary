@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -70,19 +71,20 @@ public sealed class RouteMapModel : PageModel
         }
 
         var userId = GetUserId();
+        var userEmail = GetUserEmail();
         TripDetails? details = null;
 
         if (!string.IsNullOrWhiteSpace(TripId))
         {
-            details = await _repository.GetTripAsync(userId, TripId, cancellationToken);
+            details = await _repository.GetTripAsync(userId, userEmail, TripId, cancellationToken);
         }
 
         if (details is null && !string.IsNullOrWhiteSpace(TripSlug))
         {
-            details = await _repository.GetTripBySlugAsync(userId, TripSlug, cancellationToken);
+            details = await _repository.GetTripBySlugAsync(userId, userEmail, TripSlug, cancellationToken);
             if (details is null && Guid.TryParse(TripSlug, out _))
             {
-                details = await _repository.GetTripAsync(userId, TripSlug, cancellationToken);
+                details = await _repository.GetTripAsync(userId, userEmail, TripSlug, cancellationToken);
             }
         }
 
@@ -107,5 +109,11 @@ public sealed class RouteMapModel : PageModel
         }
 
         return userId;
+    }
+
+    private string? GetUserEmail()
+    {
+        var email = User.FindFirstValue("preferred_username") ?? User.FindFirstValue(ClaimTypes.Email);
+        return string.IsNullOrWhiteSpace(email) ? null : email;
     }
 }

@@ -61,6 +61,13 @@ public enum TimelineItemType
     Other = 16
 }
 
+public enum TripPermission
+{
+    ReadOnly = 0,
+    FullControl = 1,
+    Owner = 2
+}
+
 public sealed record Trip(
     string TripId,
     string UserId,
@@ -188,11 +195,27 @@ public sealed record ShareLinkMutation(
     bool ShowBookingMetadata,
     string? Notes);
 
+public sealed record TripAccess(
+    string TripId,
+    string AccessId,
+    string OwnerUserId,
+    TripPermission Permission,
+    string Email,
+    string NormalizedEmail,
+    string? UserId,
+    string? InvitedByUserId,
+    DateTimeOffset? InvitedOn);
+
+public sealed record TripAccessMutation(
+    string Email,
+    TripPermission Permission);
+
 public sealed record TripDetails(
     Trip Trip,
     IReadOnlyList<ItineraryEntry> Entries,
     IReadOnlyList<Booking> Bookings,
-    ShareLink? ShareLink);
+    ShareLink? ShareLink,
+    TripPermission CurrentUserPermission = TripPermission.Owner);
 
 public sealed partial record ItineraryEntry
 {
@@ -284,6 +307,38 @@ public static class ModelEnumExtensions
             TimelineItemType.Dining => "bi-egg-fried",
             TimelineItemType.Note => "bi-journal-text",
             _ => "bi-stars"
+        };
+}
+
+public static class TripPermissionExtensions
+{
+    public static bool HasWriteAccess(this TripPermission permission)
+        => permission is TripPermission.Owner or TripPermission.FullControl;
+
+    public static bool IsOwner(this TripPermission permission)
+        => permission == TripPermission.Owner;
+
+    public static TripPermission FromStorage(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return TripPermission.ReadOnly;
+        }
+
+        return value.Trim().ToLowerInvariant() switch
+        {
+            "owner" => TripPermission.Owner,
+            "full" or "fullcontrol" => TripPermission.FullControl,
+            _ => TripPermission.ReadOnly
+        };
+    }
+
+    public static string ToStorageValue(this TripPermission permission)
+        => permission switch
+        {
+            TripPermission.Owner => "owner",
+            TripPermission.FullControl => "full",
+            _ => "read"
         };
 }
 
