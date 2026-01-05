@@ -25,14 +25,10 @@
         <a class="btn btn-outline-secondary" href="/trips">Back to trips</a>
         @if (trip is not null)
         {
-            <a class="btn btn-outline-secondary"
-               asp-page="./Details"
-               asp-route-tripSlug="@tripSlug"
-               asp-route-tripId="@(tripSlug is null ? trip?.TripId : null)">View timeline</a>
-            <a class="btn btn-outline-primary"
-               asp-page="./ShareLinks"
-               asp-route-tripSlug="@tripSlug"
-               asp-route-tripId="@(tripSlug is null ? trip?.TripId : null)">Share links</a>
+            <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-tripSlug="@tripSlug"
+                asp-route-tripId="@(tripSlug is null ? trip?.TripId : null)">View timeline</a>
+            <a class="btn btn-outline-primary" asp-page="./ShareLinks" asp-route-tripSlug="@tripSlug"
+                asp-route-tripId="@(tripSlug is null ? trip?.TripId : null)">Share links</a>
         }
     </div>
 </div>
@@ -55,7 +51,8 @@ else
             <div class="card shadow-sm">
                 <div class="card-header bg-white border-0">
                     <div class="fw-semibold">@(Model.IsEditing ? "Update access" : "Invite someone new")</div>
-                    <div class="text-muted small">Full control lets them edit the itinerary; read only keeps it view-only.</div>
+                    <div class="text-muted small">Full control lets them edit the itinerary; read only keeps it view-only.
+                    </div>
                 </div>
                 <div class="card-body">
                     <form method="post" asp-page-handler="Save">
@@ -73,17 +70,20 @@ else
 
                         <div class="mb-3">
                             <label asp-for="Input.Permission" class="form-label"></label>
-                            <select asp-for="Input.Permission" class="form-select" asp-items="Model.PermissionOptions"></select>
-                            <div class="form-text">Full control can edit entries and bookings; read only can just view.</div>
+                            <select asp-for="Input.Permission" class="form-select"
+                                asp-items="Model.PermissionOptions"></select>
+                            <div class="form-text">Full control can edit entries and bookings; read only can just view.
+                            </div>
                             <span asp-validation-for="Input.Permission" class="text-danger"></span>
                         </div>
 
                         <div class="d-flex flex-wrap gap-2">
-                            <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save access" : "Invite")</button>
+                            <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save access" :
+                                                            "Invite")</button>
                             @if (Model.IsEditing)
                             {
                                 <a class="btn btn-outline-secondary" asp-page="./Access" asp-route-tripId="@Model.TripId"
-                                   asp-route-tripSlug="@Model.TripSlug">Cancel edit</a>
+                                    asp-route-tripSlug="@Model.TripSlug">Cancel edit</a>
                             }
                         </div>
                     </form>
@@ -112,7 +112,8 @@ else
                                         <div class="text-uppercase small text-muted">Email</div>
                                         <div class="fw-semibold">@access.Email</div>
                                     </div>
-                                    <span class="badge @(access.Permission.HasWriteAccess() ? "text-bg-primary" : "text-bg-secondary")">
+                                    <span
+                                        class="badge @(access.Permission.HasWriteAccess() ? "text-bg-primary" : "text-bg-secondary")">
                                         @(access.Permission == TripPermission.FullControl ? "Full control" : "Read only")
                                     </span>
                                 </div>
@@ -127,10 +128,10 @@ else
                                     }
                                 </div>
                                 <div class="d-flex flex-wrap gap-2">
-                                    <a class="btn btn-sm btn-outline-primary" asp-page="./Access"
-                                       asp-route-tripId="@Model.TripId" asp-route-tripSlug="@Model.TripSlug"
-                                       asp-route-edit="@access.AccessId">Edit</a>
-                                    <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Remove access for this person?');">
+                                    <a class="btn btn-sm btn-outline-primary" asp-page="./Access" asp-route-tripId="@Model.TripId"
+                                        asp-route-tripSlug="@Model.TripSlug" asp-route-edit="@access.AccessId">Edit</a>
+                                    <form method="post" asp-page-handler="Delete" class="d-inline"
+                                        onsubmit="return confirm('Remove access for this person?');">
                                         <input type="hidden" name="tripId" value="@Model.TripId" />
                                         <input type="hidden" name="tripSlug" value="@Model.TripSlug" />
                                         <input type="hidden" name="accessId" value="@access.AccessId" />

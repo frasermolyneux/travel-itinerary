@@ -32,29 +32,21 @@
     <div class="d-flex flex-wrap gap-2 justify-content-end">
         @if (Model.IsTripOwner)
         {
-            <a class="btn btn-outline-primary"
-                asp-page="/Trips/Access"
-                asp-route-tripId="@(tripSlug is null ? tripId : null)"
-                asp-route-tripSlug="@tripSlug">
+            <a class="btn btn-outline-primary" asp-page="/Trips/Access"
+                asp-route-tripId="@(tripSlug is null ? tripId : null)" asp-route-tripSlug="@tripSlug">
                 Manage access
             </a>
-            <a class="btn btn-outline-primary"
-                asp-page="/Trips/ShareLinks"
-                asp-route-tripId="@(tripSlug is null ? tripId : null)"
-                asp-route-tripSlug="@tripSlug">
+            <a class="btn btn-outline-primary" asp-page="/Trips/ShareLinks"
+                asp-route-tripId="@(tripSlug is null ? tripId : null)" asp-route-tripSlug="@tripSlug">
                 Share links
             </a>
         }
-        <a class="btn btn-outline-primary"
-            asp-page="/Trips/RouteMap"
-            asp-route-tripId="@(tripSlug is null ? tripId : null)"
-            asp-route-tripSlug="@tripSlug">
+        <a class="btn btn-outline-primary" asp-page="/Trips/RouteMap"
+            asp-route-tripId="@(tripSlug is null ? tripId : null)" asp-route-tripSlug="@tripSlug">
             Route map
         </a>
-        <a class="btn btn-outline-primary"
-            asp-page="/Trips/CostSummary"
-            asp-route-tripId="@(tripSlug is null ? tripId : null)"
-            asp-route-tripSlug="@tripSlug">
+        <a class="btn btn-outline-primary" asp-page="/Trips/CostSummary"
+            asp-route-tripId="@(tripSlug is null ? tripId : null)" asp-route-tripSlug="@tripSlug">
             Cost summary
         </a>
         <a class="btn btn-outline-secondary" href="/trips">Back to Trips</a>
@@ -134,11 +126,11 @@ else
             <div data-entry-google-place-container>
                 @{
                     var placePickerModel = new GooglePlacePickerModel(
-                        Html.IdFor(m => m.EntryInput.GooglePlaceId).ToString(),
-                        Html.NameFor(m => m.EntryInput.GooglePlaceId).ToString(),
-                        "Google Place ID",
-                        Model.EntryInput.GooglePlaceId,
-                        Model.IsGoogleMapsConfigured);
+                    Html.IdFor(m => m.EntryInput.GooglePlaceId).ToString(),
+                    Html.NameFor(m => m.EntryInput.GooglePlaceId).ToString(),
+                    "Google Place ID",
+                    Model.EntryInput.GooglePlaceId,
+                    Model.IsGoogleMapsConfigured);
                 }
                 <partial name="~/Pages/Shared/FormControls/_GooglePlacePicker.cshtml" model="@placePickerModel" />
             </div>
@@ -160,22 +152,23 @@ else
                     <div class="col-md-6">
                         @{
                             var departurePicker = new GooglePlacePickerModel(
-                                Html.IdFor(m => m.EntryInput.TravelSegment.DeparturePlaceId).ToString(),
-                                Html.NameFor(m => m.EntryInput.TravelSegment.DeparturePlaceId).ToString(),
-                                "Departure location",
-                                Model.EntryInput.TravelSegment.DeparturePlaceId,
-                                Model.IsGoogleMapsConfigured);
+                            Html.IdFor(m => m.EntryInput.TravelSegment.DeparturePlaceId).ToString(),
+                            Html.NameFor(m => m.EntryInput.TravelSegment.DeparturePlaceId).ToString(),
+                            "Departure location",
+                            Model.EntryInput.TravelSegment.DeparturePlaceId,
+                            Model.IsGoogleMapsConfigured);
                         }
-                        <partial name="~/Pages/Shared/FormControls/_GooglePlacePicker.cshtml" model="@departurePicker" />
+                        <partial name="~/Pages/Shared/FormControls/_GooglePlacePicker.cshtml"
+                            model="@departurePicker" />
                     </div>
                     <div class="col-md-6">
                         @{
                             var arrivalPicker = new GooglePlacePickerModel(
-                                Html.IdFor(m => m.EntryInput.TravelSegment.ArrivalPlaceId).ToString(),
-                                Html.NameFor(m => m.EntryInput.TravelSegment.ArrivalPlaceId).ToString(),
-                                "Arrival location",
-                                Model.EntryInput.TravelSegment.ArrivalPlaceId,
-                                Model.IsGoogleMapsConfigured);
+                            Html.IdFor(m => m.EntryInput.TravelSegment.ArrivalPlaceId).ToString(),
+                            Html.NameFor(m => m.EntryInput.TravelSegment.ArrivalPlaceId).ToString(),
+                            "Arrival location",
+                            Model.EntryInput.TravelSegment.ArrivalPlaceId,
+                            Model.IsGoogleMapsConfigured);
                         }
                         <partial name="~/Pages/Shared/FormControls/_GooglePlacePicker.cshtml" model="@arrivalPicker" />
                     </div>
@@ -270,7 +263,8 @@ else
                 <div class="row g-3 align-items-stretch">
                     <div class="col-lg-7">
                         <div class="place-picker-map" data-place-picker-map>
-                            <div class="place-picker-map-placeholder">Map preview loads after the Places API is ready.</div>
+                            <div class="place-picker-map-placeholder">Map preview loads after the Places API is ready.
+                            </div>
                         </div>
                     </div>
                     <div class="col-lg-5">
