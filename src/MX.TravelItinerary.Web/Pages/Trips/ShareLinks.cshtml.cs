@@ -215,7 +215,7 @@ public sealed class ShareLinksModel : PageModel
         public string? ShareCode { get; set; }
 
         [Display(Name = "Custom share code")]
-        [RegularExpression("^(|[A-HJ-NP-Za-hj-np-z2-9]{4,32})$", ErrorMessage = "Use 4-32 characters from A-H, J-N, P-Z and digits 2-9 or leave blank to auto-generate.")]
+        [RegularExpression("^(|[A-Za-z2-9]{4,32})$", ErrorMessage = "Use 4-32 characters from A-Z and digits 2-9 or leave blank to auto-generate.")]
         public string? CustomShareCode { get; set; }
 
         [Display(Name = "Expires on")]

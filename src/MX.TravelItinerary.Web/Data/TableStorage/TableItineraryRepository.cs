@@ -1393,7 +1393,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         {
             if (!ShareCodeAlphabetSet.Contains(character))
             {
-                throw new InvalidOperationException("Share code can only use letters A-H, J-N, P-Z and digits 2-9.");
+                throw new InvalidOperationException("Share code can only use letters A-Z and digits 2-9.");
             }
         }
     }
@@ -1418,7 +1418,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
     }
 
-    private static readonly char[] ShareCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".ToCharArray();
+    private static readonly char[] ShareCodeAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ23456789".ToCharArray();
 
     private static readonly HashSet<char> ShareCodeAlphabetSet = new(ShareCodeAlphabet);
 
