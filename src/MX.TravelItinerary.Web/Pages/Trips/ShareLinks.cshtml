@@ -66,13 +66,15 @@ else
                             <label asp-for="Input.CustomShareCode" class="form-label"></label>
                             @if (Model.IsEditing)
                             {
-                                <input asp-for="Input.CustomShareCode" class="form-control" type="text" maxlength="32" disabled />
+                                <input asp-for="Input.CustomShareCode" class="form-control" type="text" maxlength="32"
+                                    disabled />
                             }
                             else
                             {
                                 <input asp-for="Input.CustomShareCode" class="form-control" type="text" maxlength="32" />
                             }
-                            <div class="form-text">Optional. Use 4-32 characters from A-Z and digits 2-9. Leave blank to generate one.</div>
+                            <div class="form-text">Optional. Use 4-32 characters from A-Z and digits 2-9. Leave blank to
+                                generate one.</div>
                             <span asp-validation-for="Input.CustomShareCode" class="text-danger"></span>
                         </div>
 
@@ -112,7 +114,7 @@ else
                         <div class="mb-3">
                             <label asp-for="Input.Notes" class="form-label"></label>
                             <textarea asp-for="Input.Notes" class="form-control" rows="3"
-                                placeholder="Example: For family only"></textarea>
+                            placeholder="Example: For family only"></textarea>
                             <span asp-validation-for="Input.Notes" class="text-danger"></span>
                         </div>
 
