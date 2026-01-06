@@ -365,7 +365,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
     }
 
-    public async Task<ShareLink> CreateShareLinkAsync(string userId, string tripId, ShareLinkMutation mutation, CancellationToken cancellationToken = default)
+    public async Task<ShareLink> CreateShareLinkAsync(string userId, string tripId, ShareLinkMutation mutation, CancellationToken cancellationToken = default, string? shareCode = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tripId);
@@ -373,33 +373,26 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
         await EnsureTripOwnershipAsync(userId, tripId, cancellationToken);
 
+        var normalizedShareCode = NormalizeShareCode(shareCode);
+        if (!string.IsNullOrWhiteSpace(normalizedShareCode))
+        {
+            ValidateShareCode(normalizedShareCode);
+            await EnsureShareCodeIsAvailableAsync(normalizedShareCode, cancellationToken);
+            return await CreateShareLinkEntityAsync(userId, tripId, normalizedShareCode, mutation, cancellationToken);
+        }
+
         const int maxAttempts = 5;
         for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
-            var code = GenerateShareCode();
-            var entity = new TableEntity(tripId, code)
+            var generatedCode = GenerateShareCode();
+            if (await ShareCodeExistsAsync(generatedCode, cancellationToken))
             {
-                ["OwnerUserId"] = userId,
-                ["CreatedOn"] = DateTimeOffset.UtcNow,
-                ["CreatedBy"] = userId
-            };
-
-            ApplyShareLinkMutation(entity, mutation);
+                continue;
+            }
 
             try
             {
-                await _tables.ShareLinks.AddEntityAsync(entity, cancellationToken);
-                var shareLink = TableEntityMapper.ToShareLink(entity);
-                TrackEvent("ShareLinkCreated", properties =>
-                {
-                    properties["UserId"] = userId;
-                    properties["TripId"] = tripId;
-                    properties["ShareCode"] = shareLink.ShareCode;
-                    properties["MaskBookings"] = FormatBool(shareLink.MaskBookings);
-                    properties["IncludeCost"] = FormatBool(shareLink.IncludeCost);
-                    properties["ExpiresOnUtc"] = FormatDateTimeOffset(shareLink.ExpiresOn);
-                });
-                return shareLink;
+                return await CreateShareLinkEntityAsync(userId, tripId, generatedCode, mutation, cancellationToken);
             }
             catch (RequestFailedException ex) when (ex.Status == 409)
             {
@@ -1332,6 +1325,79 @@ public sealed class TableItineraryRepository : IItineraryRepository
         SetOrRemove(entity, "Notes", mutation.Notes);
     }
 
+    private async Task<ShareLink> CreateShareLinkEntityAsync(string userId, string tripId, string shareCode, ShareLinkMutation mutation, CancellationToken cancellationToken)
+    {
+        var entity = new TableEntity(tripId, shareCode)
+        {
+            ["OwnerUserId"] = userId,
+            ["CreatedOn"] = DateTimeOffset.UtcNow,
+            ["CreatedBy"] = userId
+        };
+
+        ApplyShareLinkMutation(entity, mutation);
+
+        await _tables.ShareLinks.AddEntityAsync(entity, cancellationToken);
+        var shareLink = TableEntityMapper.ToShareLink(entity);
+        TrackEvent("ShareLinkCreated", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripId"] = tripId;
+            properties["ShareCode"] = shareLink.ShareCode;
+            properties["MaskBookings"] = FormatBool(shareLink.MaskBookings);
+            properties["IncludeCost"] = FormatBool(shareLink.IncludeCost);
+            properties["ExpiresOnUtc"] = FormatDateTimeOffset(shareLink.ExpiresOn);
+        });
+
+        return shareLink;
+    }
+
+    private async Task EnsureShareCodeIsAvailableAsync(string shareCode, CancellationToken cancellationToken)
+    {
+        if (await ShareCodeExistsAsync(shareCode, cancellationToken))
+        {
+            throw new InvalidOperationException("That share code is already in use. Choose another one.");
+        }
+    }
+
+    private async Task<bool> ShareCodeExistsAsync(string shareCode, CancellationToken cancellationToken)
+    {
+        await foreach (var _ in _tables.ShareLinks.QueryAsync<TableEntity>(
+                   filter: CreateRowFilter(shareCode),
+                   maxPerPage: 1,
+                   cancellationToken: cancellationToken))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string? NormalizeShareCode(string? shareCode)
+    {
+        if (string.IsNullOrWhiteSpace(shareCode))
+        {
+            return null;
+        }
+
+        return shareCode.Trim().ToUpperInvariant();
+    }
+
+    private static void ValidateShareCode(string shareCode)
+    {
+        if (shareCode.Length is < 4 or > 32)
+        {
+            throw new InvalidOperationException("Share code must be between 4 and 32 characters.");
+        }
+
+        foreach (var character in shareCode)
+        {
+            if (!ShareCodeAlphabetSet.Contains(character))
+            {
+                throw new InvalidOperationException("Share code can only use letters A-H, J-N, P-Z and digits 2-9.");
+            }
+        }
+    }
+
     private static string GenerateShareCode()
     {
         Span<char> buffer = stackalloc char[8];
@@ -1353,6 +1419,8 @@ public sealed class TableItineraryRepository : IItineraryRepository
     }
 
     private static readonly char[] ShareCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".ToCharArray();
+
+    private static readonly HashSet<char> ShareCodeAlphabetSet = new(ShareCodeAlphabet);
 
     private void TrackEvent(string eventName, Action<Dictionary<string, string?>> configure)
     {

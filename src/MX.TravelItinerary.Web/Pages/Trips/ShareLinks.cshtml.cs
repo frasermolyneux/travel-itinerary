@@ -78,15 +78,20 @@ public sealed class ShareLinksModel : PageModel
 
         var userId = GetUserId();
         var mutation = Input.ToMutation();
+        var customShareCode = string.IsNullOrWhiteSpace(Input.ShareCode)
+            ? NormalizeShareCode(Input.CustomShareCode)
+            : null;
+        Input.CustomShareCode = customShareCode;
 
-        if (string.IsNullOrWhiteSpace(Input.ShareCode))
+        try
         {
-            var created = await _repository.CreateShareLinkAsync(userId, TripId, mutation, cancellationToken);
-            StatusMessage = "Share link created.";
-            return RedirectToPage(new { tripId = TripId, tripSlug = TripSlug, edit = created.ShareCode });
-        }
-        else
-        {
+            if (string.IsNullOrWhiteSpace(Input.ShareCode))
+            {
+                var created = await _repository.CreateShareLinkAsync(userId, TripId, mutation, cancellationToken, customShareCode);
+                StatusMessage = "Share link created.";
+                return RedirectToPage(new { tripId = TripId, tripSlug = TripSlug, edit = created.ShareCode });
+            }
+
             var updated = await _repository.UpdateShareLinkAsync(userId, TripId, Input.ShareCode, mutation, cancellationToken);
             if (updated is null)
             {
@@ -97,6 +102,12 @@ public sealed class ShareLinksModel : PageModel
 
             StatusMessage = "Share link updated.";
             return RedirectToPage(new { tripId = TripId, tripSlug = TripSlug, edit = updated.ShareCode });
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.IsNullOrWhiteSpace(Input.ShareCode) ? nameof(Input.CustomShareCode) : string.Empty, ex.Message);
+            await LoadShareLinksAsync(cancellationToken);
+            return Page();
         }
     }
 
@@ -132,6 +143,9 @@ public sealed class ShareLinksModel : PageModel
             values: new { tripSlug = slug, shareCode = link.ShareCode },
             protocol: Request.Scheme) ?? string.Empty;
     }
+
+    private static string? NormalizeShareCode(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToUpperInvariant();
 
     private async Task<bool> LoadTripAsync(CancellationToken cancellationToken)
     {
@@ -200,6 +214,10 @@ public sealed class ShareLinksModel : PageModel
 
         public string? ShareCode { get; set; }
 
+        [Display(Name = "Custom share code")]
+        [RegularExpression("^(|[A-HJ-NP-Za-hj-np-z2-9]{4,32})$", ErrorMessage = "Use 4-32 characters from A-H, J-N, P-Z and digits 2-9 or leave blank to auto-generate.")]
+        public string? CustomShareCode { get; set; }
+
         [Display(Name = "Expires on")]
         [DataType(DataType.DateTime)]
         public DateTime? ExpiresOn { get; set; }
@@ -242,6 +260,7 @@ public sealed class ShareLinksModel : PageModel
             {
                 TripId = link.TripId,
                 ShareCode = link.ShareCode,
+                CustomShareCode = null,
                 ExpiresOn = link.ExpiresOn?.LocalDateTime,
                 MaskBookings = link.MaskBookings,
                 IncludeCost = link.IncludeCost,

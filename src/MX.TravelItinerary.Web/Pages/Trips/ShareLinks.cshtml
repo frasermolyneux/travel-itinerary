@@ -63,6 +63,20 @@ else
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                         <div class="mb-3">
+                            <label asp-for="Input.CustomShareCode" class="form-label"></label>
+                            @if (Model.IsEditing)
+                            {
+                                <input asp-for="Input.CustomShareCode" class="form-control" type="text" maxlength="32" disabled />
+                            }
+                            else
+                            {
+                                <input asp-for="Input.CustomShareCode" class="form-control" type="text" maxlength="32" />
+                            }
+                            <div class="form-text">Optional. Use 4-32 characters from A-H, J-N, P-Z, and digits 2-9. Leave blank to generate one.</div>
+                            <span asp-validation-for="Input.CustomShareCode" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
                             <label asp-for="Input.ExpiresOn" class="form-label"></label>
                             <input asp-for="Input.ExpiresOn" class="form-control" type="datetime-local" />
                             <div class="form-text">Leave blank for a link that never expires.</div>
