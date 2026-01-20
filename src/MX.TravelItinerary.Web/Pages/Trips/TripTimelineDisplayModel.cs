@@ -1,4 +1,5 @@
 using System;
+using System.Security;
 using MX.TravelItinerary.Web.Data.Models;
 
 namespace MX.TravelItinerary.Web.Pages.Trips;
@@ -35,12 +36,25 @@ public sealed class TripTimelineDisplayModel
         // Determine if trip is in progress and should hide past days
         // Use the trip's home timezone to get the current date in that timezone
         DateOnly today;
-        if (!string.IsNullOrWhiteSpace(trip.HomeTimeZone) && TimeZoneInfo.TryFindSystemTimeZoneById(trip.HomeTimeZone, out var tripTimeZone))
+        try
         {
-            today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tripTimeZone));
+            if (!string.IsNullOrWhiteSpace(trip.HomeTimeZone) && TimeZoneInfo.TryFindSystemTimeZoneById(trip.HomeTimeZone, out var tripTimeZone))
+            {
+                today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tripTimeZone));
+            }
+            else
+            {
+                today = DateOnly.FromDateTime(DateTime.UtcNow);
+            }
         }
-        else
+        catch (TimeZoneNotFoundException)
         {
+            // Fall back to UTC if the timezone is not found
+            today = DateOnly.FromDateTime(DateTime.UtcNow);
+        }
+        catch (SecurityException)
+        {
+            // Fall back to UTC if there are security restrictions
             today = DateOnly.FromDateTime(DateTime.UtcNow);
         }
         
