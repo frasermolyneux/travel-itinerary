@@ -1,4 +1,5 @@
 using System;
+using System.Security;
 using MX.TravelItinerary.Web.Data.Models;
 
 namespace MX.TravelItinerary.Web.Pages.Trips;
@@ -31,6 +32,35 @@ public sealed class TripTimelineDisplayModel
             : emptyStateMessage;
         ShowBookingConfirmations = showBookingConfirmations;
         ShowBookingMetadata = showBookingMetadata;
+        
+        // Determine if trip is in progress and should hide past days
+        // Use the trip's home timezone to get the current date in that timezone
+        DateOnly today;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(trip.HomeTimeZone) && TimeZoneInfo.TryFindSystemTimeZoneById(trip.HomeTimeZone, out var tripTimeZone))
+            {
+                today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tripTimeZone));
+            }
+            else
+            {
+                today = DateOnly.FromDateTime(DateTime.UtcNow);
+            }
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            // Fall back to UTC if the timezone is not found
+            today = DateOnly.FromDateTime(DateTime.UtcNow);
+        }
+        catch (SecurityException)
+        {
+            // Fall back to UTC if there are security restrictions
+            today = DateOnly.FromDateTime(DateTime.UtcNow);
+        }
+        
+        IsTripInProgress = trip.StartDate.HasValue && trip.EndDate.HasValue 
+            && today >= trip.StartDate.Value && today <= trip.EndDate.Value;
+        CurrentDate = today;
     }
 
     public Trip Trip { get; }
@@ -54,6 +84,10 @@ public sealed class TripTimelineDisplayModel
     public bool ShowBookingConfirmations { get; }
 
     public bool ShowBookingMetadata { get; }
+
+    public bool IsTripInProgress { get; }
+    
+    public DateOnly CurrentDate { get; }
 
     public Booking? GetBookingForEntry(string entryId)
         => string.IsNullOrWhiteSpace(entryId) ? null : BookingSelector(entryId);

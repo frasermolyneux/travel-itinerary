@@ -106,9 +106,21 @@
     <div class="alert alert-info">@Model.EmptyStateMessage</div>
 }
 
+@if (Model.IsTripInProgress && timeline.Days.Any(d => d.Date < Model.CurrentDate))
+{
+    <div class="mb-3">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="togglePastDays">
+            <span class="bi bi-eye" id="togglePastDaysIcon"></span>
+            <span id="togglePastDaysText">Show past days</span>
+        </button>
+    </div>
+}
+
 <div class="timeline-grid" style="--segment-lane-multiplier:@laneMultiplier;" data-timeline-root
     data-trip-id="@Model.Trip.TripId" data-trip-default-currency="@(Model.Trip.DefaultCurrency ?? string.Empty)"
-    data-allow-reorder="@Model.AllowEntryReordering.ToString().ToLowerInvariant()">
+    data-allow-reorder="@Model.AllowEntryReordering.ToString().ToLowerInvariant()"
+    data-trip-in-progress="@Model.IsTripInProgress.ToString().ToLowerInvariant()"
+    data-current-date="@Model.CurrentDate.ToString("yyyy-MM-dd")">
     @foreach (var day in timeline.Days)
     {
         var dayDateIso = day.Date.ToString("yyyy-MM-dd");
@@ -116,7 +128,9 @@
         var dayDataAttributes = Model.AllowEntryReordering
         ? $" data-day-sortable=\"true\" data-day-date=\"{dayDateIso}\" data-current-order=\"{dayOrder}\""
         : string.Empty;
-        <div class="timeline-axis" style="grid-row:@day.RowLine;">
+        var isPastDay = Model.IsTripInProgress && day.Date < Model.CurrentDate;
+        var dayClass = isPastDay ? " timeline-day-past" : string.Empty;
+        <div class="timeline-axis@(dayClass)" style="grid-row:@day.RowLine;" data-day-date="@dayDateIso">
             <div class="timeline-axis-dot"></div>
             <div>
                 <div class="timeline-day-label">@day.Date.ToString("MMM dd")</div>
@@ -126,7 +140,7 @@
         var mobileSpans = spansByStartDate.TryGetValue(day.Date, out var foundSpans)
         ? foundSpans
         : null;
-        <div class="timeline-content" style="grid-row:@day.RowLine;" @Html.Raw(dayDataAttributes)>
+        <div class="timeline-content@(dayClass)" style="grid-row:@day.RowLine;" @Html.Raw(dayDataAttributes)>
             <div class="timeline-day-mobile-header">
                 <span class="timeline-day-mobile-dot" aria-hidden="true"></span>
                 <div>
@@ -611,9 +625,13 @@
         Model.ShowBookingConfirmations).ToList()
         : new List<BookingQuickFact>();
         var showDetailsPanel = entryHasDetails || entryHasMetadata || canShowBookingInfo;
-        <div class="timeline-segment"
+        var isPastSpan = Model.IsTripInProgress && block.EndDate < Model.CurrentDate;
+        var spanClass = isPastSpan ? " timeline-segment-past" : string.Empty;
+        <div class="timeline-segment@(spanClass)"
             style="grid-row:@block.RowStart / @block.RowEnd; --lane-index:@block.LaneIndex; --lane-count:@block.LaneCount;"
-            data-segment-type="@segmentType">
+            data-segment-type="@segmentType"
+            data-segment-start-date="@block.StartDate.ToString("yyyy-MM-dd")"
+            data-segment-end-date="@block.EndDate.ToString("yyyy-MM-dd")">
             <div class="timeline-segment-span" aria-hidden="true"></div>
             <div class="timeline-item timeline-item--segment segment-type-@segmentType" data-timeline-item
                 data-item-type="entry" data-item-id="@block.Entry.EntryId">
