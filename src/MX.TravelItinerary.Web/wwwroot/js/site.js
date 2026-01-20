@@ -34,6 +34,7 @@
         initGooglePlacePicker();
         reopenOffcanvasOnValidation();
         initRouteMapPage();
+        initPastDaysToggle();
         const initialItemType = document.getElementById('BookingInput_ItemType')?.value || '';
         toggleBookingStaySection(initialItemType);
     });
@@ -67,6 +68,53 @@
                 item.classList.add('is-selected');
                 current = item;
             });
+        });
+    }
+
+    function initPastDaysToggle() {
+        const toggleButton = document.getElementById('togglePastDays');
+        if (!toggleButton) {
+            return;
+        }
+
+        const timelineRoot = document.querySelector('[data-timeline-root]');
+        if (!timelineRoot) {
+            return;
+        }
+
+        const isTripInProgress = timelineRoot.dataset.tripInProgress === 'true';
+        if (!isTripInProgress) {
+            return;
+        }
+
+        // Initially hide past days
+        const pastDays = document.querySelectorAll('.timeline-day-past');
+        const pastSegments = document.querySelectorAll('.timeline-segment-past');
+        pastDays.forEach(day => day.style.display = 'none');
+        pastSegments.forEach(segment => segment.style.display = 'none');
+
+        let pastDaysVisible = false;
+
+        toggleButton.addEventListener('click', () => {
+            pastDaysVisible = !pastDaysVisible;
+            
+            pastDays.forEach(day => {
+                day.style.display = pastDaysVisible ? '' : 'none';
+            });
+            pastSegments.forEach(segment => {
+                segment.style.display = pastDaysVisible ? '' : 'none';
+            });
+
+            const icon = document.getElementById('togglePastDaysIcon');
+            const text = document.getElementById('togglePastDaysText');
+            
+            if (pastDaysVisible) {
+                icon.className = 'bi bi-eye-slash';
+                text.textContent = 'Hide past days';
+            } else {
+                icon.className = 'bi bi-eye';
+                text.textContent = 'Show past days';
+            }
         });
     }
 
