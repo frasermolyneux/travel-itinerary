@@ -108,12 +108,14 @@
             const icon = document.getElementById('togglePastDaysIcon');
             const text = document.getElementById('togglePastDaysText');
             
-            if (pastDaysVisible) {
-                icon.className = 'bi bi-eye-slash';
-                text.textContent = 'Hide past days';
-            } else {
-                icon.className = 'bi bi-eye';
-                text.textContent = 'Show past days';
+            if (icon && text) {
+                if (pastDaysVisible) {
+                    icon.className = 'bi bi-eye-slash';
+                    text.textContent = 'Hide past days';
+                } else {
+                    icon.className = 'bi bi-eye';
+                    text.textContent = 'Show past days';
+                }
             }
         });
     }
