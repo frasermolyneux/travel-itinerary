@@ -63,7 +63,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Skip chrome extensions and other origins
-  if (!url.origin.includes(self.location.origin)) {
+  if (url.origin !== self.location.origin) {
     return;
   }
 
@@ -123,7 +123,8 @@ async function networkFirst(request) {
     }
 
     // If requesting an HTML page and nothing in cache, return offline page
-    if (request.headers.get('accept').includes('text/html')) {
+    const acceptHeader = request.headers.get('accept');
+    if (acceptHeader && acceptHeader.includes('text/html')) {
       return caches.match(OFFLINE_PAGE);
     }
 
