@@ -1,0 +1,19 @@
+{
+  "name": "Travel Itinerary",
+  "short_name": "Itinerary",
+  "description": "Manage your travel itineraries with offline support",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d6efd",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["travel", "lifestyle", "productivity"],
+  "screenshots": []
+}
