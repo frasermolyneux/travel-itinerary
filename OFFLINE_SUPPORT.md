@@ -149,29 +149,25 @@ const CACHE_VERSION = 'v2'; // Increment version
 
 ### Custom PWA Icons
 
-The manifest currently uses only the favicon. For a complete PWA experience, add custom icons:
+The application includes custom PWA icons for proper mobile installation:
 
-1. Create icons in multiple sizes:
-   - `icon-192.png` (192x192px)
-   - `icon-512.png` (512x512px)
+**Included Icons:**
+- `icon-192.png` (192x192px) - For home screen and app launcher
+- `icon-512.png` (512x512px) - For splash screens and high-res displays
+- `favicon.ico` (48x48px) - For browser tabs
 
-2. Update `/wwwroot/manifest.json`:
-```json
-{
-  "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
-}
-```
+The icons feature a white airplane design on a blue background (matching the app's theme color #0d6efd), providing a recognizable travel-themed appearance.
+
+**Icon Design:**
+- Blue background (#0d6efd) matching theme color
+- White airplane silhouette for instant recognition
+- Optimized PNG format for fast loading
+- "any maskable" purpose for adaptive display across platforms
+
+To customize the icons further:
+1. Replace `icon-192.png` and `icon-512.png` in `/wwwroot/`
+2. Maintain the same sizes and PNG format
+3. Consider using a tool like [PWA Asset Generator](https://github.com/elegantapp/pwa-asset-generator) for comprehensive icon sets
 
 ## Testing
 
