@@ -43,10 +43,55 @@
     function showUpdateNotification(worker) {
         const message = 'A new version is available. Click to refresh.';
         
-        // Check if the app has a notification area, otherwise use confirm dialog
-        if (confirm(message)) {
-            worker.postMessage({ type: 'SKIP_WAITING' });
-            window.location.reload();
+        // Use Bootstrap toast for update notification
+        if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-info border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-light me-2 my-auto" id="update-refresh-btn">Refresh</button>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            
+            // Find or create toast container
+            let toastContainer = document.querySelector('.toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                document.body.appendChild(toastContainer);
+            }
+            
+            // Add toast to container
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+            const toastElement = toastContainer.lastElementChild;
+            const toast = new bootstrap.Toast(toastElement, { autohide: false });
+            toast.show();
+            
+            // Add click handler for refresh button
+            const refreshBtn = document.getElementById('update-refresh-btn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', () => {
+                    worker.postMessage({ type: 'SKIP_WAITING' });
+                    window.location.reload();
+                });
+            }
+            
+            // Remove toast element after it's hidden
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
+        } else {
+            // Fallback to console if Bootstrap is not available
+            console.log(`[PWA] ${message}. Please refresh the page.`);
+            // Auto-refresh after 5 seconds as fallback
+            setTimeout(() => {
+                worker.postMessage({ type: 'SKIP_WAITING' });
+                window.location.reload();
+            }, 5000);
         }
     }
 
