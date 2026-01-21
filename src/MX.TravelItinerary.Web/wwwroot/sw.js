@@ -155,7 +155,6 @@ self.addEventListener('message', (event) => {
 async function getCacheStatus() {
   const cacheNames = await caches.keys();
   let totalItems = 0;
-  let cacheSize = 0;
 
   for (const cacheName of cacheNames) {
     const cache = await caches.open(cacheName);

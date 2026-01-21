@@ -152,7 +152,7 @@
             <li class="nav-item dropdown" id="pwa-cache-status">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-cloud-check" id="cache-status-icon"></i>
-                    <span class="d-none d-md-inline ms-1">Offline</span>
+                    <span class="d-none d-md-inline ms-1" id="cache-status-text">Status</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width: 300px;">
                     <li class="px-3 py-2">
@@ -207,6 +207,7 @@
         const isOnline = navigator.onLine;
         const statusIcon = document.getElementById('cache-status-icon');
         const statusBadge = document.getElementById('cache-status-badge');
+        const statusText = document.getElementById('cache-status-text');
         
         if (!statusIcon || !statusBadge) return;
 
@@ -215,10 +216,12 @@
             statusIcon.className = 'bi bi-cloud-check';
             statusBadge.className = 'badge bg-success';
             statusBadge.textContent = 'Online';
+            if (statusText) statusText.textContent = 'Online';
         } else {
             statusIcon.className = 'bi bi-cloud-slash';
             statusBadge.className = 'badge bg-warning';
             statusBadge.textContent = 'Offline';
+            if (statusText) statusText.textContent = 'Offline';
         }
 
         // Update cached items count
@@ -319,14 +322,15 @@
             // Update UI
             await updateCacheStatus();
             
-            // Reload page after a short delay
+            // Brief delay before reload to show success message
+            const RELOAD_DELAY_MS = 1000;
             setTimeout(() => {
                 window.location.reload();
-            }, 1000);
+            }, RELOAD_DELAY_MS);
 
         } catch (error) {
             console.error('[PWA] Sync failed:', error);
-            showConnectionStatus('Sync failed. Please try again.', 'danger');
+            showConnectionStatus(`Sync failed: ${error.message || 'Unknown error'}`, 'danger');
         } finally {
             // Re-enable button
             syncButton.disabled = false;
