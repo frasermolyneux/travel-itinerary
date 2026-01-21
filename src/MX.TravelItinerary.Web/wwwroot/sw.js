@@ -134,6 +134,13 @@ async function networkFirst(request) {
 
 // Listen for messages from the client
 self.addEventListener('message', (event) => {
+  // Verify the origin of the message for security
+  // Service workers should only accept messages from the same origin
+  if (event.origin && event.origin !== self.location.origin) {
+    console.warn('[SW] Rejected message from unauthorized origin:', event.origin);
+    return;
+  }
+  
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
