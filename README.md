@@ -1,6 +1,24 @@
 # travel-itinerary
 A simple ASP.NET Core app hosted on Azure for sharing travel itineraries with my travel companions.
 
+## Progressive Web App (PWA) - Offline Support
+
+This application includes Progressive Web App capabilities for offline access:
+
+- **View trips offline**: Previously loaded trips remain accessible without internet
+- **Browse itineraries**: Timeline, bookings, and details work offline
+- **Automatic caching**: Static assets and visited pages are cached automatically
+- **Online-only editing**: Creating/editing requires internet connection (by design)
+
+For detailed documentation on offline support, see [OFFLINE_SUPPORT.md](OFFLINE_SUPPORT.md).
+
+### How It Works
+
+- **Service Worker** caches static assets and dynamic content
+- **Network-first strategy** for fresh data when online, falls back to cache when offline
+- **Offline notifications** alert users about connectivity status
+- **Install prompt** allows adding the app to home screen on mobile devices
+
 ## Authentication & Authorization
 - Microsoft Entra ID (single-tenant) secures the site. Terraform now provisions the app registration, service principal, and client secret.
 - User assignment is required on the Enterprise Application, so only explicitly assigned tenant users can reach authenticated pages.
