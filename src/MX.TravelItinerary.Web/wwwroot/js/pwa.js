@@ -138,4 +138,231 @@
         deferredPrompt = null;
     });
 
+    // ========================================
+    // Cache Status and Manual Sync Features
+    // ========================================
+
+    // Initialize cache status UI
+    function initCacheStatus() {
+        // Create cache status indicator in the navbar
+        const navbar = document.querySelector('.navbar-nav.ms-auto');
+        if (!navbar) return;
+
+        const cacheStatusHtml = `
+            <li class="nav-item dropdown" id="pwa-cache-status">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-cloud-check" id="cache-status-icon"></i>
+                    <span class="d-none d-md-inline ms-1">Offline</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 300px;">
+                    <li class="px-3 py-2">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <strong>Cache Status</strong>
+                            <span class="badge bg-success" id="cache-status-badge">Online</span>
+                        </div>
+                        <div class="small text-muted mb-2">
+                            <i class="bi bi-clock"></i>
+                            Last synced: <span id="last-sync-time">Never</span>
+                        </div>
+                        <div class="small text-muted mb-3">
+                            <i class="bi bi-database"></i>
+                            Cached items: <span id="cached-items-count">0</span>
+                        </div>
+                        <button class="btn btn-sm btn-primary w-100" id="manual-sync-btn">
+                            <i class="bi bi-arrow-clockwise"></i> Sync Now
+                        </button>
+                    </li>
+                </ul>
+            </li>
+        `;
+
+        // Insert before the user name or sign in link
+        const firstNavItem = navbar.querySelector('li');
+        if (firstNavItem) {
+            firstNavItem.insertAdjacentHTML('beforebegin', cacheStatusHtml);
+        }
+
+        // Set up event listeners
+        setupCacheStatusListeners();
+        updateCacheStatus();
+        
+        // Update cache status every 30 seconds
+        setInterval(updateCacheStatus, 30000);
+    }
+
+    // Set up event listeners for cache status features
+    function setupCacheStatusListeners() {
+        const syncButton = document.getElementById('manual-sync-btn');
+        if (syncButton) {
+            syncButton.addEventListener('click', handleManualSync);
+        }
+
+        // Update status when online/offline changes
+        window.addEventListener('online', updateCacheStatus);
+        window.addEventListener('offline', updateCacheStatus);
+    }
+
+    // Update cache status display
+    async function updateCacheStatus() {
+        const isOnline = navigator.onLine;
+        const statusIcon = document.getElementById('cache-status-icon');
+        const statusBadge = document.getElementById('cache-status-badge');
+        
+        if (!statusIcon || !statusBadge) return;
+
+        // Update online/offline status
+        if (isOnline) {
+            statusIcon.className = 'bi bi-cloud-check';
+            statusBadge.className = 'badge bg-success';
+            statusBadge.textContent = 'Online';
+        } else {
+            statusIcon.className = 'bi bi-cloud-slash';
+            statusBadge.className = 'badge bg-warning';
+            statusBadge.textContent = 'Offline';
+        }
+
+        // Update cached items count
+        await updateCachedItemsCount();
+        
+        // Update last sync time from localStorage
+        updateLastSyncTime();
+    }
+
+    // Count cached items
+    async function updateCachedItemsCount() {
+        const countElement = document.getElementById('cached-items-count');
+        if (!countElement) return;
+
+        try {
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                let totalItems = 0;
+                
+                for (const cacheName of cacheNames) {
+                    const cache = await caches.open(cacheName);
+                    const keys = await cache.keys();
+                    totalItems += keys.length;
+                }
+                
+                countElement.textContent = totalItems;
+            }
+        } catch (error) {
+            console.error('[PWA] Error counting cached items:', error);
+            countElement.textContent = '?';
+        }
+    }
+
+    // Update last sync time display
+    function updateLastSyncTime() {
+        const lastSyncElement = document.getElementById('last-sync-time');
+        if (!lastSyncElement) return;
+
+        const lastSync = localStorage.getItem('pwa-last-sync');
+        if (lastSync) {
+            const syncDate = new Date(lastSync);
+            const now = new Date();
+            const diffMinutes = Math.floor((now - syncDate) / 60000);
+            
+            if (diffMinutes < 1) {
+                lastSyncElement.textContent = 'Just now';
+            } else if (diffMinutes < 60) {
+                lastSyncElement.textContent = `${diffMinutes} min ago`;
+            } else if (diffMinutes < 1440) {
+                const hours = Math.floor(diffMinutes / 60);
+                lastSyncElement.textContent = `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            } else {
+                const days = Math.floor(diffMinutes / 1440);
+                lastSyncElement.textContent = `${days} day${days > 1 ? 's' : ''} ago`;
+            }
+        } else {
+            lastSyncElement.textContent = 'Never';
+        }
+    }
+
+    // Handle manual sync
+    async function handleManualSync() {
+        const syncButton = document.getElementById('manual-sync-btn');
+        if (!syncButton) return;
+
+        // Disable button and show loading state
+        syncButton.disabled = true;
+        const originalHtml = syncButton.innerHTML;
+        syncButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Syncing...';
+
+        try {
+            if (!navigator.onLine) {
+                showConnectionStatus('Cannot sync while offline', 'warning');
+                return;
+            }
+
+            // Clear dynamic cache to force fresh data
+            const cacheNames = await caches.keys();
+            for (const cacheName of cacheNames) {
+                if (cacheName.includes('dynamic')) {
+                    await caches.delete(cacheName);
+                    console.log('[PWA] Cleared cache:', cacheName);
+                }
+            }
+
+            // Update service worker
+            const registration = await navigator.serviceWorker.getRegistration();
+            if (registration) {
+                await registration.update();
+            }
+
+            // Store sync timestamp
+            localStorage.setItem('pwa-last-sync', new Date().toISOString());
+
+            // Reload current page to get fresh data
+            showConnectionStatus('Sync completed successfully', 'success');
+            
+            // Update UI
+            await updateCacheStatus();
+            
+            // Reload page after a short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+
+        } catch (error) {
+            console.error('[PWA] Sync failed:', error);
+            showConnectionStatus('Sync failed. Please try again.', 'danger');
+        } finally {
+            // Re-enable button
+            syncButton.disabled = false;
+            syncButton.innerHTML = originalHtml;
+        }
+    }
+
+    // Mark page as cached when loaded via service worker
+    if (navigator.serviceWorker.controller) {
+        // Page was served by service worker (likely from cache)
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add a subtle indicator that this page is cached
+            const pageIndicator = document.createElement('div');
+            pageIndicator.id = 'cached-page-indicator';
+            pageIndicator.className = 'd-none'; // Hidden by default, can be shown if needed
+            pageIndicator.innerHTML = '<i class="bi bi-cloud-download"></i> Viewing cached content';
+            document.body.appendChild(pageIndicator);
+        });
+    }
+
+    // Initialize cache status UI when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCacheStatus);
+    } else {
+        initCacheStatus();
+    }
+
+    // Auto-sync when coming back online
+    window.addEventListener('online', () => {
+        console.log('[PWA] Back online, checking for updates...');
+        // Automatically update service worker when connection restored
+        navigator.serviceWorker.getRegistration().then(registration => {
+            if (registration) {
+                registration.update();
+            }
+        });
+    });
+
 })();

@@ -137,4 +137,80 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+  
+  // Handle cache status requests
+  if (event.data && event.data.type === 'GET_CACHE_STATUS') {
+    getCacheStatus().then(status => {
+      event.ports[0].postMessage(status);
+    });
+  }
+  
+  // Handle manual sync requests
+  if (event.data && event.data.type === 'MANUAL_SYNC') {
+    handleManualSync(event);
+  }
 });
+
+// Get cache status information
+async function getCacheStatus() {
+  const cacheNames = await caches.keys();
+  let totalItems = 0;
+  let cacheSize = 0;
+
+  for (const cacheName of cacheNames) {
+    const cache = await caches.open(cacheName);
+    const keys = await cache.keys();
+    totalItems += keys.length;
+  }
+
+  return {
+    totalItems,
+    cacheNames,
+    timestamp: Date.now()
+  };
+}
+
+// Handle manual sync request from client
+async function handleManualSync(event) {
+  console.log('[SW] Manual sync requested');
+  
+  try {
+    // Notify client that sync has started
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({ type: 'SYNC_STARTED' });
+    });
+
+    // Force update of all cached resources
+    const cache = await caches.open(DYNAMIC_CACHE);
+    const requests = await cache.keys();
+    
+    for (const request of requests) {
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          await cache.put(request, response);
+        }
+      } catch (error) {
+        console.log('[SW] Failed to update:', request.url);
+      }
+    }
+
+    // Notify client that sync completed
+    clients.forEach(client => {
+      client.postMessage({ 
+        type: 'SYNC_COMPLETED',
+        timestamp: Date.now()
+      });
+    });
+  } catch (error) {
+    console.error('[SW] Sync failed:', error);
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({ 
+        type: 'SYNC_FAILED',
+        error: error.message
+      });
+    });
+  }
+}

@@ -12,6 +12,8 @@ The Travel Itinerary application has been enhanced with Progressive Web App (PWA
 ✅ **Browse Cached Itinerary Details** - Itinerary entries, timelines, and details are available offline
 ✅ **Review Booking Information** - Booking details remain accessible without connectivity
 ✅ **Static Assets** - CSS, JavaScript, and images are cached for fast loading
+✅ **Cache Status Indicator** - Visual indicator showing online/offline status and cached content
+✅ **Manual Sync** - Users can trigger a sync to refresh cached content
 
 ### What Requires Internet Connection
 
@@ -21,6 +23,36 @@ The Travel Itinerary application has been enhanced with Progressive Web App (PWA
 ❌ **Load New Data** - Fetching data that hasn't been cached requires internet access
 ❌ **Authentication** - Sign in/sign out operations require online connectivity
 
+## Cache Status & Sync Features
+
+### Cache Status Indicator
+
+A dropdown menu in the navbar provides real-time information about the cache:
+
+- **Online/Offline Badge** - Shows current connectivity status with color-coded badge (green for online, yellow for offline)
+- **Last Sync Timestamp** - Displays when content was last synchronized (e.g., "5 min ago", "Just now")
+- **Cached Items Count** - Shows the number of items currently cached for offline access
+- **Manual Sync Button** - Allows users to manually refresh cached content
+
+### Using Manual Sync
+
+1. Click the cache status icon in the navbar (cloud icon with checkmark)
+2. Click "Sync Now" button in the dropdown
+3. The app will:
+   - Clear dynamic cache to fetch fresh data
+   - Update the service worker
+   - Reload the current page with new content
+   - Update the last sync timestamp
+
+**Note:** Manual sync requires an internet connection. If offline, the button will show a warning.
+
+### Automatic Sync
+
+The app automatically syncs when:
+- Connection is restored after being offline
+- User manually triggers sync via the "Sync Now" button
+- Service worker detects updates (checked hourly)
+
 ## Technical Implementation
 
 ### Architecture
@@ -29,7 +61,7 @@ The PWA implementation uses the following technologies:
 
 1. **Service Worker** (`/wwwroot/sw.js`) - Intercepts network requests and implements caching strategies
 2. **Web App Manifest** (`/wwwroot/manifest.json`) - Defines PWA metadata for installability
-3. **PWA JavaScript** (`/wwwroot/js/pwa.js`) - Handles service worker registration and user notifications
+3. **PWA JavaScript** (`/wwwroot/js/pwa.js`) - Handles service worker registration, cache status, and user notifications
 4. **Offline Page** (`/wwwroot/offline.html`) - Fallback page when content isn't cached
 
 ### Caching Strategies
