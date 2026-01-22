@@ -7,6 +7,8 @@ const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 const OFFLINE_PAGE = '/offline.html';
 
 // Track manual offline mode state
+// Note: This will be set to false on startup, but will be updated by the client
+// via a message when the page loads
 let manualOfflineMode = false;
 
 // Assets to cache on install

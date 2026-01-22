@@ -197,6 +197,11 @@
         localStorage.setItem('pwa-manual-offline', offline ? 'true' : 'false');
         updateCacheStatus();
         // Notify service worker about the change
+        notifyServiceWorkerOfflineState(offline);
+    }
+
+    // Notify service worker about offline state
+    function notifyServiceWorkerOfflineState(offline) {
         if (navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
                 type: 'SET_MANUAL_OFFLINE',
@@ -236,7 +241,7 @@
                             Cached items: <span id="cached-items-count">0</span>
                         </div>
                         <button class="btn btn-sm btn-outline-primary w-100 mb-2" id="offline-toggle-btn">
-                            <i class="bi bi-wifi-off"></i> <span id="offline-toggle-text">Go Offline</span>
+                            <span id="offline-toggle-text"><i class="bi bi-wifi-off"></i> Go Offline</span>
                         </button>
                         <button class="btn btn-sm btn-primary w-100" id="manual-sync-btn">
                             <i class="bi bi-arrow-clockwise"></i> Sync Now
@@ -461,8 +466,15 @@
 
     // Update page sync time when page is loaded
     function updatePageSyncOnLoad() {
-        // Only update if we're online and not in manual offline mode
-        if (navigator.onLine && !isManualOfflineMode()) {
+        // Only update if we're online, not in manual offline mode, and not served from service worker cache
+        // Check if the page was served from the service worker
+        const wasServedByServiceWorker = navigator.serviceWorker.controller !== null;
+        const performanceEntries = performance.getEntriesByType('navigation');
+        const wasFromCache = performanceEntries.length > 0 && 
+                            performanceEntries[0].transferSize === 0;
+        
+        // Only update sync time if we're online and likely fetched from network
+        if (navigator.onLine && !isManualOfflineMode() && (!wasServedByServiceWorker || !wasFromCache)) {
             const pageKey = getPageKey();
             localStorage.setItem(`pwa-page-sync-${pageKey}`, new Date().toISOString());
             updatePageSyncTime();
@@ -551,9 +563,19 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initCacheStatus);
         document.addEventListener('DOMContentLoaded', updatePageSyncOnLoad);
+        document.addEventListener('DOMContentLoaded', () => {
+            // Sync manual offline state with service worker on load
+            if (navigator.serviceWorker.controller) {
+                notifyServiceWorkerOfflineState(isManualOfflineMode());
+            }
+        });
     } else {
         initCacheStatus();
         updatePageSyncOnLoad();
+        // Sync manual offline state with service worker on load
+        if (navigator.serviceWorker.controller) {
+            notifyServiceWorkerOfflineState(isManualOfflineMode());
+        }
     }
 
     // Auto-sync when coming back online
