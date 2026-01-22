@@ -301,7 +301,6 @@
         const offlineToggleText = document.getElementById('offline-toggle-text');
         
         // Status bar elements
-        const statusBar = document.getElementById('pwa-status-bar');
         const statusLabel = document.getElementById('pwa-status-label');
         const statusLabelIcon = document.getElementById('pwa-status-icon');
         const statusLabelText = document.getElementById('pwa-status-label-text');
@@ -466,15 +465,15 @@
 
     // Update page sync time when page is loaded
     function updatePageSyncOnLoad() {
-        // Only update if we're online, not in manual offline mode, and not served from service worker cache
-        // Check if the page was served from the service worker
-        const wasServedByServiceWorker = navigator.serviceWorker.controller !== null;
+        // Only update if we're online and not in manual offline mode
+        // Check if the page was likely fetched from network (not cache)
+        // This is a best-effort detection - transferSize > 0 suggests network fetch
         const performanceEntries = performance.getEntriesByType('navigation');
-        const wasFromCache = performanceEntries.length > 0 && 
-                            performanceEntries[0].transferSize === 0;
+        const likelyFromNetwork = performanceEntries.length > 0 && 
+                                  performanceEntries[0].transferSize > 0;
         
         // Only update sync time if we're online and likely fetched from network
-        if (navigator.onLine && !isManualOfflineMode() && (!wasServedByServiceWorker || !wasFromCache)) {
+        if (navigator.onLine && !isManualOfflineMode() && likelyFromNetwork) {
             const pageKey = getPageKey();
             localStorage.setItem(`pwa-page-sync-${pageKey}`, new Date().toISOString());
             updatePageSyncTime();
