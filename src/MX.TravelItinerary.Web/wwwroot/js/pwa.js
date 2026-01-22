@@ -189,13 +189,13 @@
 
     // Initialize cache status UI
     function initCacheStatus() {
-        // Create cache status indicator in the navbar
-        const navbar = document.querySelector('.navbar-nav.ms-auto');
-        if (!navbar) return;
+        // Create cache status indicator in the top-level navbar container
+        const topLevelContainer = document.getElementById('pwa-cache-status-top-level');
+        if (!topLevelContainer) return;
 
         const cacheStatusHtml = `
-            <li class="nav-item dropdown" id="pwa-cache-status">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <div class="dropdown" id="pwa-cache-status">
+                <a class="nav-link text-dark dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-cloud-check" id="cache-status-icon"></i>
                     <span class="d-none d-md-inline ms-1" id="cache-status-text">Status</span>
                 </a>
@@ -218,14 +218,11 @@
                         </button>
                     </li>
                 </ul>
-            </li>
+            </div>
         `;
 
-        // Insert before the user name or sign in link
-        const firstNavItem = navbar.querySelector('li');
-        if (firstNavItem) {
-            firstNavItem.insertAdjacentHTML('beforebegin', cacheStatusHtml);
-        }
+        // Insert into the top-level container
+        topLevelContainer.innerHTML = cacheStatusHtml;
 
         // Set up event listeners
         setupCacheStatusListeners();
