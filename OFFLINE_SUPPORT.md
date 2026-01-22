@@ -29,10 +29,37 @@ The Travel Itinerary application has been enhanced with Progressive Web App (PWA
 
 A dropdown menu in the navbar provides real-time information about the cache:
 
-- **Online/Offline Badge** - Shows current connectivity status with color-coded badge (green for online, yellow for offline)
-- **Last Sync Timestamp** - Displays when content was last synchronized (e.g., "5 min ago", "Just now")
+- **Online/Offline Badge** - Shows current connectivity status with color-coded badge:
+  - **Green**: Online (normal operation)
+  - **Blue**: Manual Offline (user has chosen to go offline)
+  - **Red**: Offline (network unavailable)
+- **Status Bar** - Centered label in the navbar showing current connection state
+- **Last Sync Timestamp** - Displays when content was last synchronized globally (e.g., "5 min ago", "Just now")
+- **Page Sync Timestamp** - Shows when the current page was last synchronized
 - **Cached Items Count** - Shows the number of items currently cached for offline access
+- **Manual Offline Toggle** - "Go Offline"/"Go Online" button to control connectivity mode
 - **Manual Sync Button** - Allows users to manually refresh cached content
+
+### Manual Offline Mode
+
+The app includes a manual offline mode that allows users to control network usage:
+
+1. Click the cache status icon in the navbar (cloud icon)
+2. Click "Go Offline" button in the dropdown
+3. The app will:
+   - Switch to manual offline mode (blue status indicator)
+   - Only serve content from cache
+   - Block all network requests
+   - Prevent automatic syncing
+4. To return to online mode:
+   - Click the same icon and select "Go Online"
+   - App will resume normal network operations
+
+**Benefits:**
+- Prevents slow loading on poor connections
+- Preserves cache from failed requests
+- Saves data usage
+- Provides predictable performance
 
 ### Using Manual Sync
 
@@ -42,14 +69,23 @@ A dropdown menu in the navbar provides real-time information about the cache:
    - Clear dynamic cache to fetch fresh data
    - Update the service worker
    - Reload the current page with new content
-   - Update the last sync timestamp
+   - Update both global and page-specific sync timestamps
 
-**Note:** Manual sync requires an internet connection. If offline, the button will show a warning.
+**Note:** Manual sync requires an internet connection and online mode. If offline or in manual offline mode, the button will show a warning.
+
+### Page-Specific Sync Times
+
+Each page tracks its own last sync time separately from the global sync time:
+
+- **Global Sync**: Shows when you last clicked "Sync Now" (affects all cached content)
+- **Page Sync**: Shows when the current page was last loaded while online
+- Both timestamps are displayed in the cache status dropdown
+- Helps identify if you're viewing stale data on a specific page
 
 ### Automatic Sync
 
 The app automatically syncs when:
-- Connection is restored after being offline
+- Connection is restored after being offline (unless in manual offline mode)
 - User manually triggers sync via the "Sync Now" button
 - Service worker detects updates (checked hourly)
 

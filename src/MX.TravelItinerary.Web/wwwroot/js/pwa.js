@@ -187,6 +187,29 @@
     // Cache Status and Manual Sync Features
     // ========================================
 
+    // Get manual offline mode state
+    function isManualOfflineMode() {
+        return localStorage.getItem('pwa-manual-offline') === 'true';
+    }
+
+    // Set manual offline mode
+    function setManualOfflineMode(offline) {
+        localStorage.setItem('pwa-manual-offline', offline ? 'true' : 'false');
+        updateCacheStatus();
+        // Notify service worker about the change
+        notifyServiceWorkerOfflineState(offline);
+    }
+
+    // Notify service worker about offline state
+    function notifyServiceWorkerOfflineState(offline) {
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SET_MANUAL_OFFLINE',
+                offline: offline
+            });
+        }
+    }
+
     // Initialize cache status UI
     function initCacheStatus() {
         // Create cache status indicator in the top-level navbar container
@@ -199,7 +222,7 @@
                     <i class="bi bi-cloud-check" id="cache-status-icon"></i>
                     <span class="d-none d-md-inline ms-1" id="cache-status-text">Status</span>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 300px;">
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 320px;">
                     <li class="px-3 py-2">
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <strong>Cache Status</strong>
@@ -209,10 +232,17 @@
                             <i class="bi bi-clock"></i>
                             Last synced: <span id="last-sync-time">Never</span>
                         </div>
+                        <div class="small text-muted mb-2">
+                            <i class="bi bi-file-earmark"></i>
+                            Page synced: <span id="page-sync-time">Never</span>
+                        </div>
                         <div class="small text-muted mb-3">
                             <i class="bi bi-database"></i>
                             Cached items: <span id="cached-items-count">0</span>
                         </div>
+                        <button class="btn btn-sm btn-outline-primary w-100 mb-2" id="offline-toggle-btn">
+                            <span id="offline-toggle-text"><i class="bi bi-wifi-off"></i> Go Offline</span>
+                        </button>
                         <button class="btn btn-sm btn-primary w-100" id="manual-sync-btn">
                             <i class="bi bi-arrow-clockwise"></i> Sync Now
                         </button>
@@ -239,31 +269,93 @@
             syncButton.addEventListener('click', handleManualSync);
         }
 
+        const offlineToggleBtn = document.getElementById('offline-toggle-btn');
+        if (offlineToggleBtn) {
+            offlineToggleBtn.addEventListener('click', handleOfflineToggle);
+        }
+
         // Update status when online/offline changes
         window.addEventListener('online', updateCacheStatus);
         window.addEventListener('offline', updateCacheStatus);
     }
 
+    // Handle offline toggle button click
+    function handleOfflineToggle() {
+        const currentState = isManualOfflineMode();
+        setManualOfflineMode(!currentState);
+        
+        const message = !currentState 
+            ? 'You are now in offline mode. The app will only use cached content.'
+            : 'You are now in online mode. The app will fetch fresh content when available.';
+        showConnectionStatus(message, !currentState ? 'info' : 'success');
+    }
+
     // Update cache status display
     async function updateCacheStatus() {
         const isOnline = navigator.onLine;
+        const manualOffline = isManualOfflineMode();
         const statusIcon = document.getElementById('cache-status-icon');
         const statusBadge = document.getElementById('cache-status-badge');
         const statusText = document.getElementById('cache-status-text');
+        const offlineToggleBtn = document.getElementById('offline-toggle-btn');
+        const offlineToggleText = document.getElementById('offline-toggle-text');
+        
+        // Status bar elements
+        const statusLabel = document.getElementById('pwa-status-label');
+        const statusLabelIcon = document.getElementById('pwa-status-icon');
+        const statusLabelText = document.getElementById('pwa-status-label-text');
         
         if (!statusIcon || !statusBadge) return;
 
-        // Update online/offline status
-        if (isOnline) {
+        // Update offline toggle button
+        if (offlineToggleBtn && offlineToggleText) {
+            if (manualOffline) {
+                offlineToggleText.innerHTML = '<i class="bi bi-wifi"></i> Go Online';
+            } else {
+                offlineToggleText.innerHTML = '<i class="bi bi-wifi-off"></i> Go Offline';
+            }
+        }
+
+        // Update online/offline status with color coding
+        if (manualOffline) {
+            // Manual offline mode - blue
+            statusIcon.className = 'bi bi-cloud-slash';
+            statusBadge.className = 'badge bg-primary';
+            statusBadge.textContent = 'Manual Offline';
+            if (statusText) statusText.textContent = 'Manual Offline';
+            
+            // Update status bar
+            if (statusLabel && statusLabelIcon && statusLabelText) {
+                statusLabel.className = 'badge bg-primary';
+                statusLabelIcon.className = 'bi bi-wifi-off';
+                statusLabelText.textContent = 'Manual Offline';
+            }
+        } else if (isOnline) {
+            // Online - green
             statusIcon.className = 'bi bi-cloud-check';
             statusBadge.className = 'badge bg-success';
             statusBadge.textContent = 'Online';
             if (statusText) statusText.textContent = 'Online';
+            
+            // Update status bar
+            if (statusLabel && statusLabelIcon && statusLabelText) {
+                statusLabel.className = 'badge bg-success';
+                statusLabelIcon.className = 'bi bi-wifi';
+                statusLabelText.textContent = 'Online';
+            }
         } else {
+            // Network offline - red
             statusIcon.className = 'bi bi-cloud-slash';
-            statusBadge.className = 'badge bg-warning';
+            statusBadge.className = 'badge bg-danger';
             statusBadge.textContent = 'Offline';
             if (statusText) statusText.textContent = 'Offline';
+            
+            // Update status bar
+            if (statusLabel && statusLabelIcon && statusLabelText) {
+                statusLabel.className = 'badge bg-danger';
+                statusLabelIcon.className = 'bi bi-wifi-off';
+                statusLabelText.textContent = 'Offline';
+            }
         }
 
         // Update cached items count
@@ -271,6 +363,9 @@
         
         // Update last sync time from localStorage
         updateLastSyncTime();
+        
+        // Update page sync time
+        updatePageSyncTime();
     }
 
     // Count cached items
@@ -324,6 +419,67 @@
         }
     }
 
+    // Update page-specific sync time display
+    function updatePageSyncTime() {
+        const pageSyncElement = document.getElementById('page-sync-time');
+        if (!pageSyncElement) return;
+
+        const pageKey = getPageKey();
+        const pageSync = localStorage.getItem(`pwa-page-sync-${pageKey}`);
+        
+        if (pageSync) {
+            const syncDate = new Date(pageSync);
+            const now = new Date();
+            const diffMinutes = Math.floor((now - syncDate) / 60000);
+            
+            if (diffMinutes < 1) {
+                pageSyncElement.textContent = 'Just now';
+            } else if (diffMinutes < 60) {
+                pageSyncElement.textContent = `${diffMinutes} min ago`;
+            } else if (diffMinutes < 1440) {
+                const hours = Math.floor(diffMinutes / 60);
+                pageSyncElement.textContent = `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            } else {
+                const days = Math.floor(diffMinutes / 1440);
+                pageSyncElement.textContent = `${days} day${days > 1 ? 's' : ''} ago`;
+            }
+        } else {
+            pageSyncElement.textContent = 'Never';
+        }
+    }
+
+    // Get a unique key for the current page
+    function getPageKey() {
+        // Use pathname as the key, normalizing it
+        let path = window.location.pathname;
+        // Remove trailing slash
+        if (path.endsWith('/') && path.length > 1) {
+            path = path.slice(0, -1);
+        }
+        // Default to 'home' for root path
+        if (path === '/' || path === '') {
+            path = 'home';
+        }
+        return path;
+    }
+
+    // Update page sync time when page is loaded
+    function updatePageSyncOnLoad() {
+        // Only update if we're online and not in manual offline mode
+        // Check if the page was likely fetched from network (not cache)
+        // This is a best-effort detection - transferSize > 0 suggests network fetch
+        const performanceEntries = performance.getEntriesByType('navigation');
+        const likelyFromNetwork = performanceEntries.length > 0 && 
+                                  performanceEntries[0].transferSize > 0;
+        
+        // Only update sync time if we're online and likely fetched from network
+        if (navigator.onLine && !isManualOfflineMode() && likelyFromNetwork) {
+            const pageKey = getPageKey();
+            localStorage.setItem(`pwa-page-sync-${pageKey}`, new Date().toISOString());
+            updatePageSyncTime();
+        }
+    }
+
     // Handle manual sync
     async function handleManualSync() {
         const syncButton = document.getElementById('manual-sync-btn');
@@ -337,6 +493,11 @@
         try {
             if (!navigator.onLine) {
                 showConnectionStatus('Cannot sync while offline', 'warning');
+                return;
+            }
+
+            if (isManualOfflineMode()) {
+                showConnectionStatus('Cannot sync in manual offline mode. Switch to online first.', 'warning');
                 return;
             }
 
@@ -357,6 +518,10 @@
 
             // Store sync timestamp
             localStorage.setItem('pwa-last-sync', new Date().toISOString());
+            
+            // Also update page sync time
+            const pageKey = getPageKey();
+            localStorage.setItem(`pwa-page-sync-${pageKey}`, new Date().toISOString());
 
             // Reload current page to get fresh data
             showConnectionStatus('Sync completed successfully', 'success');
@@ -396,8 +561,20 @@
     // Initialize cache status UI when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initCacheStatus);
+        document.addEventListener('DOMContentLoaded', updatePageSyncOnLoad);
+        document.addEventListener('DOMContentLoaded', () => {
+            // Sync manual offline state with service worker on load
+            if (navigator.serviceWorker.controller) {
+                notifyServiceWorkerOfflineState(isManualOfflineMode());
+            }
+        });
     } else {
         initCacheStatus();
+        updatePageSyncOnLoad();
+        // Sync manual offline state with service worker on load
+        if (navigator.serviceWorker.controller) {
+            notifyServiceWorkerOfflineState(isManualOfflineMode());
+        }
     }
 
     // Auto-sync when coming back online

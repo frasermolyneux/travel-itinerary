@@ -6,6 +6,11 @@ const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 const OFFLINE_PAGE = '/offline.html';
 
+// Track manual offline mode state
+// Note: This will be set to false on startup, but will be updated by the client
+// via a message when the page loads
+let manualOfflineMode = false;
+
 // Assets to cache on install
 const STATIC_ASSETS = [
   '/',
@@ -67,6 +72,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // If manual offline mode is enabled, always serve from cache
+  if (manualOfflineMode) {
+    event.respondWith(cacheOnly(request));
+    return;
+  }
+
   // Strategy 1: Cache-first for static assets
   if (isStaticAsset(url.pathname)) {
     event.respondWith(cacheFirst(request));
@@ -106,6 +117,32 @@ async function cacheFirst(request) {
   }
 }
 
+// Cache-only strategy (for manual offline mode)
+async function cacheOnly(request) {
+  const cachedResponse = await caches.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  // If requesting an HTML page and nothing in cache, return offline page
+  const acceptHeader = request.headers.get('accept');
+  if (acceptHeader && acceptHeader.includes('text/html')) {
+    const offlineResponse = await caches.match(OFFLINE_PAGE);
+    if (offlineResponse) {
+      return offlineResponse;
+    }
+  }
+
+  // Return a basic offline response
+  return new Response('Offline - content not available in cache', {
+    status: 503,
+    statusText: 'Service Unavailable',
+    headers: new Headers({
+      'Content-Type': 'text/plain'
+    })
+  });
+}
+
 // Network-first strategy (for dynamic content)
 async function networkFirst(request) {
   try {
@@ -143,6 +180,12 @@ self.addEventListener('message', (event) => {
   
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  
+  // Handle manual offline mode changes
+  if (event.data && event.data.type === 'SET_MANUAL_OFFLINE') {
+    manualOfflineMode = event.data.offline;
+    console.log('[SW] Manual offline mode:', manualOfflineMode);
   }
   
   // Handle cache status requests
