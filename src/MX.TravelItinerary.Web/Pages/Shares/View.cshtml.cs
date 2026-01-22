@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Identity.Web;
 using MX.TravelItinerary.Web.Data;
 using MX.TravelItinerary.Web.Data.Models;
 using MX.TravelItinerary.Web.Pages.Trips;
@@ -37,6 +40,11 @@ public sealed class ViewModel : PageModel
     public IReadOnlyDictionary<string, Booking> EntryBookings { get; private set; } = new Dictionary<string, Booking>(StringComparer.OrdinalIgnoreCase);
 
     public string? ErrorMessage { get; private set; }
+
+    public bool IsAlreadySaved { get; private set; }
+
+    [TempData]
+    public string? StatusMessage { get; set; }
 
     public TripTimelineDisplayModel? GetTimelineDisplayModel()
     {
@@ -93,6 +101,19 @@ public sealed class ViewModel : PageModel
         }
 
         TripSlug = canonicalSlug;
+
+        // Check if already saved (for authenticated users)
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var userId = User.GetObjectId();
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                var savedLinks = await _repository.GetSavedShareLinksAsync(userId, cancellationToken);
+                IsAlreadySaved = savedLinks.Any(link => 
+                    string.Equals(link.ShareCode, ShareCode, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
         return Page();
     }
 
@@ -114,6 +135,40 @@ public sealed class ViewModel : PageModel
 
     public Booking? GetBookingForEntry(string entryId)
         => EntryBookings.TryGetValue(entryId, out var booking) ? booking : null;
+
+    public async Task<IActionResult> OnPostSaveTripAsync(CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(ShareCode) || string.IsNullOrWhiteSpace(TripSlug))
+        {
+            return RedirectToPage();
+        }
+
+        // Get trip details to get the name
+        var details = await _repository.GetTripByShareCodeAsync(ShareCode, cancellationToken);
+        if (details is null)
+        {
+            ErrorMessage = "This share link has expired or is no longer available.";
+            return Page();
+        }
+
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            // Save to remote storage for authenticated users
+            var userId = User.GetObjectId();
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                await _repository.SaveShareLinkAsync(userId, TripSlug, ShareCode, details.Trip.Name, cancellationToken);
+                StatusMessage = "Trip saved! You can now find it on your trips page.";
+            }
+        }
+        else
+        {
+            // For anonymous users, JavaScript will handle local storage
+            StatusMessage = "Trip saved locally! Sign in to save it to your account.";
+        }
+
+        return RedirectToPage(new { tripSlug = TripSlug, shareCode = ShareCode });
+    }
 
     private static IReadOnlyDictionary<string, Booking> BuildBookingLookup(IEnumerable<Booking> bookings, Func<Booking, string?> keySelector)
     {

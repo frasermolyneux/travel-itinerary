@@ -1438,4 +1438,74 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
     private static string? FormatDateTimeOffset(DateTimeOffset? value)
         => value?.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture);
+
+    public async Task<IReadOnlyList<SavedShareLink>> GetSavedShareLinksAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+
+        var savedLinks = new List<SavedShareLink>();
+
+        await foreach (var entity in _tables.SavedShareLinks.QueryAsync<TableEntity>(
+                   filter: CreatePartitionFilter(userId),
+                   cancellationToken: cancellationToken))
+        {
+            savedLinks.Add(TableEntityMapper.ToSavedShareLink(entity));
+        }
+
+        return savedLinks
+            .OrderByDescending(link => link.SavedOn)
+            .ToList();
+    }
+
+    public async Task<SavedShareLink> SaveShareLinkAsync(string userId, string tripSlug, string shareCode, string tripName, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tripSlug);
+        ArgumentException.ThrowIfNullOrWhiteSpace(shareCode);
+
+        var savedLinkId = Guid.NewGuid().ToString("N");
+        var savedOn = DateTimeOffset.UtcNow;
+
+        var entity = new TableEntity(userId, savedLinkId)
+        {
+            ["TripSlug"] = tripSlug,
+            ["ShareCode"] = shareCode,
+            ["TripName"] = tripName ?? string.Empty,
+            ["SavedOn"] = savedOn
+        };
+
+        await _tables.SavedShareLinks.UpsertEntityAsync(entity, cancellationToken: cancellationToken);
+
+        TrackEvent("SavedShareLinkCreated", properties =>
+        {
+            properties["UserId"] = userId;
+            properties["TripSlug"] = tripSlug;
+            properties["ShareCode"] = shareCode;
+        });
+
+        return new SavedShareLink(savedLinkId, userId, tripSlug, shareCode, tripName ?? string.Empty, savedOn);
+    }
+
+    public async Task<bool> DeleteSavedShareLinkAsync(string userId, string savedLinkId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(savedLinkId);
+
+        try
+        {
+            await _tables.SavedShareLinks.DeleteEntityAsync(userId, savedLinkId, cancellationToken: cancellationToken);
+
+            TrackEvent("SavedShareLinkDeleted", properties =>
+            {
+                properties["UserId"] = userId;
+                properties["SavedLinkId"] = savedLinkId;
+            });
+
+            return true;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return false;
+        }
+    }
 }

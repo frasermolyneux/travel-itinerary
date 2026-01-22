@@ -48,4 +48,10 @@ public interface IItineraryRepository
     Task<Booking?> UpdateBookingAsync(string userId, string? userEmail, string tripId, string bookingId, BookingMutation mutation, CancellationToken cancellationToken = default);
 
     Task<bool> DeleteBookingAsync(string userId, string? userEmail, string tripId, string bookingId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<SavedShareLink>> GetSavedShareLinksAsync(string userId, CancellationToken cancellationToken = default);
+
+    Task<SavedShareLink> SaveShareLinkAsync(string userId, string tripSlug, string shareCode, string tripName, CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteSavedShareLinkAsync(string userId, string savedLinkId, CancellationToken cancellationToken = default);
 }

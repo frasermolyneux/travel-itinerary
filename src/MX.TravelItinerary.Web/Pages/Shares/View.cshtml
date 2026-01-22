@@ -30,6 +30,20 @@
             <div class="d-flex flex-wrap gap-2 justify-content-end align-self-start align-self-lg-center">
                 @if (Model.TripDetails is not null)
                 {
+                    @if (!Model.IsAlreadySaved)
+                    {
+                        <form method="post" asp-page-handler="SaveTrip" class="d-inline">
+                            <button type="submit" class="btn btn-primary" id="save-trip-btn">
+                                <i class="bi bi-bookmark-plus"></i> Save this trip
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a class="btn btn-outline-success" href="/trips">
+                            <i class="bi bi-bookmark-check"></i> Saved
+                        </a>
+                    }
                     <a class="btn btn-outline-primary"
                        asp-page="/Shares/RouteMap"
                        asp-route-tripSlug="@Model.TripSlug"
@@ -39,6 +53,14 @@
                 }
             </div>
         </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @Model.StatusMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
 
         @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
         {
