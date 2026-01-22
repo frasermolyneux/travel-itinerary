@@ -14,10 +14,11 @@ locals {
   storage_account_prefix = substr(replace(var.workload, "-", ""), 0, 8)
   storage_account_name   = lower("st${local.storage_account_prefix}${var.environment}${random_id.storage.hex}")
   storage_table_names = {
-    trips             = "Trips"
-    itinerary_entries = "ItineraryEntries"
-    bookings          = "Bookings"
-    share_links       = "ShareLinks"
-    trip_access       = "TripAccess"
+    trips              = "Trips"
+    itinerary_entries  = "ItineraryEntries"
+    bookings           = "Bookings"
+    share_links        = "ShareLinks"
+    trip_access        = "TripAccess"
+    saved_share_links  = "SavedShareLinks"
   }
 }
