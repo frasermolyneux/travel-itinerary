@@ -1,10 +1,270 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (!User.Identity?.IsAuthenticated ?? true)
+{
+    <div class="text-center py-5">
+        <h1 class="display-4 mb-4">Travel Plans</h1>
+        <p class="lead mb-4">Organize your travel itineraries with offline support</p>
+        <a class="btn btn-primary btn-lg" asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="SignIn">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In to Get Started
+        </a>
+    </div>
+}
+else
+{
+    <h1 class="mb-4">Welcome, @User.Identity?.Name</h1>
+
+    @if (Model.TodayActivities.Count > 0)
+    {
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Today's Activities</h5>
+            </div>
+            <div class="card-body">
+                @foreach (var activity in Model.TodayActivities)
+                {
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">
+                            <a href="/trips/@(string.IsNullOrWhiteSpace(activity.Trip.Slug) ? activity.Trip.TripId : activity.Trip.Slug)" class="text-decoration-none">
+                                @activity.Trip.Name
+                            </a>
+                        </h6>
+
+                        @if (activity.Entries.Count > 0)
+                        {
+                            <div class="mb-3">
+                                @foreach (var entry in activity.Entries)
+                                {
+                                    <div class="d-flex align-items-start mb-2">
+                                        <i class="bi bi-@GetIconForItemType(entry.ItemType) me-2 mt-1"></i>
+                                        <div>
+                                            <div class="fw-semibold">@entry.Title</div>
+                                            @if (!string.IsNullOrWhiteSpace(entry.Details))
+                                            {
+                                                <div class="text-muted small">@entry.Details</div>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(entry.GooglePlaceId))
+                                            {
+                                                <a href="https://www.google.com/maps/search/?api=1&query=Google&query_place_id=@entry.GooglePlaceId" 
+                                                   target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                                    <i class="bi bi-geo-alt"></i> View on Google Maps
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (activity.Bookings.Count > 0)
+                        {
+                            <div class="alert alert-info mb-3">
+                                <h6 class="alert-heading"><i class="bi bi-bookmark-check me-2"></i>Checking in?</h6>
+                                @foreach (var booking in activity.Bookings)
+                                {
+                                    var entry = activity.Entries.FirstOrDefault(e => e.EntryId == booking.EntryId);
+                                    <div class="mb-2">
+                                        @if (entry is not null)
+                                        {
+                                            <div class="fw-semibold">@entry.Title</div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(booking.Vendor))
+                                        {
+                                            <div><strong>Vendor:</strong> @booking.Vendor</div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(booking.Reference))
+                                        {
+                                            <div><strong>Reference:</strong> @booking.Reference</div>
+                                        }
+                                        @if (booking.Metadata?.Stay?.CheckInTime is not null)
+                                        {
+                                            <div><strong>Check-in Time:</strong> @booking.Metadata.Stay.CheckInTime</div>
+                                        }
+                                        @if (booking.ConfirmationUrl is not null)
+                                        {
+                                            <a href="@booking.ConfirmationUrl" target="_blank" class="btn btn-sm btn-outline-info mt-1">
+                                                <i class="bi bi-box-arrow-up-right"></i> View Confirmation
+                                            </a>
+                                        }
+                                        @if (entry is not null && !string.IsNullOrWhiteSpace(entry.GooglePlaceId))
+                                        {
+                                            <a href="https://www.google.com/maps/search/?api=1&query=Google&query_place_id=@entry.GooglePlaceId" 
+                                               target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                                <i class="bi bi-geo-alt"></i> View on Google Maps
+                                            </a>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (Model.CurrentAndUpcomingTrips.Count > 0)
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-airplane me-2"></i>Current & Upcoming Trips</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @foreach (var tripWithDetails in Model.CurrentAndUpcomingTrips)
+                    {
+                        var trip = tripWithDetails.Trip;
+                        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                        var isInProgress = trip.StartDate <= today && (trip.EndDate == null || trip.EndDate >= today);
+                        var daysUntilStart = trip.StartDate.HasValue ? (trip.StartDate.Value.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days : 0;
+
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="card h-100 @(isInProgress ? "border-success" : "")">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        @if (isInProgress)
+                                        {
+                                            <span class="badge bg-success float-end">In Progress</span>
+                                        }
+                                        else if (daysUntilStart <= 7 && daysUntilStart >= 0)
+                                        {
+                                            <span class="badge bg-warning text-dark float-end">Soon</span>
+                                        }
+                                        <a href="/trips/@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : trip.Slug)" class="text-decoration-none text-dark">
+                                            @trip.Name
+                                        </a>
+                                    </h6>
+                                    <p class="card-text text-muted small mb-2">
+                                        @if (trip.StartDate is not null || trip.EndDate is not null)
+                                        {
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            @trip.StartDate?.ToString("MMM dd, yyyy")
+                                            @if (trip.EndDate is not null)
+                                            {
+                                                <text> – @trip.EndDate?.ToString("MMM dd, yyyy")</text>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-calendar3 me-1"></i><span>Dates TBD</span>
+                                        }
+                                    </p>
+                                    @if (tripWithDetails.Entries.Count > 0)
+                                    {
+                                        <p class="card-text text-muted small mb-2">
+                                            <i class="bi bi-list-ul me-1"></i>@tripWithDetails.Entries.Count item(s) in itinerary
+                                        </p>
+                                    }
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        <a href="/trips/@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : trip.Slug)" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                        <a href="/trips/@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : trip.Slug)/cost-summary" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-cash"></i> Costs
+                                        </a>
+                                        <a href="/trips/@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : trip.Slug)/route" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-map"></i> Map
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="mt-3">
+                    <a href="/trips" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Create New Trip
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card mb-4">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-airplane text-muted" style="font-size: 4rem;"></i>
+                <h5 class="mt-3">No trips yet</h5>
+                <p class="text-muted">Start planning your next adventure!</p>
+                <a href="/trips" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Create Your First Trip
+                </a>
+            </div>
+        </div>
+    }
+
+    @if (Model.PastTrips.Count > 0)
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Past Trips</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @foreach (var tripWithDetails in Model.PastTrips)
+                    {
+                        var trip = tripWithDetails.Trip;
+
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <a href="/trips/@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : trip.Slug)" class="text-decoration-none text-muted">
+                                            @trip.Name
+                                        </a>
+                                    </h6>
+                                    <p class="card-text text-muted small mb-2">
+                                        @if (trip.StartDate is not null || trip.EndDate is not null)
+                                        {
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            @trip.StartDate?.ToString("MMM dd, yyyy")
+                                            @if (trip.EndDate is not null)
+                                            {
+                                                <text> – @trip.EndDate?.ToString("MMM dd, yyyy")</text>
+                                            }
+                                        }
+                                    </p>
+                                    <div class="d-flex gap-1">
+                                        <a href="/trips/@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : trip.Slug)" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@functions {
+    private string GetIconForItemType(MX.TravelItinerary.Web.Data.Models.TimelineItemType itemType)
+    {
+        return itemType switch
+        {
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Flight => "airplane",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Train => "train-front",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Coach => "bus-front",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Ferry => "water",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Taxi => "taxi-front",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.PrivateCar => "car-front",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.RentalCar => "car-front-fill",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Parking => "p-square",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Hotel => "building",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Flat => "house-door",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.House => "house",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Tour => "compass",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Museum => "bank",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Park => "tree",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Dining => "cup-hot",
+            MX.TravelItinerary.Web.Data.Models.TimelineItemType.Note => "sticky",
+            _ => "circle"
+        };
+    }
+}
