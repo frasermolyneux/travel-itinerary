@@ -55,7 +55,7 @@ dotnet user-secrets set "GoogleMaps:ApiKey" "<google-maps-places-api-key>"
 
 Terraform now provisions a dedicated Storage Account plus Azure Table containers for the data model. The web app's system-assigned managed identity receives the `Storage Table Data Contributor` role, so the application code authenticates with managed identity (or `DefaultAzureCredential` locally) instead of connection strings.
 
-- Tables: `Trips`, `ItineraryEntries`, `Bookings`, `ShareLinks`.
+- Tables: `Trips`, `ItineraryEntries`, `Bookings`, `ShareLinks`, `SavedShareLinks`.
 - Outputs: `storage_account_name` and `storage_table_names` expose deployment-time metadata.
 - App configuration: the web app expects `Storage:TableEndpoint` (and optionally overrides for table names) via configuration. In Azure these values are injected through App Service settings; locally configure them with `dotnet user-secrets` or environment variables.
 
@@ -136,3 +136,25 @@ Multi-day spans are expressed directly on itinerary entries (`IsMultiDay` + `End
 - Share links surface a public, anonymous route at `/shares/{tripSlug}/{shareCode}`. The page reuses the same responsive timeline component but trims all editing affordances.
 - `MaskBookings = true` removes booking cards entirely; `IncludeCost = false` keeps the linked bookings but strips currency, totals, and outbound confirmation links before rendering.
 - The clipboard helper next to each share URL uses the browser Clipboard API, so the site must be served over HTTPS (or `localhost`) for one-click copy.
+
+### Saving shared trips
+
+Users can now save shared trips for easy access later:
+
+- **Save button**: When viewing a shared trip (`/shares/{tripSlug}/{shareCode}`), users can click "Save this trip" to bookmark it
+- **Local storage for anonymous users**: Unauthenticated users have their saved trips stored in browser localStorage, allowing offline access
+- **Remote storage for authenticated users**: Logged-in users have saved trips persisted to the `SavedShareLinks` Azure Table Storage, synced across devices
+- **Trips page display**: Saved trips appear in a "Trips Shared With Me" section on the `/trips` page, visually distinguished with a light background and share icon
+- **Easy removal**: Users can remove saved trips at any time (this only removes the bookmark, not the actual share link)
+- **Offline compatible**: Saved share links work seamlessly with the PWA offline features
+
+The `SavedShareLinks` table stores:
+
+| Column         | Type / Example                 | Notes                                                |
+| -------------- | ------------------------------ | ---------------------------------------------------- |
+| `PartitionKey` | `UserId`                       | Groups saved links per user.                         |
+| `RowKey`       | `SavedLinkId` (GUID)           | Unique identifier for the saved link.                |
+| `TripSlug`     | `"india-sri-lanka-2026"`       | The trip slug for navigation.                        |
+| `ShareCode`    | `"HUHB3HU2H"`                  | The share code to access the trip.                   |
+| `TripName`     | `"India & Sri Lanka 2026"`     | Display name of the shared trip.                     |
+| `SavedOn`      | `2026-01-22T10:30:00Z`         | Timestamp when the link was saved.                   |
