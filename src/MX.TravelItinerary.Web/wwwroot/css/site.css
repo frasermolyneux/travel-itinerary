@@ -985,6 +985,28 @@ body {
   cursor: pointer;
 }
 
+/* PWA Status Bar - Centered in navbar */
+#pwa-status-bar {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+#pwa-status-label {
+  font-size: 0.875rem;
+  padding: 0.4rem 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+#pwa-status-label i {
+  font-size: 1rem;
+}
+
 /* On mobile, reduce padding for cloud icon */
 @media (max-width: 575.98px) {
   #pwa-cache-status-top-level .nav-link {
