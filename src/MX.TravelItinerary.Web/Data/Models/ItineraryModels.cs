@@ -217,6 +217,14 @@ public sealed record TripDetails(
     ShareLink? ShareLink,
     TripPermission CurrentUserPermission = TripPermission.Owner);
 
+public sealed record SavedShareLink(
+    string SavedLinkId,
+    string UserId,
+    string TripSlug,
+    string ShareCode,
+    string TripName,
+    DateTimeOffset SavedOn);
+
 public sealed partial record ItineraryEntry
 {
     public override string ToString()

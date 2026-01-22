@@ -20,4 +20,6 @@ public sealed class StorageTableNames
     public string ShareLinks { get; set; } = "ShareLinks";
 
     public string TripAccess { get; set; } = "TripAccess";
+
+    public string SavedShareLinks { get; set; } = "SavedShareLinks";
 }

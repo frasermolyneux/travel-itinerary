@@ -23,6 +23,8 @@ public sealed class IndexModel : PageModel
 
     public IReadOnlyList<Trip> Trips { get; private set; } = Array.Empty<Trip>();
 
+    public IReadOnlyList<SavedShareLink> SavedShareLinks { get; private set; } = Array.Empty<SavedShareLink>();
+
     [BindProperty]
     public TripForm Input { get; set; } = new();
 
@@ -35,6 +37,7 @@ public sealed class IndexModel : PageModel
     {
         var userId = GetUserId();
         Trips = await _repository.GetTripsForUserAsync(userId, GetUserEmail(), cancellationToken);
+        SavedShareLinks = await _repository.GetSavedShareLinksAsync(userId, cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(edit))
         {
@@ -91,6 +94,19 @@ public sealed class IndexModel : PageModel
         var userId = GetUserId();
         await _repository.DeleteTripAsync(userId, GetUserEmail(), tripId, cancellationToken);
         StatusMessage = "Trip deleted.";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostRemoveSavedLinkAsync(string savedLinkId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(savedLinkId))
+        {
+            return RedirectToPage();
+        }
+
+        var userId = GetUserId();
+        await _repository.DeleteSavedShareLinkAsync(userId, savedLinkId, cancellationToken);
+        StatusMessage = "Saved trip removed.";
         return RedirectToPage();
     }
 

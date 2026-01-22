@@ -87,6 +87,15 @@ internal static class TableEntityMapper
             InvitedOn: entity.GetDateTimeOffset("InvitedOn"));
     }
 
+    public static SavedShareLink ToSavedShareLink(TableEntity entity)
+        => new(
+            SavedLinkId: entity.RowKey,
+            UserId: entity.PartitionKey,
+            TripSlug: entity.GetString("TripSlug") ?? string.Empty,
+            ShareCode: entity.GetString("ShareCode") ?? string.Empty,
+            TripName: entity.GetString("TripName") ?? string.Empty,
+            SavedOn: entity.GetDateTimeOffset("SavedOn") ?? DateTimeOffset.UtcNow);
+
     private static TimelineItemType GetBookingItemType(TableEntity entity)
         => entity.GetString("ItemType").ToTimelineItemType();
 
