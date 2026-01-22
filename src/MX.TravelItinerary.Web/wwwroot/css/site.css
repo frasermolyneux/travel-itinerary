@@ -981,13 +981,8 @@ body {
   display: flex;
   align-items: center;
   padding: 0.5rem 0.75rem;
-  color: #212529;
   text-decoration: none;
   cursor: pointer;
-}
-
-#pwa-cache-status-top-level .nav-link:hover {
-  color: #0d6efd;
 }
 
 /* On mobile, reduce padding for cloud icon */

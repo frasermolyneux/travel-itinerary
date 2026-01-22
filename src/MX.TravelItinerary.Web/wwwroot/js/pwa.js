@@ -195,7 +195,7 @@
 
         const cacheStatusHtml = `
             <div class="dropdown" id="pwa-cache-status">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <a class="nav-link text-dark dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-cloud-check" id="cache-status-icon"></i>
                     <span class="d-none d-md-inline ms-1" id="cache-status-text">Status</span>
                 </a>
