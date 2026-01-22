@@ -970,3 +970,34 @@ body {
 .pac-container {
   z-index: 2000 !important;
 }
+
+/* PWA Cache Status - Top-level Navigation */
+#pwa-cache-status-top-level {
+  margin-left: auto;
+  margin-right: 0.5rem;
+}
+
+#pwa-cache-status-top-level .nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  color: #212529;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#pwa-cache-status-top-level .nav-link:hover {
+  color: #0d6efd;
+}
+
+/* On mobile, position cloud icon next to burger menu */
+@media (max-width: 575.98px) {
+  #pwa-cache-status-top-level {
+    margin-left: auto;
+    margin-right: 0.5rem;
+  }
+  
+  #pwa-cache-status-top-level .nav-link {
+    padding: 0.5rem;
+  }
+}
