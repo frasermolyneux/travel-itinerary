@@ -990,13 +990,8 @@ body {
   color: #0d6efd;
 }
 
-/* On mobile, position cloud icon next to burger menu */
+/* On mobile, reduce padding for cloud icon */
 @media (max-width: 575.98px) {
-  #pwa-cache-status-top-level {
-    margin-left: auto;
-    margin-right: 0.5rem;
-  }
-  
   #pwa-cache-status-top-level .nav-link {
     padding: 0.5rem;
   }
