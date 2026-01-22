@@ -1463,6 +1463,17 @@ public sealed class TableItineraryRepository : IItineraryRepository
         ArgumentException.ThrowIfNullOrWhiteSpace(tripSlug);
         ArgumentException.ThrowIfNullOrWhiteSpace(shareCode);
 
+        // Check if already saved to avoid duplicates
+        var existingLinks = await GetSavedShareLinksAsync(userId, cancellationToken);
+        var existing = existingLinks.FirstOrDefault(link =>
+            string.Equals(link.ShareCode, shareCode, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(link.TripSlug, tripSlug, StringComparison.OrdinalIgnoreCase));
+
+        if (existing is not null)
+        {
+            return existing;
+        }
+
         var savedLinkId = Guid.NewGuid().ToString("N");
         var savedOn = DateTimeOffset.UtcNow;
 

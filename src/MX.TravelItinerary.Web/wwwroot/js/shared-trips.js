@@ -132,12 +132,12 @@
                                     <div class="text-muted small">Shared trip (local)</div>
                                 </td>
                                 <td>
-                                    ${formatDate(trip.savedOn)}
+                                    ${escapeHtml(formatDate(trip.savedOn))}
                                 </td>
                                 <td class="text-end">
-                                    <a class="btn btn-sm btn-link" href="/shares/${trip.tripSlug}/${trip.shareCode}">View</a>
+                                    <a class="btn btn-sm btn-link" href="/shares/${encodeURIComponent(trip.tripSlug)}/${encodeURIComponent(trip.shareCode)}">View</a>
                                     <button type="button" class="btn btn-sm btn-link text-danger" 
-                                            onclick="removeLocalTrip('${trip.savedLinkId}')"
+                                            onclick="removeLocalTrip('${escapeHtml(trip.savedLinkId)}')"
                                             data-confirm="Remove this saved trip?">Remove</button>
                                 </td>
                             </tr>
@@ -212,6 +212,10 @@
     function formatDate(dateString) {
         try {
             const date = new Date(dateString);
+            // Check if date is valid
+            if (isNaN(date.getTime())) {
+                return dateString || 'Unknown date';
+            }
             return date.toLocaleString('en-US', {
                 year: 'numeric',
                 month: '2-digit',
@@ -220,7 +224,7 @@
                 minute: '2-digit'
             });
         } catch (error) {
-            return dateString;
+            return dateString || 'Unknown date';
         }
     }
 
