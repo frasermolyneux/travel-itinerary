@@ -115,8 +115,9 @@ public class IndexModel : PageModel
         {
             return User.GetObjectId();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to retrieve user object ID from claims");
             return null;
         }
     }
