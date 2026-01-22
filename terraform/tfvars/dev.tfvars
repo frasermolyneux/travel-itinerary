@@ -1,6 +1,6 @@
 workload    = "travel-itinerary"
 environment = "dev"
-location    = "uksouth"
+location    = "swedencentral"
 
 subscription_id = "ef3cc6c2-159e-4890-9193-13673dded835"
 

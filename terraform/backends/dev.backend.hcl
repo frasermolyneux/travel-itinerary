@@ -1,4 +1,4 @@
-resource_group_name  = "rg-tf-travel-itinerary-dev-uksouth-01"
+resource_group_name  = "rg-tf-travel-itinerary-dev-swedencentral-01"
 storage_account_name = "sa193e166e5920"
 container_name       = "tfstate"
 key                  = "terraform.tfstate"
