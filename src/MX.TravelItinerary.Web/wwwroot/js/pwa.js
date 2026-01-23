@@ -105,11 +105,13 @@
     window.addEventListener('online', () => {
         console.log('[PWA] Connection restored');
         showConnectionStatus('You are back online', 'success');
+        updateNetworkDependentUI();
     });
 
     window.addEventListener('offline', () => {
         console.log('[PWA] Connection lost');
         showConnectionStatus('You are offline. Some features may not be available.', 'warning');
+        updateNetworkDependentUI();
     });
 
     // Show connection status notification
@@ -198,6 +200,13 @@
         updateCacheStatus();
         // Notify service worker about the change
         notifyServiceWorkerOfflineState(offline);
+        // Update UI elements that require network
+        updateNetworkDependentUI();
+    }
+
+    // Check if app is effectively offline (no network OR manual offline mode)
+    function isEffectivelyOffline() {
+        return !navigator.onLine || isManualOfflineMode();
     }
 
     // Notify service worker about offline state
@@ -208,6 +217,63 @@
                 offline: offline
             });
         }
+    }
+
+    // Update UI elements that require network connectivity
+    function updateNetworkDependentUI() {
+        const offline = isEffectivelyOffline();
+        
+        // Find all elements that should be disabled when offline
+        // These are marked with data-requires-network attribute
+        const networkElements = document.querySelectorAll('[data-requires-network="true"]');
+        
+        networkElements.forEach(element => {
+            if (offline) {
+                // Disable the element and add visual indicator
+                element.classList.add('offline-disabled');
+                element.setAttribute('disabled', 'disabled');
+                element.setAttribute('title', 'This feature requires an internet connection');
+                
+                // Add offline icon if it's a button or link
+                if ((element.tagName === 'BUTTON' || element.tagName === 'A') && 
+                    !element.querySelector('.offline-indicator')) {
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-cloud-slash offline-indicator ms-1';
+                    icon.style.fontSize = '0.875em';
+                    icon.style.opacity = '0.7';
+                    element.appendChild(icon);
+                }
+            } else {
+                // Re-enable the element and remove indicators
+                element.classList.remove('offline-disabled');
+                element.removeAttribute('disabled');
+                element.removeAttribute('title');
+                
+                // Remove offline icon
+                const icon = element.querySelector('.offline-indicator');
+                if (icon) {
+                    icon.remove();
+                }
+            }
+        });
+        
+        // Also update form inputs that need network (like Google Place Picker)
+        const placeInputs = document.querySelectorAll('.google-place-picker');
+        placeInputs.forEach(input => {
+            if (offline) {
+                input.setAttribute('readonly', 'readonly');
+                input.setAttribute('placeholder', 'Place search unavailable offline');
+                input.classList.add('offline-disabled');
+            } else {
+                input.removeAttribute('readonly');
+                input.classList.remove('offline-disabled');
+                // Restore original placeholder if stored
+                const originalPlaceholder = input.getAttribute('data-original-placeholder');
+                if (originalPlaceholder) {
+                    input.setAttribute('placeholder', originalPlaceholder);
+                }
+            }
+        });
     }
 
     // Initialize cache status UI
@@ -562,6 +628,7 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initCacheStatus);
         document.addEventListener('DOMContentLoaded', updatePageSyncOnLoad);
+        document.addEventListener('DOMContentLoaded', updateNetworkDependentUI);
         document.addEventListener('DOMContentLoaded', () => {
             // Sync manual offline state with service worker on load
             if (navigator.serviceWorker.controller) {
@@ -571,6 +638,7 @@
     } else {
         initCacheStatus();
         updatePageSyncOnLoad();
+        updateNetworkDependentUI();
         // Sync manual offline state with service worker on load
         if (navigator.serviceWorker.controller) {
             notifyServiceWorkerOfflineState(isManualOfflineMode());

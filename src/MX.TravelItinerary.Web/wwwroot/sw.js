@@ -146,7 +146,14 @@ async function cacheOnly(request) {
 // Network-first strategy (for dynamic content)
 async function networkFirst(request) {
   try {
-    const networkResponse = await fetch(request);
+    // Add a timeout to prevent long waits when offline
+    const NETWORK_TIMEOUT_MS = 5000; // 5 seconds max wait for network
+    const networkPromise = fetch(request);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Network timeout')), NETWORK_TIMEOUT_MS)
+    );
+    
+    const networkResponse = await Promise.race([networkPromise, timeoutPromise]);
     if (networkResponse.ok) {
       const cache = await caches.open(DYNAMIC_CACHE);
       cache.put(request, networkResponse.clone());

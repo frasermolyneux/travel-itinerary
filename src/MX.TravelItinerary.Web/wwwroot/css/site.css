@@ -1013,3 +1013,37 @@ body {
     padding: 0.5rem;
   }
 }
+
+/* Offline-disabled UI elements */
+.offline-disabled {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+.offline-disabled:hover {
+  opacity: 0.5;
+}
+
+/* Offline indicator icon */
+.offline-indicator {
+  color: #6c757d !important;
+  margin-left: 0.25rem;
+}
+
+/* Disabled buttons with offline styling */
+button.offline-disabled,
+a.offline-disabled {
+  background-color: #e9ecef !important;
+  border-color: #dee2e6 !important;
+  color: #6c757d !important;
+}
+
+/* Input fields that are offline-disabled */
+input.offline-disabled,
+textarea.offline-disabled,
+select.offline-disabled {
+  background-color: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+  color: #6c757d !important;
+}

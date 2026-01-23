@@ -925,8 +925,20 @@
             return;
         }
 
-        if (modalElement.dataset.googlePlaceEnabled !== 'true') {
+        // Check if effectively offline (no network or manual offline mode)
+        const isOffline = !navigator.onLine || (localStorage.getItem('pwa-manual-offline') === 'true');
+        
+        if (isOffline || modalElement.dataset.googlePlaceEnabled !== 'true') {
             disablePlacePickerTriggers(triggers);
+            // Add offline indicators to triggers if offline
+            if (isOffline) {
+                triggers.forEach((trigger) => {
+                    trigger.setAttribute('title', 'Place search requires an internet connection');
+                    trigger.classList.add('offline-disabled');
+                    // Mark as requiring network so PWA code can update it
+                    trigger.setAttribute('data-requires-network', 'true');
+                });
+            }
             return;
         }
 
