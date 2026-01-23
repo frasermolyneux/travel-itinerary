@@ -261,6 +261,11 @@
         const placeInputs = document.querySelectorAll('.google-place-picker');
         placeInputs.forEach(input => {
             if (offline) {
+                // Store original placeholder before changing it
+                if (!input.hasAttribute('data-original-placeholder')) {
+                    const currentPlaceholder = input.getAttribute('placeholder') || '';
+                    input.setAttribute('data-original-placeholder', currentPlaceholder);
+                }
                 input.setAttribute('readonly', 'readonly');
                 input.setAttribute('placeholder', 'Place search unavailable offline');
                 input.classList.add('offline-disabled');
