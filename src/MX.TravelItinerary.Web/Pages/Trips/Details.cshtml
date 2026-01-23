@@ -75,7 +75,7 @@ else
 
 <div class="fab-container">
     <button type="button" class="btn btn-primary rounded-circle fab-main" aria-label="Add timeline entry"
-        data-fab-open-entry>
+        data-fab-open-entry data-requires-network="true">
         <span class="fab-icon">+</span>
     </button>
 </div>
@@ -232,7 +232,7 @@ else
             </div>
 
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Save entry</button>
+                <button type="submit" class="btn btn-primary" data-requires-network="true">Save entry</button>
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancel</button>
             </div>
         </form>
@@ -421,7 +421,7 @@ else
             </div>
 
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Save booking</button>
+                <button type="submit" class="btn btn-primary" data-requires-network="true">Save booking</button>
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancel</button>
             </div>
         </form>
@@ -480,11 +480,11 @@ else
             <div class="booking-detail-notes" data-booking-detail="notes">—</div>
         </div>
         <div class="d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-primary" id="bookingDetailEditButton">Edit booking</button>
+            <button type="button" class="btn btn-primary" id="bookingDetailEditButton" data-requires-network="true">Edit booking</button>
             <form method="post" asp-page-handler="DeleteBooking" id="bookingDetailDeleteForm" class="d-inline">
                 <input type="hidden" name="tripId" value="@Model.TripDetails?.Trip.TripId" />
                 <input type="hidden" name="bookingId" value="" />
-                <button type="submit" class="btn btn-outline-danger">Delete booking</button>
+                <button type="submit" class="btn btn-outline-danger" data-requires-network="true">Delete booking</button>
             </form>
         </div>
     </div>

@@ -78,7 +78,7 @@ else
                         </div>
 
                         <div class="d-flex flex-wrap gap-2">
-                            <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save access" :
+                            <button type="submit" class="btn btn-primary" data-requires-network="true">@(Model.IsEditing ? "Save access" :
                                                             "Invite")</button>
                             @if (Model.IsEditing)
                             {
@@ -129,13 +129,13 @@ else
                                 </div>
                                 <div class="d-flex flex-wrap gap-2">
                                     <a class="btn btn-sm btn-outline-primary" asp-page="./Access" asp-route-tripId="@Model.TripId"
-                                        asp-route-tripSlug="@Model.TripSlug" asp-route-edit="@access.AccessId">Edit</a>
+                                        asp-route-tripSlug="@Model.TripSlug" asp-route-edit="@access.AccessId" data-requires-network="true">Edit</a>
                                     <form method="post" asp-page-handler="Delete" class="d-inline"
                                         onsubmit="return confirm('Remove access for this person?');">
                                         <input type="hidden" name="tripId" value="@Model.TripId" />
                                         <input type="hidden" name="tripSlug" value="@Model.TripSlug" />
                                         <input type="hidden" name="accessId" value="@access.AccessId" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" data-requires-network="true">Remove</button>
                                     </form>
                                 </div>
                             </div>

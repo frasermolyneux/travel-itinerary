@@ -551,19 +551,21 @@
                                         data-entry-flight-arrival-airport="@(entry.Metadata?.Flight?.ArrivalAirport ?? string.Empty)"
                                         data-entry-flight-arrival-time="@(entry.Metadata?.Flight?.ArrivalTime ?? string.Empty)"
                                         data-entry-stay-property="@(entry.Metadata?.Stay?.PropertyName ?? string.Empty)"
-                                        data-entry-stay-link="@(entry.Metadata?.Stay?.PropertyLink ?? string.Empty)">
+                                        data-entry-stay-link="@(entry.Metadata?.Stay?.PropertyLink ?? string.Empty)"
+                                        data-requires-network="true">
                                         Edit
                                     </button>
                                     <form method="post" asp-page-handler="DeleteEntry" class="d-inline">
                                         <input type="hidden" name="entryId" value="@entry.EntryId" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" data-requires-network="true">Delete</button>
                                     </form>
                                 }
                                 @if (allowBookingCreation)
                                 {
                                     <button type="button" class="btn btn-sm btn-outline-secondary" data-booking-action="add"
                                         data-parent-type="entry" data-entry-id="@entry.EntryId" data-entry-title="@entry.Title"
-                                        data-entry-type="@entry.ItemType" data-entry-type-label="@entry.ItemType.GetDisplayName()">
+                                        data-entry-type="@entry.ItemType" data-entry-type-label="@entry.ItemType.GetDisplayName()"
+                                        data-requires-network="true">
                                         Add booking
                                     </button>
                                 }
@@ -788,12 +790,13 @@
                                 data-entry-flight-arrival-airport="@(block.Entry.Metadata?.Flight?.ArrivalAirport ?? string.Empty)"
                                 data-entry-flight-arrival-time="@(block.Entry.Metadata?.Flight?.ArrivalTime ?? string.Empty)"
                                 data-entry-stay-property="@(block.Entry.Metadata?.Stay?.PropertyName ?? string.Empty)"
-                                data-entry-stay-link="@(block.Entry.Metadata?.Stay?.PropertyLink ?? string.Empty)">
+                                data-entry-stay-link="@(block.Entry.Metadata?.Stay?.PropertyLink ?? string.Empty)"
+                                data-requires-network="true">
                                 Edit
                             </button>
                             <form method="post" asp-page-handler="DeleteEntry" class="d-inline">
                                 <input type="hidden" name="entryId" value="@block.Entry.EntryId" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                <button type="submit" class="btn btn-sm btn-outline-danger" data-requires-network="true">Delete</button>
                             </form>
                         }
                         @if (allowBookingCreation)
@@ -802,7 +805,8 @@
                                 data-parent-type="entry" data-entry-id="@block.Entry.EntryId"
                                 data-entry-title="@(block.Entry.Title ?? block.Entry.ItemType.GetDisplayName())"
                                 data-entry-type="@block.Entry.ItemType"
-                                data-entry-type-label="@block.Entry.ItemType.GetDisplayName()">
+                                data-entry-type-label="@block.Entry.ItemType.GetDisplayName()"
+                                data-requires-network="true">
                                 Add booking
                             </button>
                         }
