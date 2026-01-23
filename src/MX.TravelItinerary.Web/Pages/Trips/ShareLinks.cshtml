@@ -119,7 +119,7 @@ else
                         </div>
 
                         <div class="d-flex flex-wrap gap-2">
-                            <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save settings" : "Create                            link")</button>
+                            <button type="submit" class="btn btn-primary" data-requires-network="true">@(Model.IsEditing ? "Save settings" : "Create                            link")</button>
                             @if (Model.IsEditing)
                             {
                                 <a class="btn btn-outline-secondary" asp-page="./ShareLinks" asp-route-tripId="@Model.TripId"
@@ -200,13 +200,13 @@ else
                                 <div class="d-flex flex-wrap gap-2">
                                     <a class="btn btn-sm btn-outline-primary" asp-page="./ShareLinks"
                                         asp-route-tripId="@Model.TripId" asp-route-tripSlug="@Model.TripSlug"
-                                        asp-route-edit="@link.ShareCode">Edit</a>
+                                        asp-route-edit="@link.ShareCode" data-requires-network="true">Edit</a>
                                     <form method="post" asp-page-handler="Delete" class="d-inline"
                                         onsubmit="return confirm('Delete this share link?');">
                                         <input type="hidden" name="tripId" value="@Model.TripId" />
                                         <input type="hidden" name="tripSlug" value="@Model.TripSlug" />
                                         <input type="hidden" name="shareCode" value="@link.ShareCode" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" data-requires-network="true">Delete</button>
                                     </form>
                                 </div>
                             </div>

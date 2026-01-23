@@ -67,7 +67,7 @@
                     </div>
 
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">@(Model.IsEditing ? "Save Changes" : "Create                   Trip")</button>
+                        <button type="submit" class="btn btn-primary" data-requires-network="true">@(Model.IsEditing ? "Save Changes" : "Create                   Trip")</button>
                         @if (Model.IsEditing)
                         {
                             <a class="btn btn-outline-secondary" href="/trips">Cancel</a>
@@ -129,13 +129,14 @@
                                                 asp-route-tripId="@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : null)">View</a>
                                             <a class="btn btn-sm btn-link" asp-page="./ShareLinks"
                                                 asp-route-tripSlug="@(string.IsNullOrWhiteSpace(trip.Slug) ? null : trip.Slug)"
-                                                asp-route-tripId="@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : null)">Share</a>
+                                                asp-route-tripId="@(string.IsNullOrWhiteSpace(trip.Slug) ? trip.TripId : null)"
+                                                data-requires-network="true">Share</a>
                                             <a class="btn btn-sm btn-link" asp-page="./Index"
-                                                asp-route-edit="@trip.TripId">Edit</a>
+                                                asp-route-edit="@trip.TripId" data-requires-network="true">Edit</a>
                                             <form method="post" asp-page-handler="Delete" asp-route-tripId="@trip.TripId"
                                                 class="d-inline">
                                                 <button type="submit" class="btn btn-sm btn-link text-danger"
-                                                    onclick="return confirm('Delete this trip?');">Delete</button>
+                                                    onclick="return confirm('Delete this trip?');" data-requires-network="true">Delete</button>
                                             </form>
                                         </td>
                                     </tr>
