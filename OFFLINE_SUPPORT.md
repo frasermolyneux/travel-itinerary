@@ -95,23 +95,23 @@ The app automatically syncs when:
 
 The app is configured with extended authentication sessions to improve offline capability:
 
-- **Session Duration**: 30 days
+- **Session Duration**: 7 days
 - **Sliding Expiration**: Enabled - session extends automatically with each request
-- **Offline Access**: Once authenticated, users remain logged in for up to 30 days, even when offline
+- **Offline Access**: Once authenticated, users remain logged in for up to 7 days, even when offline
 
 ### How It Works
 
 1. **Initial Sign-In** - Requires internet connection to authenticate with Microsoft Entra ID
-2. **Session Cookie** - A secure authentication cookie is stored in the browser for 30 days
-3. **Sliding Window** - Each time you use the app, the session is extended (sliding window of 15 days)
-4. **Offline Usage** - You can access the app offline without re-authenticating for up to 30 days
+2. **Session Cookie** - A secure authentication cookie is stored in the browser for 7 days
+3. **Sliding Window** - Each time you use the app, the session is extended (sliding window of ~3.5 days)
+4. **Offline Usage** - You can access the app offline without re-authenticating for up to 7 days
 5. **Automatic Extension** - Active users will stay logged in indefinitely as long as they use the app regularly
 
 ### What This Means for Users
 
 ✅ **No unexpected logouts** - You won't be logged out when returning to the app after days or weeks
 ✅ **Works offline** - Access your trips offline without authentication issues
-✅ **Security maintained** - Sessions still expire after 30 days of complete inactivity
+✅ **Security maintained** - Sessions still expire after 7 days of complete inactivity
 ✅ **Seamless experience** - No need to re-authenticate frequently
 
 ### Manual Sign-Out

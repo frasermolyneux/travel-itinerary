@@ -42,9 +42,9 @@ builder.Services
 // Configure cookie authentication options to extend session timeout for offline capability
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    // Extend the cookie expiration to 30 days to improve offline capability
+    // Extend the cookie expiration to 7 days to improve offline capability
     // Users will remain logged in even when they return to the app after a long period
-    options.ExpireTimeSpan = TimeSpan.FromDays(30);
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
     
     // Enable sliding expiration so the timeout resets with each request
     // This means active users will stay logged in indefinitely
