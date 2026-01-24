@@ -21,7 +21,7 @@ The Travel Itinerary application has been enhanced with Progressive Web App (PWA
 ❌ **Add New Bookings** - Adding or modifying booking information needs internet access
 ❌ **Share Itineraries** - Generating and managing share links requires connectivity
 ❌ **Load New Data** - Fetching data that hasn't been cached requires internet access
-❌ **Authentication** - Sign in/sign out operations require online connectivity
+❌ **Initial Authentication** - Sign in operations require online connectivity (see Authentication section below)
 
 ## Cache Status & Sync Features
 
@@ -88,6 +88,35 @@ The app automatically syncs when:
 - Connection is restored after being offline (unless in manual offline mode)
 - User manually triggers sync via the "Sync Now" button
 - Service worker detects updates (checked hourly)
+
+## Authentication & Session Management
+
+### Extended Session Timeout
+
+The app is configured with extended authentication sessions to improve offline capability:
+
+- **Session Duration**: 7 days
+- **Sliding Expiration**: Enabled - session extends automatically with each request
+- **Offline Access**: Once authenticated, users remain logged in for up to 7 days, even when offline
+
+### How It Works
+
+1. **Initial Sign-In** - Requires internet connection to authenticate with Microsoft Entra ID
+2. **Session Cookie** - A secure authentication cookie is stored in the browser for 7 days
+3. **Sliding Window** - Each time you use the app, the session is extended (sliding window of ~3.5 days)
+4. **Offline Usage** - You can access the app offline without re-authenticating for up to 7 days
+5. **Automatic Extension** - Active users will stay logged in indefinitely as long as they use the app regularly
+
+### What This Means for Users
+
+✅ **No unexpected logouts** - You won't be logged out when returning to the app after days or weeks
+✅ **Works offline** - Access your trips offline without authentication issues
+✅ **Security maintained** - Sessions still expire after 7 days of complete inactivity
+✅ **Seamless experience** - No need to re-authenticate frequently
+
+### Manual Sign-Out
+
+Users can explicitly sign out at any time via the "Sign out" link in the navbar. This immediately invalidates the session cookie.
 
 ## Technical Implementation
 
