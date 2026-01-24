@@ -50,8 +50,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     // This means active users will stay logged in indefinitely
     options.SlidingExpiration = true;
     
-    // The sliding window is half of ExpireTimeSpan (15 days)
-    // After 15 days of the 30-day window, the cookie will be refreshed on the next request
+    // The cookie will be refreshed when more than half of the expiration period has elapsed on the next request
 });
 
 builder.Services.AddAuthorization();
