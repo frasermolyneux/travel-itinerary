@@ -11,15 +11,15 @@ public sealed class StorageOptions
 
 public sealed class StorageTableNames
 {
-    public required string Trips { get; set; }
+    public string Trips { get; set; } = "Trips";
 
-    public required string ItineraryEntries { get; set; }
+    public string ItineraryEntries { get; set; } = "ItineraryEntries";
 
-    public required string Bookings { get; set; }
+    public string Bookings { get; set; } = "Bookings";
 
-    public required string ShareLinks { get; set; }
+    public string ShareLinks { get; set; } = "ShareLinks";
 
-    public required string TripAccess { get; set; }
+    public string TripAccess { get; set; } = "TripAccess";
 
-    public required string SavedShareLinks { get; set; }
+    public string SavedShareLinks { get; set; } = "SavedShareLinks";
 }
