@@ -32,7 +32,7 @@ public sealed class ShareLinksModel : PageModel
 
     public TripDetails? TripDetails { get; private set; }
 
-    public IReadOnlyList<ShareLink> ShareLinks { get; private set; } = Array.Empty<ShareLink>();
+    public IReadOnlyList<ShareLink> ShareLinks { get; private set; } = [];
 
     [BindProperty]
     public ShareLinkForm Input { get; set; } = new();

@@ -18,9 +18,9 @@ public class IndexModel : PageModel
         _logger = logger;
     }
 
-    public IReadOnlyList<TripWithDetails> CurrentAndUpcomingTrips { get; private set; } = Array.Empty<TripWithDetails>();
-    public IReadOnlyList<TripWithDetails> PastTrips { get; private set; } = Array.Empty<TripWithDetails>();
-    public IReadOnlyList<TodayActivity> TodayActivities { get; private set; } = Array.Empty<TodayActivity>();
+    public IReadOnlyList<TripWithDetails> CurrentAndUpcomingTrips { get; private set; } = [];
+    public IReadOnlyList<TripWithDetails> PastTrips { get; private set; } = [];
+    public IReadOnlyList<TodayActivity> TodayActivities { get; private set; } = [];
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {

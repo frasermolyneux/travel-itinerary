@@ -11,7 +11,7 @@ public static class RouteMapBuilder
     {
         if (details is null || details.Entries.Count == 0)
         {
-            return Array.Empty<RouteMapPoint>();
+            return [];
         }
 
         var orderedEntries = details.Entries

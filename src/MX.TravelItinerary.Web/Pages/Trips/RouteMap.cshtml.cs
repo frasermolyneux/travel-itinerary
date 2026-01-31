@@ -41,7 +41,7 @@ public sealed class RouteMapModel : PageModel
 
     public TripDetails? TripDetails { get; private set; }
 
-    public IReadOnlyList<RouteMapPoint> RoutePoints { get; private set; } = Array.Empty<RouteMapPoint>();
+    public IReadOnlyList<RouteMapPoint> RoutePoints { get; private set; } = [];
 
     public string? GoogleMapsApiKey { get; }
 

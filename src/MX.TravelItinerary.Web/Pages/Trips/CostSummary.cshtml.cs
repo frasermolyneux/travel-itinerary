@@ -32,7 +32,7 @@ public sealed class CostSummaryModel : PageModel
 
     public TripDetails? TripDetails { get; private set; }
 
-    public IReadOnlyList<CurrencyCostSummary> CurrencySummaries { get; private set; } = Array.Empty<CurrencyCostSummary>();
+    public IReadOnlyList<CurrencyCostSummary> CurrencySummaries { get; private set; } = [];
 
     public decimal OverallTotal => CurrencySummaries.Sum(group => group.Total);
 
@@ -55,7 +55,7 @@ public sealed class CostSummaryModel : PageModel
     {
         if (TripDetails is null)
         {
-            CurrencySummaries = Array.Empty<CurrencyCostSummary>();
+            CurrencySummaries = [];
             return;
         }
 
@@ -80,7 +80,7 @@ public sealed class CostSummaryModel : PageModel
 
         if (bookingRows.Count == 0)
         {
-            CurrencySummaries = Array.Empty<CurrencyCostSummary>();
+            CurrencySummaries = [];
             return;
         }
 
