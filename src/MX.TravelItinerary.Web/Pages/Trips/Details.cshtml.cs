@@ -191,7 +191,7 @@ public sealed class DetailsModel : PageModel
             return BadRequest(new { error = "Invalid date." });
         }
 
-        var entryIds = request.EntryIds?.Where(id => !string.IsNullOrWhiteSpace(id)).ToList() ?? new List<string>();
+        var entryIds = request.EntryIds?.Where(id => !string.IsNullOrWhiteSpace(id)).ToList() ?? [];
         var userId = GetUserId();
         var userEmail = GetUserEmail();
         await _repository.ReorderItineraryEntriesAsync(userId, userEmail, TripId, day, entryIds, cancellationToken);

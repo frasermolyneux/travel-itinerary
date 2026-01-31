@@ -94,8 +94,8 @@ public sealed class CostSummaryModel : PageModel
                     .ToList();
 
                 var total = orderedRows.Sum(row => row.Cost ?? 0m);
-                var paid = orderedRows.Where(row => row.IsPaid == true).Sum(row => row.Cost ?? 0m);
-                var unpaid = orderedRows.Where(row => row.IsPaid != true).Sum(row => row.Cost ?? 0m);
+                var paid = orderedRows.Where(row => row.IsPaid is true).Sum(row => row.Cost ?? 0m);
+                var unpaid = orderedRows.Where(row => row.IsPaid is not true).Sum(row => row.Cost ?? 0m);
 
                 return new CurrencyCostSummary(
                     CurrencyKey: group.Key,
