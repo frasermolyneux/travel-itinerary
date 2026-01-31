@@ -352,11 +352,11 @@ public static class TripPermissionExtensions
 
 public sealed partial record TravelMetadata
 {
-    public bool HasFlightDetails => Flight?.HasContent == true;
+    public bool HasFlightDetails => Flight?.HasContent is true;
 
-    public bool HasStayDetails => Stay?.HasContent == true;
+    public bool HasStayDetails => Stay?.HasContent is true;
 
-    public bool HasSegmentDetails => Segment?.HasContent == true;
+    public bool HasSegmentDetails => Segment?.HasContent is true;
 
     public bool HasContent => HasFlightDetails || HasStayDetails || HasSegmentDetails;
 }
@@ -385,7 +385,7 @@ public sealed partial record TravelSegmentMetadata
 
 public sealed partial record BookingMetadata
 {
-    public bool HasContent => Stay?.HasContent == true;
+    public bool HasContent => Stay?.HasContent is true;
 }
 
 public sealed partial record StayBookingMetadata

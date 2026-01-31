@@ -23,7 +23,7 @@ public sealed class TimelineViewModel
 
     public int MaxSegmentLaneCount { get; }
 
-    public static TimelineViewModel Empty { get; } = new(Array.Empty<TimelineDay>(), Array.Empty<TimelineSpanBlock>(), 1);
+    public static TimelineViewModel Empty { get; } = new([], [], 1);
 
     public static TimelineViewModel From(TripDetails details)
     {
@@ -116,7 +116,7 @@ public sealed class TimelineViewModel
     {
         if (entries.Count == 0 || dates.Count == 0)
         {
-            return Array.Empty<TimelineSpanBlock>();
+            return [];
         }
 
         var firstDate = dates.First();

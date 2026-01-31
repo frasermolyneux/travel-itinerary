@@ -34,7 +34,7 @@ public sealed class AccessModel : PageModel
 
     public TripDetails? TripDetails { get; private set; }
 
-    public IReadOnlyList<TripAccess> AccessList { get; private set; } = Array.Empty<TripAccess>();
+    public IReadOnlyList<TripAccess> AccessList { get; private set; } = [];
 
     [BindProperty]
     public AccessForm Input { get; set; } = new();
@@ -185,11 +185,11 @@ public sealed class AccessModel : PageModel
 
     private static IReadOnlyList<SelectListItem> BuildPermissionOptions()
     {
-        return new List<SelectListItem>
-        {
+        return
+        [
             new("Full control", TripPermission.FullControl.ToString()),
             new("Read only", TripPermission.ReadOnly.ToString())
-        };
+        ];
     }
 
     public sealed class AccessForm

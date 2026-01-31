@@ -10,8 +10,7 @@ public static class CurrencyCatalog
     private static readonly IReadOnlyDictionary<string, string[]> ManualAliases =
         new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
         {
-            ["GBP"] = new[]
-            {
+            ["GBP"] = [
                 "British Pound",
                 "British Pounds",
                 "Great Britain Pound",
@@ -21,36 +20,32 @@ public static class CurrencyCatalog
                 "UK Pound",
                 "UK Pounds",
                 "Pound Sterling"
-            },
-            ["USD"] = new[]
-            {
+            ],
+            ["USD"] = [
                 "US Dollar",
                 "United States Dollar",
                 "American Dollar"
-            },
-            ["EUR"] = new[]
-            {
+            ],
+            ["EUR"] = [
                 "Euro",
                 "European Euro"
-            },
-            ["PTS"] = new[]
-            {
+            ],
+            ["PTS"] = [
                 "Rewards Points"
-            }
+            ]
         };
 
     private static readonly IReadOnlyDictionary<string, string[]> ManualKeywords =
         new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
         {
-            ["PTS"] = new[]
-            {
+            ["PTS"] = [
                 "Rewards Points",
                 "Reward Points",
                 "Loyalty Points",
                 "Points Booking",
                 "Points Redemption",
                 "Loyalty Rewards"
-            }
+            ]
         };
 
     public static IReadOnlyList<CurrencyOption> All { get; } = Build();
