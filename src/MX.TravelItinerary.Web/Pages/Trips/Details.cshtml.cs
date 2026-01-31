@@ -762,16 +762,16 @@ public sealed class DetailsModel : PageModel
 
     private static IReadOnlyDictionary<TimelineItemType, SelectListGroup> TimelineItemGroups { get; } = CreateTimelineItemGroups();
 
-    private static readonly IReadOnlyList<string> StayInclusionLabels = new[]
-    {
+    private static readonly IReadOnlyList<string> StayInclusionLabels =
+    [
         "Breakfast",
         "Lunch",
         "Dinner",
         "Lounge Access"
-    };
+    ];
 
     private static readonly TimelineItemType[] TravelItemTypes =
-    {
+    [
         TimelineItemType.Flight,
         TimelineItemType.Train,
         TimelineItemType.Coach,
@@ -779,7 +779,7 @@ public sealed class DetailsModel : PageModel
         TimelineItemType.Taxi,
         TimelineItemType.PrivateCar,
         TimelineItemType.RentalCar
-    };
+    ];
 
     private static SelectListGroup? TimelineItemGroupSelector(TimelineItemType type)
         => TimelineItemGroups.TryGetValue(type, out var group) ? group : null;

@@ -2,24 +2,24 @@ namespace MX.TravelItinerary.Web.Options;
 
 public sealed class StorageOptions
 {
-    public string AccountName { get; set; } = string.Empty;
+    public required string AccountName { get; set; }
 
-    public string TableEndpoint { get; set; } = string.Empty;
+    public required string TableEndpoint { get; set; }
 
-    public StorageTableNames Tables { get; set; } = new();
+    public required StorageTableNames Tables { get; set; }
 }
 
 public sealed class StorageTableNames
 {
-    public string Trips { get; set; } = "Trips";
+    public required string Trips { get; set; }
 
-    public string ItineraryEntries { get; set; } = "ItineraryEntries";
+    public required string ItineraryEntries { get; set; }
 
-    public string Bookings { get; set; } = "Bookings";
+    public required string Bookings { get; set; }
 
-    public string ShareLinks { get; set; } = "ShareLinks";
+    public required string ShareLinks { get; set; }
 
-    public string TripAccess { get; set; } = "TripAccess";
+    public required string TripAccess { get; set; }
 
-    public string SavedShareLinks { get; set; } = "SavedShareLinks";
+    public required string SavedShareLinks { get; set; }
 }
