@@ -2,11 +2,11 @@ namespace MX.TravelItinerary.Web.Options;
 
 public sealed class StorageOptions
 {
-    public required string AccountName { get; set; }
+    public string AccountName { get; set; } = string.Empty;
 
-    public required string TableEndpoint { get; set; }
+    public string TableEndpoint { get; set; } = string.Empty;
 
-    public required StorageTableNames Tables { get; set; }
+    public StorageTableNames Tables { get; set; } = new();
 }
 
 public sealed class StorageTableNames
