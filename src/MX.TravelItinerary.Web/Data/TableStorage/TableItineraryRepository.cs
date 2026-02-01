@@ -1013,14 +1013,14 @@ public sealed class TableItineraryRepository : IItineraryRepository
         var entries = await entriesTask;
         var bookings = await bookingsTask;
 
-        if (shareLink?.IncludeCost == false)
+        if (shareLink?.IncludeCost is false)
         {
             bookings = bookings
                 .Select(booking => booking with { Cost = null, Currency = null, IsPaid = null, ConfirmationUrl = null })
                 .ToList();
         }
 
-        if (shareLink?.ShowBookingConfirmations == false)
+        if (shareLink?.ShowBookingConfirmations is false)
         {
             bookings = bookings
                 .Select(booking => booking with
@@ -1039,14 +1039,14 @@ public sealed class TableItineraryRepository : IItineraryRepository
                 .ToList();
         }
 
-        if (shareLink?.ShowBookingMetadata == false)
+        if (shareLink?.ShowBookingMetadata is false)
         {
             bookings = bookings
                 .Select(booking => booking with { Metadata = null })
                 .ToList();
         }
 
-        if (shareLink?.MaskBookings == true)
+        if (shareLink?.MaskBookings is true)
         {
             bookings = new List<Booking>();
         }

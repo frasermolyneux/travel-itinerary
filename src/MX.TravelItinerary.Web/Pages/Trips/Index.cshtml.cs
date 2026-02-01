@@ -21,9 +21,9 @@ public sealed class IndexModel : PageModel
         _logger = logger;
     }
 
-    public IReadOnlyList<Trip> Trips { get; private set; } = Array.Empty<Trip>();
+    public IReadOnlyList<Trip> Trips { get; private set; } = [];
 
-    public IReadOnlyList<SavedShareLink> SavedShareLinks { get; private set; } = Array.Empty<SavedShareLink>();
+    public IReadOnlyList<SavedShareLink> SavedShareLinks { get; private set; } = [];
 
     [BindProperty]
     public TripForm Input { get; set; } = new();

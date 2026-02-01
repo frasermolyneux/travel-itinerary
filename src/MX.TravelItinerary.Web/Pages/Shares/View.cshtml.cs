@@ -103,7 +103,7 @@ public sealed class ViewModel : PageModel
         TripSlug = canonicalSlug;
 
         // Check if already saved (for authenticated users)
-        if (User.Identity?.IsAuthenticated == true)
+        if (User.Identity?.IsAuthenticated is true)
         {
             var userId = User.GetObjectId();
             if (!string.IsNullOrWhiteSpace(userId))
@@ -151,7 +151,7 @@ public sealed class ViewModel : PageModel
             return Page();
         }
 
-        if (User.Identity?.IsAuthenticated == true)
+        if (User.Identity?.IsAuthenticated is true)
         {
             // Save to remote storage for authenticated users
             var userId = User.GetObjectId();

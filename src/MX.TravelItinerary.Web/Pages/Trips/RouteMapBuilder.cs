@@ -11,7 +11,7 @@ public static class RouteMapBuilder
     {
         if (details is null || details.Entries.Count == 0)
         {
-            return Array.Empty<RouteMapPoint>();
+            return [];
         }
 
         var orderedEntries = details.Entries
@@ -134,7 +134,7 @@ public static class RouteMapBuilder
             return trimmed;
         }
 
-        return string.Concat(trimmed.AsSpan(0, maxLength - 1), "...");
+        return $"{trimmed[..(maxLength - 1)]}...";
     }
 }
 
