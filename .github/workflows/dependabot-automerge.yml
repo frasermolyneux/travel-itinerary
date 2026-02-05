@@ -6,6 +6,8 @@ on:
       - 'dependabot/**'
 
 
+permissions: read-all
+
 jobs:
   dependabot:
     permissions:
