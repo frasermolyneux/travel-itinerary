@@ -9,15 +9,15 @@ on:
   schedule:
     - cron: "0 3 * * 4" # Weekly Thursday at 3am UTC (standardized)
 
-permissions:
-  contents: read
-  id-token: write # This is required for Az CLI Login
 
 concurrency: # This is required to prevent multiple runs of the same workflow from running at the same time.
   group: ${{ github.workflow }}
 
 jobs:
   dotnet-web-ci:
+    permissions:
+      contents: read
+      id-token: write # This is required for Az CLI Login
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +28,9 @@ jobs:
         src-folder: "src"
 
   terraform-plan-and-apply-dev:
+    permissions:
+      contents: read
+      id-token: write # This is required for Az CLI Login
     environment: Development
     runs-on: ubuntu-latest
     needs: [dotnet-web-ci]
@@ -63,6 +66,9 @@ jobs:
       web_app_name: ${{ steps.terraform-output.outputs.web_app_name }}
 
   app-service-deploy-dev:
+    permissions:
+      contents: read
+      id-token: write # This is required for Az CLI Login
     environment: Development
     runs-on: ubuntu-latest
     needs: [dotnet-web-ci, terraform-plan-and-apply-dev]
@@ -81,6 +87,9 @@ jobs:
         AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
   terraform-plan-and-apply-prd:
+    permissions:
+      contents: read
+      id-token: write # This is required for Az CLI Login
     environment: Production
     runs-on: ubuntu-latest
     needs: [app-service-deploy-dev]
@@ -116,6 +125,9 @@ jobs:
       web_app_name: ${{ steps.terraform-output.outputs.web_app_name }}
 
   app-service-deploy-prd:
+    permissions:
+      contents: read
+      id-token: write # This is required for Az CLI Login
     environment: Production
     runs-on: ubuntu-latest
     needs: [dotnet-web-ci, terraform-plan-and-apply-prd]

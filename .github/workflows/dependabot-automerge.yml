@@ -5,12 +5,12 @@ on:
     branches:
       - 'dependabot/**'
 
-permissions:
-  contents: write
-  pull-requests: write
 
 jobs:
   dependabot:
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
