@@ -11,9 +11,8 @@ on:
         options:
           - dev
           - prd
-
   
-permissions: read-all
+permissions: {}
 
 jobs:
   terraform-destroy:
