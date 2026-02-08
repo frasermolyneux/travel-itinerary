@@ -25,6 +25,7 @@ variable "platform_hosting_state" {
     key                  = string
     subscription_id      = string
     tenant_id            = string
+    use_oidc             = bool
   })
 }
 
