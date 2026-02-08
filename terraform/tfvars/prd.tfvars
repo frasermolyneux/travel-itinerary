@@ -2,7 +2,7 @@ workload    = "travel-itinerary"
 environment = "prd"
 location    = "swedencentral"
 
-subscription_id = "3cc59319-eb1e-4b52-b19e-09a49f9db2e7"
+subscription_id = "903b6685-c12a-4703-ac54-7ec1ff15ca43"
 
 log_analytics_subscription_id     = "d68448b0-9947-46d7-8771-baa331a3063a"
 log_analytics_resource_group_name = "rg-platform-logging-prd-uksouth-01"
