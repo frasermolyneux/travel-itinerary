@@ -1,6 +1,22 @@
 # travel-itinerary
 A simple ASP.NET Core app hosted on Azure for sharing travel itineraries with my travel companions.
 
+## Workflows
+[![Code Quality](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/codequality.yml/badge.svg)](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/codequality.yml)
+[![Build and Test](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/build-and-test.yml)
+[![PR Verify](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/pr-verify.yml/badge.svg)](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/pr-verify.yml)
+[![Deploy Dev](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/deploy-dev.yml/badge.svg)](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/deploy-dev.yml)
+[![Deploy PRD](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/deploy-prd.yml/badge.svg)](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/deploy-prd.yml)
+[![Destroy Development](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/destroy-development.yml/badge.svg)](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/destroy-development.yml)
+[![Destroy Environment](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/destroy-environment.yml/badge.svg)](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/destroy-environment.yml)
+[![Dependabot Automerge](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/dependabot-automerge.yml/badge.svg)](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/dependabot-automerge.yml)
+[![Copilot Setup Steps](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/copilot-setup-steps.yml/badge.svg)](https://github.com/frasermolyneux/travel-itinerary/actions/workflows/copilot-setup-steps.yml)
+
+### CI/CD flow
+- PRs to `main` run build + test and a Development Terraform plan by default; add the `deploy-dev` label to apply Terraform and deploy the web app to Development, or `run-prd-plan` to run a Production plan.
+- Use the `Deploy Dev` workflow for on-demand Development releases; `Deploy PRD` runs on pushes to `main`, on Thursdays at 03:00 UTC, or manually via workflow dispatch and rolls through Development before Production.
+- Feature, bugfix, and hotfix branches trigger the lightweight Build and Test workflow; scheduled and PR Code Quality runs keep SonarCloud, dependency review, and secure scanning aligned.
+
 ## Progressive Web App (PWA) - Offline Support
 
 This application includes Progressive Web App capabilities for offline access:

@@ -1,0 +1,23 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - "feature/**"
+      - "bugfix/**"
+      - "hotfix/**"
+
+permissions: {}
+
+jobs:
+  build-and-test:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: frasermolyneux/actions/dotnet-web-ci@main
+        with:
+          dotnet-project: "MX.TravelItinerary.Web"
+          dotnet-version: 9.0.x
+          src-folder: "src"
+          skip-nuget-artifact-upload: "true"
