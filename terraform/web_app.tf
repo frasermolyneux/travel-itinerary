@@ -5,7 +5,7 @@ resource "azurerm_linux_web_app" "app" {
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
 
-  service_plan_id = azurerm_service_plan.sp.id
+  service_plan_id = local.platform_hosting_app_service_plan.id
 
   https_only = true
 
