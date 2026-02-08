@@ -166,11 +166,11 @@ Users can now save shared trips for easy access later:
 
 The `SavedShareLinks` table stores:
 
-| Column         | Type / Example                 | Notes                                                |
-| -------------- | ------------------------------ | ---------------------------------------------------- |
-| `PartitionKey` | `UserId`                       | Groups saved links per user.                         |
-| `RowKey`       | `SavedLinkId` (GUID)           | Unique identifier for the saved link.                |
-| `TripSlug`     | `"india-sri-lanka-2026"`       | The trip slug for navigation.                        |
-| `ShareCode`    | `"HUHB3HU2H"`                  | The share code to access the trip.                   |
-| `TripName`     | `"India & Sri Lanka 2026"`     | Display name of the shared trip.                     |
-| `SavedOn`      | `2026-01-22T10:30:00Z`         | Timestamp when the link was saved.                   |
+| Column         | Type / Example             | Notes                                 |
+| -------------- | -------------------------- | ------------------------------------- |
+| `PartitionKey` | `UserId`                   | Groups saved links per user.          |
+| `RowKey`       | `SavedLinkId` (GUID)       | Unique identifier for the saved link. |
+| `TripSlug`     | `"india-sri-lanka-2026"`   | The trip slug for navigation.         |
+| `ShareCode`    | `"HUHB3HU2H"`              | The share code to access the trip.    |
+| `TripName`     | `"India & Sri Lanka 2026"` | Display name of the shared trip.      |
+| `SavedOn`      | `2026-01-22T10:30:00Z`     | Timestamp when the link was saved.    |
