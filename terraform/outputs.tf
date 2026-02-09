@@ -6,6 +6,10 @@ output "web_app_name" {
   value = azurerm_linux_web_app.app.name
 }
 
+output "web_app_resource_group_name" {
+  value = azurerm_linux_web_app.app.resource_group_name
+}
+
 output "entra_application_client_id" {
   value = azuread_application.web.application_id
 }

@@ -2,10 +2,10 @@ resource "azurerm_linux_web_app" "app" {
   name = local.web_app_name
   tags = var.tags
 
-  resource_group_name = data.azurerm_resource_group.rg.name
-  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = local.platform_hosting_app_service_plan.resource_group_name
+  location            = local.platform_hosting_app_service_plan.location
 
-  service_plan_id = azurerm_service_plan.sp.id
+  service_plan_id = local.platform_hosting_app_service_plan.id
 
   https_only = true
 
@@ -47,7 +47,7 @@ resource "azurerm_linux_web_app" "app" {
 resource "azurerm_app_service_custom_hostname_binding" "primary" {
   hostname            = local.public_hostname
   app_service_name    = azurerm_linux_web_app.app.name
-  resource_group_name = data.azurerm_resource_group.rg.name
+  resource_group_name = azurerm_linux_web_app.app.resource_group_name
 
   depends_on = [
     azurerm_dns_txt_record.app_service_verification,
