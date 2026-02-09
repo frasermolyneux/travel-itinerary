@@ -2,8 +2,8 @@ resource "azurerm_linux_web_app" "app" {
   name = local.web_app_name
   tags = var.tags
 
-  resource_group_name = data.azurerm_resource_group.rg.name
-  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = local.platform_hosting_app_service_plan.resource_group_name
+  location            = local.platform_hosting_app_service_plan.location
 
   service_plan_id = local.platform_hosting_app_service_plan.id
 
