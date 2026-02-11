@@ -50,7 +50,7 @@ jobs:
         shell: bash
         run: |
           cd terraform
-          echo "resource_group_name=$(terraform output -raw resource_group_name)" >> $GITHUB_OUTPUT
+          echo "web_app_resource_group_name=$(terraform output -raw web_app_resource_group_name)" >> $GITHUB_OUTPUT
           echo "web_app_name=$(terraform output -raw web_app_name)" >> $GITHUB_OUTPUT
         env:
           ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
@@ -60,7 +60,7 @@ jobs:
           ARM_USE_OIDC: true
 
     outputs:
-      resource_group_name: ${{ steps.terraform-output-dev.outputs.resource_group_name }}
+      web_app_resource_group_name: ${{ steps.terraform-output-dev.outputs.web_app_resource_group_name }}
       web_app_name: ${{ steps.terraform-output-dev.outputs.web_app_name }}
 
   app-service-deploy-dev:
@@ -77,7 +77,7 @@ jobs:
         with:
           web-artifact-name: "MX.TravelItinerary.Web"
           web-app-name: ${{ needs.terraform-plan-and-apply-dev.outputs.web_app_name }}
-          resource-group-name: ${{ needs.terraform-plan-and-apply-dev.outputs.resource_group_name }}
+          resource-group-name: ${{ needs.terraform-plan-and-apply-dev.outputs.web_app_resource_group_name }}
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
@@ -105,7 +105,7 @@ jobs:
         shell: bash
         run: |
           cd terraform
-          echo "web_app_resource_group_name=$(terraform output -raw resouweb_app_resource_group_namerce_group_name)" >> $GITHUB_OUTPUT
+          echo "web_app_resource_group_name=$(terraform output -raw web_app_resource_group_name)" >> $GITHUB_OUTPUT
           echo "web_app_name=$(terraform output -raw web_app_name)" >> $GITHUB_OUTPUT
         env:
           ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
