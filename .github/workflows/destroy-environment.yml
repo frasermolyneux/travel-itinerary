@@ -11,26 +11,24 @@ on:
         options:
           - dev
           - prd
-  
+
 permissions: {}
 
 jobs:
   terraform-destroy:
     permissions:
       contents: read
-      id-token: write # This is required for Az CLI Login
+      id-token: write
     environment: ${{ inputs.environment == 'prd' && 'Production' || 'Development' }}
     runs-on: ubuntu-latest
-
-    concurrency: # Prevent multiple GitHub Actions invocations against stateful resources. e.g. Terraform state file / Database / Deployed Apps
+    concurrency:
       group: ${{ github.repository }}-${{ inputs.environment }}
-
     steps:
-    - uses: frasermolyneux/actions/terraform-destroy@main
-      with:
-        terraform-folder: "terraform"
-        terraform-var-file: ${{ inputs.environment == 'prd' && 'tfvars/prd.tfvars' || 'tfvars/dev.tfvars' }}
-        terraform-backend-file: ${{ inputs.environment == 'prd' && 'backends/prd.backend.hcl' || 'backends/dev.backend.hcl' }}
-        AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-        AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-        AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: frasermolyneux/actions/terraform-destroy@main
+        with:
+          terraform-folder: "terraform"
+          terraform-var-file: ${{ inputs.environment == 'prd' && 'tfvars/prd.tfvars' || 'tfvars/dev.tfvars' }}
+          terraform-backend-file: ${{ inputs.environment == 'prd' && 'backends/prd.backend.hcl' || 'backends/dev.backend.hcl' }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}

@@ -76,7 +76,7 @@ jobs:
         shell: bash
         run: |
           cd terraform
-          echo "web_app_resource_group_name=$(terraform output -raw resourweb_app_resource_group_namece_group_name)" >> $GITHUB_OUTPUT
+          echo "web_app_resource_group_name=$(terraform output -raw web_app_resource_group_name)" >> $GITHUB_OUTPUT
           echo "web_app_name=$(terraform output -raw web_app_name)" >> $GITHUB_OUTPUT
         env:
           ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
