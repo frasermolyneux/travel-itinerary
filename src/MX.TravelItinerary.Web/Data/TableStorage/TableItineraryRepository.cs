@@ -59,7 +59,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
             }
 
             var tripEntity = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(ownerUserId, tripId, cancellationToken: cancellationToken);
-            if (tripEntity.HasValue)
+            if (tripEntity.HasValue && tripEntity.Value != null)
             {
                 trips[tripId] = TableEntityMapper.ToTrip(tripEntity.Value);
             }
@@ -253,7 +253,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
 
         var accessId = normalizedEmail;
         var existing = await _tables.TripAccess.GetEntityIfExistsAsync<TableEntity>(tripId, accessId, cancellationToken: cancellationToken);
-        var entity = existing.HasValue ? existing.Value : new TableEntity(tripId, accessId)
+        var entity = (existing.HasValue && existing.Value != null) ? existing.Value : new TableEntity(tripId, accessId)
         {
             ["OwnerUserId"] = userId,
             ["InvitedByUserId"] = userId,
@@ -294,7 +294,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
 
         var existing = await _tables.TripAccess.GetEntityIfExistsAsync<TableEntity>(tripId, accessId, cancellationToken: cancellationToken);
-        if (existing.HasValue is false)
+        if (existing.HasValue is false || existing.Value is null)
         {
             return null;
         }
@@ -1176,7 +1176,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
     private async Task<TripAccessContext?> GetTripContextAsync(string userId, string? userEmail, string tripId, CancellationToken cancellationToken)
     {
         var ownedTrip = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(userId, tripId, cancellationToken: cancellationToken);
-        if (ownedTrip.HasValue)
+        if (ownedTrip.HasValue && ownedTrip.Value != null)
         {
             return new TripAccessContext(TableEntityMapper.ToTrip(ownedTrip.Value), TripPermission.Owner, null);
         }
@@ -1194,7 +1194,7 @@ public sealed class TableItineraryRepository : IItineraryRepository
         }
 
         var tripEntity = await _tables.Trips.GetEntityIfExistsAsync<TableEntity>(ownerUserId, tripId, cancellationToken: cancellationToken);
-        if (tripEntity.HasValue is false)
+        if (tripEntity.HasValue is false || tripEntity.Value is null)
         {
             return null;
         }
