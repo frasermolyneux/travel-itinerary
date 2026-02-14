@@ -11,7 +11,7 @@ output "web_app_resource_group_name" {
 }
 
 output "entra_application_client_id" {
-  value = azuread_application.web.application_id
+  value = azuread_application.web.client_id
 }
 
 output "entra_service_principal_object_id" {

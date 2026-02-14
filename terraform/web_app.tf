@@ -32,7 +32,7 @@ resource "azurerm_linux_web_app" "app" {
     "AzureAd__Instance"                           = "https://login.microsoftonline.com/"
     "AzureAd__Domain"                             = var.tenant_domain
     "AzureAd__TenantId"                           = data.azuread_client_config.current.tenant_id
-    "AzureAd__ClientId"                           = azuread_application.web.application_id
+    "AzureAd__ClientId"                           = azuread_application.web.client_id
     "AzureAd__ClientSecret"                       = azuread_application_password.web.value
     "AzureAd__CallbackPath"                       = "/signin-oidc"
     "Storage__AccountName"                        = azurerm_storage_account.data.name
