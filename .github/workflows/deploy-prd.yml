@@ -14,13 +14,31 @@ concurrency:
   group: ${{ github.workflow }}
 
 jobs:
+  detect-changes:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+      terraform: ${{ steps.changes.outputs.terraform }}
+    steps:
+      - id: changes
+        uses: frasermolyneux/actions/detect-changes@main
+        with:
+          filters: |
+            src:src/**
+            terraform:terraform/**
+
   build-and-test:
+    needs:
+      - detect-changes
+    if: needs.detect-changes.outputs.src == 'true'
     permissions:
       contents: read
       id-token: write
     runs-on: ubuntu-latest
     steps:
-      - uses: frasermolyneux/actions/dotnet-web-ci@main
+      - uses: frasermolyneux/actions/dotnet-web-ci@dotnet-web-ci/v1.4
         with:
           dotnet-project: "MX.TravelItinerary.Web"
           dotnet-version: 9.0.x
@@ -32,12 +50,24 @@ jobs:
       contents: read
       id-token: write
     environment: Development
-    needs: build-and-test
+    needs:
+      - detect-changes
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.repository }}-dev
     steps:
-      - uses: frasermolyneux/actions/terraform-plan-and-apply@main
+      - if: needs.detect-changes.outputs.terraform == 'true'
+        uses: frasermolyneux/actions/terraform-plan-and-apply@terraform-plan-and-apply/v1.4
+        with:
+          terraform-folder: "terraform"
+          terraform-var-file: "tfvars/dev.tfvars"
+          terraform-backend-file: "backends/dev.backend.hcl"
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - if: needs.detect-changes.outputs.terraform != 'true'
+        uses: frasermolyneux/actions/terraform-output@terraform-output/v1.0
         with:
           terraform-folder: "terraform"
           terraform-var-file: "tfvars/dev.tfvars"
@@ -64,16 +94,21 @@ jobs:
       web_app_name: ${{ steps.terraform-output-dev.outputs.web_app_name }}
 
   app-service-deploy-dev:
+    if: |
+      !failure() && !cancelled() && needs.detect-changes.outputs.src == 'true'
     permissions:
       contents: read
       id-token: write
     environment: Development
-    needs: [build-and-test, terraform-plan-and-apply-dev]
+    needs:
+      - detect-changes
+      - build-and-test
+      - terraform-plan-and-apply-dev
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.repository }}-dev
     steps:
-      - uses: frasermolyneux/actions/deploy-app-service@main
+      - uses: frasermolyneux/actions/deploy-app-service@deploy-app-service/v1.2
         with:
           web-artifact-name: "MX.TravelItinerary.Web"
           web-app-name: ${{ needs.terraform-plan-and-apply-dev.outputs.web_app_name }}
@@ -83,16 +118,33 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
   terraform-plan-and-apply-prd:
+    if: |
+      !failure() && !cancelled() && needs.terraform-plan-and-apply-dev.result == 'success'
     permissions:
       contents: read
       id-token: write
     environment: Production
-    needs: app-service-deploy-dev
+    needs:
+      - detect-changes
+      - build-and-test
+      - terraform-plan-and-apply-dev
+      - app-service-deploy-dev
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.repository }}-prd
     steps:
-      - uses: frasermolyneux/actions/terraform-plan-and-apply@main
+      - if: needs.detect-changes.outputs.terraform == 'true'
+        uses: frasermolyneux/actions/terraform-plan-and-apply@terraform-plan-and-apply/v1.4
+        with:
+          terraform-folder: "terraform"
+          terraform-var-file: "tfvars/prd.tfvars"
+          terraform-backend-file: "backends/prd.backend.hcl"
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - if: needs.detect-changes.outputs.terraform != 'true'
+        uses: frasermolyneux/actions/terraform-output@terraform-output/v1.0
         with:
           terraform-folder: "terraform"
           terraform-var-file: "tfvars/prd.tfvars"
@@ -119,16 +171,21 @@ jobs:
       web_app_name: ${{ steps.terraform-output-prd.outputs.web_app_name }}
 
   app-service-deploy-prd:
+    if: |
+      !failure() && !cancelled() && needs.terraform-plan-and-apply-prd.result == 'success' && needs.detect-changes.outputs.src == 'true'
     permissions:
       contents: read
       id-token: write
     environment: Production
-    needs: [build-and-test, terraform-plan-and-apply-prd]
+    needs:
+      - detect-changes
+      - build-and-test
+      - terraform-plan-and-apply-prd
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.repository }}-prd
     steps:
-      - uses: frasermolyneux/actions/deploy-app-service@main
+      - uses: frasermolyneux/actions/deploy-app-service@deploy-app-service/v1.2
         with:
           web-artifact-name: "MX.TravelItinerary.Web"
           web-app-name: ${{ needs.terraform-plan-and-apply-prd.outputs.web_app_name }}
