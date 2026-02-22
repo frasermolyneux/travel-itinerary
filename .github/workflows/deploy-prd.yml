@@ -30,6 +30,7 @@ jobs:
             terraform:terraform/**
 
   terraform-state-check-dev:
+    if: github.event_name != 'schedule'
     permissions:
       contents: read
       id-token: write
@@ -52,7 +53,8 @@ jobs:
     needs:
       - detect-changes
       - terraform-state-check-dev
-    if: needs.detect-changes.outputs.src == 'true' || needs.terraform-state-check-dev.outputs.has_resources != 'true'
+    if: |
+      !failure() && !cancelled() && (needs.detect-changes.outputs.src == 'true' || needs.terraform-state-check-dev.outputs.has_resources != 'true')
     permissions:
       contents: read
       id-token: write
@@ -66,6 +68,7 @@ jobs:
           skip-nuget-artifact-upload: "true"
 
   terraform-plan-and-apply-dev:
+    if: github.event_name != 'schedule'
     permissions:
       contents: read
       id-token: write
@@ -116,7 +119,7 @@ jobs:
 
   app-service-deploy-dev:
     if: |
-      !failure() && !cancelled() && (needs.detect-changes.outputs.src == 'true' || needs.terraform-state-check-dev.outputs.has_resources != 'true')
+      !failure() && !cancelled() && github.event_name != 'schedule' && (needs.detect-changes.outputs.src == 'true' || needs.terraform-state-check-dev.outputs.has_resources != 'true')
     permissions:
       contents: read
       id-token: write
@@ -141,7 +144,7 @@ jobs:
 
   terraform-plan-and-apply-prd:
     if: |
-      !failure() && !cancelled() && needs.terraform-plan-and-apply-dev.result == 'success'
+      !failure() && !cancelled() && (needs.terraform-plan-and-apply-dev.result == 'success' || github.event_name == 'schedule')
     permissions:
       contents: read
       id-token: write
