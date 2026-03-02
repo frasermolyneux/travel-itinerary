@@ -82,10 +82,16 @@
         </main>
     </div>
 
+    @{
+        var entryAssembly = System.Reflection.Assembly.GetEntryAssembly();
+        var informationalVersion = entryAssembly?.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
+        var buildVersion = informationalVersion.Split('+')[0];
+        var assemblyVersion = entryAssembly?.GetName().Version?.ToString() ?? "unknown";
+    }
     <footer class="border-top footer text-muted">
         <div class="container">
             &copy; 2025 - Travel Plans - <a asp-area="" asp-page="/Privacy">Privacy</a>
-            <span class="float-end small">v@(System.Reflection.Assembly.GetEntryAssembly()?.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0] ?? "dev")</span>
+            <span class="float-end small" title="Full: @informationalVersion&#10;Assembly: @assemblyVersion">v@buildVersion</span>
         </div>
     </footer>
 

@@ -1,4 +1,3 @@
-using System.Reflection;
 using Azure.Data.Tables;
 using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -6,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using MX.TravelItinerary.Web;
 using MX.TravelItinerary.Web.Data;
 using MX.TravelItinerary.Web.Data.TableStorage;
 using MX.TravelItinerary.Web.Options;
@@ -111,20 +111,6 @@ app.MapRazorPages()
     .WithStaticAssets();
 app.MapStaticAssets();
 
-app.MapGet("/info", () =>
-{
-    var assembly = Assembly.GetExecutingAssembly();
-    var informationalVersion = assembly
-        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-        .InformationalVersion ?? "unknown";
-    var assemblyVersion = assembly.GetName().Version?.ToString() ?? "unknown";
-
-    return Results.Ok(new
-    {
-        Version = informationalVersion,
-        BuildVersion = informationalVersion.Split('+')[0],
-        AssemblyVersion = assemblyVersion
-    });
-}).AllowAnonymous();
+app.MapInfoEndpoint();
 
 app.Run();
