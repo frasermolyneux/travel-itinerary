@@ -85,6 +85,7 @@
     <footer class="border-top footer text-muted">
         <div class="container">
             &copy; 2025 - Travel Plans - <a asp-area="" asp-page="/Privacy">Privacy</a>
+            <span class="float-end small">v@(System.Reflection.Assembly.GetEntryAssembly()?.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0] ?? "dev")</span>
         </div>
     </footer>
 

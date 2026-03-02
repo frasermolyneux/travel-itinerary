@@ -1,3 +1,4 @@
+using System.Reflection;
 using Azure.Data.Tables;
 using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -109,5 +110,21 @@ app.MapControllers();
 app.MapRazorPages()
     .WithStaticAssets();
 app.MapStaticAssets();
+
+app.MapGet("/info", () =>
+{
+    var assembly = Assembly.GetExecutingAssembly();
+    var informationalVersion = assembly
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+        .InformationalVersion ?? "unknown";
+    var assemblyVersion = assembly.GetName().Version?.ToString() ?? "unknown";
+
+    return Results.Ok(new
+    {
+        Version = informationalVersion,
+        BuildVersion = informationalVersion.Split('+')[0],
+        AssemblyVersion = assemblyVersion
+    });
+}).AllowAnonymous();
 
 app.Run();

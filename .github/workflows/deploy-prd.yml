@@ -59,8 +59,11 @@ jobs:
       contents: read
       id-token: write
     runs-on: ubuntu-latest
+    outputs:
+      build_version: ${{ steps.web-ci.outputs.build_version }}
     steps:
-      - uses: frasermolyneux/actions/dotnet-web-ci@dotnet-web-ci/v1.4
+      - id: web-ci
+        uses: frasermolyneux/actions/dotnet-web-ci@dotnet-web-ci/v1.4
         with:
           dotnet-project: "MX.TravelItinerary.Web"
           dotnet-version: 9.0.x
@@ -142,6 +145,25 @@ jobs:
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Wait for web app version ${{ needs.build-and-test.outputs.build_version }}
+        shell: bash
+        run: |
+          EXPECTED_VERSION="${{ needs.build-and-test.outputs.build_version }}"
+          INFO_URL="https://${{ needs.terraform-plan-and-apply-dev.outputs.web_app_name }}.azurewebsites.net/info"
+          echo "Waiting for $INFO_URL to report version '$EXPECTED_VERSION'..."
+          for i in $(seq 1 30); do
+            RESPONSE=$(curl -s "$INFO_URL" || true)
+            CURRENT_VERSION=$(echo "$RESPONSE" | jq -r '.buildVersion // empty' 2>/dev/null || true)
+            if [ "$CURRENT_VERSION" = "$EXPECTED_VERSION" ]; then
+              echo "Web app is running expected version '$EXPECTED_VERSION' (attempt $i)"
+              exit 0
+            fi
+            echo "Attempt $i: got version '$CURRENT_VERSION' - waiting 10s..."
+            sleep 10
+          done
+          echo "Web app did not report expected version '$EXPECTED_VERSION' in time (last seen: '$CURRENT_VERSION')"
+          exit 1
+
   terraform-plan-and-apply-prd:
     if: |
       !failure() && !cancelled() && (needs.terraform-plan-and-apply-dev.result == 'success' || github.event_name == 'schedule')
@@ -218,3 +240,22 @@ jobs:
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Wait for web app version ${{ needs.build-and-test.outputs.build_version }}
+        shell: bash
+        run: |
+          EXPECTED_VERSION="${{ needs.build-and-test.outputs.build_version }}"
+          INFO_URL="https://${{ needs.terraform-plan-and-apply-prd.outputs.web_app_name }}.azurewebsites.net/info"
+          echo "Waiting for $INFO_URL to report version '$EXPECTED_VERSION'..."
+          for i in $(seq 1 30); do
+            RESPONSE=$(curl -s "$INFO_URL" || true)
+            CURRENT_VERSION=$(echo "$RESPONSE" | jq -r '.buildVersion // empty' 2>/dev/null || true)
+            if [ "$CURRENT_VERSION" = "$EXPECTED_VERSION" ]; then
+              echo "Web app is running expected version '$EXPECTED_VERSION' (attempt $i)"
+              exit 0
+            fi
+            echo "Attempt $i: got version '$CURRENT_VERSION' - waiting 10s..."
+            sleep 10
+          done
+          echo "Web app did not report expected version '$EXPECTED_VERSION' in time (last seen: '$CURRENT_VERSION')"
+          exit 1
