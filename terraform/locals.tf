@@ -22,4 +22,9 @@ locals {
     trip_access       = "TripAccess"
     saved_share_links = "SavedShareLinks"
   }
+
+  app_insights_sampling_percentage = {
+    dev = 25
+    prd = 75
+  }
 }
