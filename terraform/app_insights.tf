@@ -8,4 +8,6 @@ resource "azurerm_application_insights" "ai" {
   sampling_percentage = lookup(local.app_insights_sampling_percentage, var.environment, 25)
 
   disable_ip_masking = true
+
+  tags = var.tags
 }
