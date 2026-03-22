@@ -10,7 +10,6 @@ resource "google_apikeys_key" "maps" {
 
     browser_key_restrictions {
       allowed_referrers = [
-        "https://${local.web_app_name}.azurewebsites.net/*",
         "https://${var.dns.subdomain}.${var.dns.domain}/*",
       ]
     }
