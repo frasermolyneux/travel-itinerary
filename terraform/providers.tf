@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/azuread"
       version = "~> 3.8.0"
     }
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 6.0"
+    }
     time = {
       source  = "hashicorp/time"
       version = "~> 0.13.1"
@@ -42,3 +46,7 @@ provider "azurerm" {
 
 
 provider "azuread" {}
+
+provider "google" {
+  project = var.gcp_project_id
+}

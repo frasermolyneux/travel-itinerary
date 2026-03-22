@@ -38,3 +38,5 @@ tags = {
   DeployedBy  = "GitHub-Terraform"
   Git         = "https://github.com/frasermolyneux/travel-itinerary"
 }
+
+gcp_project_id = "gcp-mx-io-travel-itinerary"

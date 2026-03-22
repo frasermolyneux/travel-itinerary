@@ -41,6 +41,7 @@ resource "azurerm_linux_web_app" "app" {
     "Storage__Tables__ItineraryEntries"           = azurerm_storage_table.tables["itinerary_entries"].name
     "Storage__Tables__Bookings"                   = azurerm_storage_table.tables["bookings"].name
     "Storage__Tables__ShareLinks"                 = azurerm_storage_table.tables["share_links"].name
+    "GoogleMaps__ApiKey"                          = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.google_maps_api_key.versionless_id})"
   }
 }
 
