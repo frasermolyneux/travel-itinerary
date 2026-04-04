@@ -24,6 +24,14 @@ jobs:
     concurrency:
       group: ${{ github.repository }}-${{ inputs.environment }}
     steps:
+      - uses: actions/checkout@v6
+
+      - id: gcp-auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
       - uses: frasermolyneux/actions/terraform-destroy@terraform-destroy/v1.2
         with:
           terraform-folder: "terraform"
@@ -32,3 +40,4 @@ jobs:
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          perform-checkout: "false"
