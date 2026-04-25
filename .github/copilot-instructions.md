@@ -1,5 +1,7 @@
 # Copilot Instructions
 
+> Shared conventions: see [`.github-copilot/.github/instructions/terraform.instructions.md`](../../.github-copilot/.github/instructions/terraform.instructions.md) for the standard Terraform layout, providers, remote-state pattern, validation commands, and CI/CD workflows.
+
 - **Stack & auth**: ASP.NET Core 9 Razor Pages (`src/MX.TravelItinerary.Web`) with Microsoft.Identity.Web. All pages require Entra ID except `Index`, `Error`, and `/Shares/View` read-only shares. Auth cookie lasts seven days with sliding renewal.
 - **Data**: Azure Table Storage via `TableServiceClient` + `DefaultAzureCredential`. Settings live in `appsettings*.json` and `Options/StorageOptions.cs`; prefer managed identity. `Data/TableStorage/TableItineraryRepository.cs` enforces owner checks, normalizes emails/slugs, and logs allow/deny decisions.
 - **Models & routing**: Immutable records/enums in `Data/Models/ItineraryModels.cs`. Custom routes for `trips/{tripSlug}`, cost summary, and route map are wired in `Program.cs`, which also rewrites `/trips` to `/Trips/Index`.
