@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Identity.Web;
+using MX.Observability.ApplicationInsights.Auditing;
+using MX.Observability.ApplicationInsights.Auditing.Models;
 using MX.TravelItinerary.Web.Data;
 using MX.TravelItinerary.Web.Data.Models;
 
@@ -16,11 +18,13 @@ namespace MX.TravelItinerary.Web.Pages.Trips;
 public sealed class ShareLinksModel : PageModel
 {
     private readonly IItineraryRepository _repository;
+    private readonly IAuditLogger _auditLogger;
     private readonly ILogger<ShareLinksModel> _logger;
 
-    public ShareLinksModel(IItineraryRepository repository, ILogger<ShareLinksModel> logger)
+    public ShareLinksModel(IItineraryRepository repository, IAuditLogger auditLogger, ILogger<ShareLinksModel> logger)
     {
         _repository = repository;
+        _auditLogger = auditLogger;
         _logger = logger;
     }
 
@@ -88,6 +92,13 @@ public sealed class ShareLinksModel : PageModel
             if (string.IsNullOrWhiteSpace(Input.ShareCode))
             {
                 var created = await _repository.CreateShareLinkAsync(userId, TripId, mutation, cancellationToken, customShareCode);
+                _auditLogger.LogAudit(AuditEvent.UserAction("TripShareLinkCreated", AuditAction.Create)
+                    .WithActor(userId, GetUserEmail() ?? userId)
+                    .WithTarget(created.ShareCode, "ShareLink")
+                    .WithSource(nameof(ShareLinksModel))
+                    .WithProperty("TripId", TripId)
+                    .WithProperty("ExpiresOn", created.ExpiresOn?.ToString("o") ?? "never")
+                    .Build());
                 StatusMessage = "Share link created.";
                 return RedirectToPage(new { tripId = TripId, tripSlug = TripSlug, edit = created.ShareCode });
             }
@@ -125,6 +136,12 @@ public sealed class ShareLinksModel : PageModel
 
         var userId = GetUserId();
         await _repository.DeleteShareLinkAsync(userId, TripId, shareCode, cancellationToken);
+        _auditLogger.LogAudit(AuditEvent.UserAction("TripShareLinkDeleted", AuditAction.Delete)
+            .WithActor(userId, GetUserEmail() ?? userId)
+            .WithTarget(shareCode, "ShareLink")
+            .WithSource(nameof(ShareLinksModel))
+            .WithProperty("TripId", TripId)
+            .Build());
         StatusMessage = "Share link deleted.";
         return RedirectToPage(new { tripId = TripId, tripSlug = TripSlug });
     }

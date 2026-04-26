@@ -9,6 +9,7 @@ using MX.TravelItinerary.Web;
 using MX.TravelItinerary.Web.Data;
 using MX.TravelItinerary.Web.Data.TableStorage;
 using MX.TravelItinerary.Web.Options;
+using MX.Observability.ApplicationInsights.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +31,7 @@ builder.Services.AddSingleton<TableServiceClient>(sp =>
 builder.Services.AddSingleton<ITableContext, TableContext>();
 builder.Services.AddScoped<IItineraryRepository, TableItineraryRepository>();
 builder.Services.AddApplicationInsightsTelemetry();
+builder.Services.AddObservability();
 
 builder.Services
     .AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)

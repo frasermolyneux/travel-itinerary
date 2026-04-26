@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
+using MX.Observability.ApplicationInsights.Auditing;
+using MX.Observability.ApplicationInsights.Auditing.Models;
 using MX.TravelItinerary.Web.Data;
 using MX.TravelItinerary.Web.Data.Models;
 
@@ -18,11 +20,13 @@ namespace MX.TravelItinerary.Web.Pages.Trips;
 public sealed class AccessModel : PageModel
 {
     private readonly IItineraryRepository _repository;
+    private readonly IAuditLogger _auditLogger;
     private readonly ILogger<AccessModel> _logger;
 
-    public AccessModel(IItineraryRepository repository, ILogger<AccessModel> logger)
+    public AccessModel(IItineraryRepository repository, IAuditLogger auditLogger, ILogger<AccessModel> logger)
     {
         _repository = repository;
+        _auditLogger = auditLogger;
         _logger = logger;
     }
 
@@ -86,6 +90,14 @@ public sealed class AccessModel : PageModel
         if (string.IsNullOrWhiteSpace(Input.AccessId))
         {
             var created = await _repository.GrantTripAccessAsync(userId, TripId, mutation, cancellationToken);
+            _auditLogger.LogAudit(AuditEvent.UserAction("TripAccessGranted", AuditAction.Create)
+                .WithActor(userId, GetUserEmail() ?? userId)
+                .WithTarget(created.AccessId, "TripAccess")
+                .WithSource(nameof(AccessModel))
+                .WithProperty("TripId", TripId)
+                .WithProperty("GrantedToEmail", created.Email)
+                .WithProperty("Permission", created.Permission.ToString())
+                .Build());
             StatusMessage = "Access added.";
             return RedirectToPage(new { tripId = TripId, tripSlug = TripSlug, edit = created.AccessId });
         }
@@ -99,6 +111,14 @@ public sealed class AccessModel : PageModel
                 return Page();
             }
 
+            _auditLogger.LogAudit(AuditEvent.UserAction("TripAccessUpdated", AuditAction.Update)
+                .WithActor(userId, GetUserEmail() ?? userId)
+                .WithTarget(updated.AccessId, "TripAccess")
+                .WithSource(nameof(AccessModel))
+                .WithProperty("TripId", TripId)
+                .WithProperty("GrantedToEmail", updated.Email)
+                .WithProperty("Permission", updated.Permission.ToString())
+                .Build());
             StatusMessage = "Access updated.";
             return RedirectToPage(new { tripId = TripId, tripSlug = TripSlug, edit = updated.AccessId });
         }
@@ -118,6 +138,12 @@ public sealed class AccessModel : PageModel
 
         var userId = GetUserId();
         await _repository.RevokeTripAccessAsync(userId, TripId, accessId, cancellationToken);
+        _auditLogger.LogAudit(AuditEvent.UserAction("TripAccessRevoked", AuditAction.Delete)
+            .WithActor(userId, GetUserEmail() ?? userId)
+            .WithTarget(accessId, "TripAccess")
+            .WithSource(nameof(AccessModel))
+            .WithProperty("TripId", TripId)
+            .Build());
         StatusMessage = "Access removed.";
         return RedirectToPage(new { tripId = TripId, tripSlug = TripSlug });
     }
