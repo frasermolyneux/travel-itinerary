@@ -1,5 +1,5 @@
 resource "google_apikeys_key" "maps" {
-  name         = format("maps-%s", var.environment)
+  name         = format("maps-%s-%s", var.environment, random_id.maps_key.hex)
   display_name = format("Travel Itinerary Maps API Key - %s", var.environment)
   project      = var.gcp_project_id
 
