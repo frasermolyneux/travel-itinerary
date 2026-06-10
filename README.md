@@ -20,3 +20,6 @@ Please read the [contributing](CONTRIBUTING.md) guidance; this is a learning and
 
 ## Security
 Please read the [security](SECURITY.md) guidance; I am always open to security feedback through email or opening an issue.
+
+## Local dev: MCP wire-up
+This repo declares the `frasermolyneux-copilot` MCP server in `.github/copilot/mcp_config.json` and builds it during `copilot-setup-steps.yml` (pinned to `frasermolyneux/.github-copilot@v0.1.0`). For client wire-up instructions (VS Code, GitHub Copilot coding agent, Copilot CLI, Claude Desktop, etc.) and the full tool contract, see `.github-copilot/mcp-server/README.md` in the shared config repo.
