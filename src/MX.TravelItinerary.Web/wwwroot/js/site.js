@@ -97,7 +97,7 @@
 
         toggleButton.addEventListener('click', () => {
             pastDaysVisible = !pastDaysVisible;
-            
+
             pastDays.forEach(day => {
                 day.style.display = pastDaysVisible ? '' : 'none';
             });
@@ -107,7 +107,7 @@
 
             const icon = document.getElementById('togglePastDaysIcon');
             const text = document.getElementById('togglePastDaysText');
-            
+
             if (icon && text) {
                 if (pastDaysVisible) {
                     icon.className = 'bi bi-eye-slash';
@@ -927,7 +927,7 @@
 
         // Check if effectively offline (no network or manual offline mode)
         const isOffline = !navigator.onLine || (localStorage.getItem('pwa-manual-offline') === 'true');
-        
+
         if (isOffline || modalElement.dataset.googlePlaceEnabled !== 'true') {
             disablePlacePickerTriggers(triggers);
             // Add offline indicators to triggers if offline
@@ -956,12 +956,13 @@
             return;
         }
 
+        const autocompleteHost = modalElement.querySelector('[data-place-picker-autocomplete]') || searchInput.parentElement;
+
         const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
         let pickerReadyPromise;
         let map;
         let marker;
-        let placesService;
-        let autocomplete;
+        let autocompleteEl = null;
         let selectedPlace = null;
         let targetInput;
 
@@ -989,25 +990,10 @@
                         visible: false
                     });
 
-                    placesService = new google.maps.places.PlacesService(map);
-
                     const placeholder = mapElement.querySelector('.place-picker-map-placeholder');
                     placeholder?.remove();
 
-                    autocomplete = new google.maps.places.Autocomplete(searchInput, {
-                        fields: ['place_id', 'name', 'formatted_address', 'geometry']
-                    });
-
-                    autocomplete.addListener('place_changed', () => {
-                        const place = autocomplete.getPlace();
-                        if (!place || !place.place_id) {
-                            statusTarget.textContent = 'Select one of the suggestions to continue.';
-                            return;
-                        }
-
-                        applySelectedPlace(place);
-                        statusTarget.textContent = 'Press “Use this place” to link it to your entry.';
-                    });
+                    searchInput.classList.add('d-none');
 
                     modalElement.addEventListener('shown.bs.modal', () => {
                         google.maps.event.trigger(map, 'resize');
@@ -1052,24 +1038,82 @@
             submitButton.disabled = !hasSelection;
         };
 
-        const hydrateExistingPlace = (placeId) => {
-            if (!placeId || !placesService) {
+        const normalizePlace = (place) => {
+            if (!place) {
+                return null;
+            }
+
+            return {
+                place_id: place.id,
+                name: place.displayName,
+                formatted_address: place.formattedAddress,
+                geometry: { location: place.location }
+            };
+        };
+
+        const onPlaceSelect = async (event) => {
+            const prediction = event?.placePrediction;
+            if (!prediction) {
+                statusTarget.textContent = 'Select one of the suggestions to continue.';
                 return;
             }
 
-            statusTarget.textContent = 'Loading saved place…';
-            placesService.getDetails({ placeId, fields: ['place_id', 'name', 'formatted_address', 'geometry'] }, (place, status) => {
-                if (status !== google.maps.places.PlacesServiceStatus.OK || !place) {
-                    statusTarget.textContent = defaultStatus;
-                    selectedPlace = null;
-                    updatePreview(null);
-                    marker?.setVisible(false);
-                    return;
-                }
+            try {
+                const place = prediction.toPlace();
+                await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] });
+                applySelectedPlace(normalizePlace(place));
+                statusTarget.textContent = 'Press "Use this place" to link it to your entry.';
+            } catch (error) {
+                console.warn('Unable to load the selected place.', error);
+                statusTarget.textContent = 'Could not load that place. Try another search.';
+            }
+        };
 
-                applySelectedPlace(place);
-                statusTarget.textContent = 'Press “Use this place” to keep it or search again.';
-            });
+        const mountAutocomplete = () => {
+            if (autocompleteEl || !isGooglePlacesReady()) {
+                return;
+            }
+
+            const element = new google.maps.places.PlaceAutocompleteElement();
+            element.id = 'googlePlacePickerAutocomplete';
+            const placeholder = searchInput.getAttribute('placeholder');
+            if (placeholder) {
+                element.setAttribute('placeholder', placeholder);
+            }
+            element.setAttribute('aria-label', placeholder || 'Search Google Maps Places');
+
+            element.addEventListener('gmp-select', onPlaceSelect);
+            autocompleteHost.appendChild(element);
+            autocompleteEl = element;
+        };
+
+        const resetAutocomplete = () => {
+            if (autocompleteEl) {
+                autocompleteEl.remove();
+                autocompleteEl = null;
+            }
+
+            mountAutocomplete();
+        };
+
+        const hydrateExistingPlace = async (placeId) => {
+            if (!placeId || !isGooglePlacesReady()) {
+                return;
+            }
+
+            statusTarget.textContent = 'Loading saved place...';
+            try {
+                const place = new google.maps.places.Place({ id: placeId });
+                await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] });
+                applySelectedPlace(normalizePlace(place));
+                statusTarget.textContent = 'Press "Use this place" to keep it or search again.';
+            } catch (error) {
+                console.warn('Unable to load saved place.', error);
+                statusTarget.textContent = defaultStatus;
+                selectedPlace = null;
+                updatePreview(null);
+                marker?.setVisible(false);
+            }
         };
 
         const openPicker = (targetFieldId) => {
@@ -1080,7 +1124,6 @@
             const input = document.getElementById(targetFieldId);
             targetInput = input;
             modalElement.dataset.placePickerTarget = targetFieldId;
-            searchInput.value = '';
             selectedPlace = null;
             updatePreview(null);
             statusTarget.textContent = defaultStatus;
@@ -1088,6 +1131,7 @@
 
             ensurePickerReady()
                 .then(() => {
+                    resetAutocomplete();
                     modal.show();
                     const currentValue = input?.value || '';
                     if (currentValue) {
@@ -1104,7 +1148,7 @@
         };
 
         const closeAndReset = () => {
-            searchInput.value = '';
+            resetAutocomplete();
             selectedPlace = null;
             updatePreview(null);
             submitButton.disabled = true;
@@ -1125,7 +1169,7 @@
 
         clearButton?.addEventListener('click', () => {
             closeAndReset();
-            searchInput.focus();
+            autocompleteEl?.focus();
         });
 
         modalElement.addEventListener('hidden.bs.modal', () => {
@@ -1434,9 +1478,8 @@
         }
 
         const loadingOverlay = root.querySelector('[data-route-map-loading]');
-        const service = new google.maps.places.PlacesService(root);
 
-        Promise.all(points.map((point) => loadRouteMapPlace(service, point)))
+        Promise.all(points.map((point) => loadRouteMapPlace(point)))
             .then((results) => {
                 const resolved = results.filter((result) => !!result);
                 if (resolved.length === 0) {
@@ -1611,27 +1654,25 @@
         };
     }
 
-    function loadRouteMapPlace(service, point) {
-        return new Promise((resolve) => {
-            service.getDetails(
-                {
-                    placeId: point.placeId,
-                    fields: ['geometry', 'name', 'formatted_address']
-                },
-                (place, status) => {
-                    if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
-                        resolve({
-                            point,
-                            location: place.geometry.location,
-                            placeName: place.name || point.stopLabel || 'Route stop',
-                            address: place.formatted_address || ''
-                        });
-                        return;
-                    }
+    function loadRouteMapPlace(point) {
+        const place = new google.maps.places.Place({ id: point.placeId });
+        return place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] })
+            .then(() => {
+                if (!place.location) {
+                    return null;
+                }
 
-                    resolve(null);
-                });
-        });
+                return {
+                    point,
+                    location: place.location,
+                    placeName: place.displayName || point.stopLabel || 'Route stop',
+                    address: place.formattedAddress || ''
+                };
+            })
+            .catch((error) => {
+                console.warn('Unable to load route stop place.', error);
+                return null;
+            });
     }
 
     function buildRouteMarkerIcon(color) {

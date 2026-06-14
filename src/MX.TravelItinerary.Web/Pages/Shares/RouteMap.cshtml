@@ -114,7 +114,7 @@
                 document.dispatchEvent(new CustomEvent('travel-route-map:loader-ready'));
             };
         </script>
-        <script async defer
-                src="https://maps.googleapis.com/maps/api/js?key=@Model.GoogleMapsApiKey&libraries=places&callback=travelRouteMapReady"></script>
+        <script async
+                src="https://maps.googleapis.com/maps/api/js?key=@Model.GoogleMapsApiKey&loading=async&libraries=places&callback=travelRouteMapReady"></script>
     }
 }

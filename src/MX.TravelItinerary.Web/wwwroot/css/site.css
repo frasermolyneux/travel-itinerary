@@ -911,6 +911,11 @@ body {
   min-width: 3rem;
 }
 
+gmp-place-autocomplete {
+  display: block;
+  width: 100%;
+}
+
 .place-picker-map {
   min-height: 320px;
   border-radius: 0.75rem;

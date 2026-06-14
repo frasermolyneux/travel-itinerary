@@ -251,10 +251,12 @@ else
             <div class="modal-body">
                 <div class="mb-3">
                     <label for="googlePlacePickerSearch" class="form-label">Search Google Maps Places</label>
-                    <div class="input-group">
-                        <input type="text" id="googlePlacePickerSearch" class="form-control"
-                            placeholder="Start typing a place or address" data-place-picker-search autocomplete="off"
-                            spellcheck="false">
+                    <div class="d-flex gap-2 align-items-start">
+                        <div class="flex-grow-1" data-place-picker-autocomplete>
+                            <input type="text" id="googlePlacePickerSearch" class="form-control"
+                                placeholder="Start typing a place or address" data-place-picker-search autocomplete="off"
+                                spellcheck="false">
+                        </div>
                         <button type="button" class="btn btn-outline-secondary" data-place-picker-clear>Clear</button>
                     </div>
                     <div class="form-text" data-place-picker-hint>Look up hotels, airports, landmarks, or entire
@@ -499,7 +501,7 @@ else
                 document.dispatchEvent(new CustomEvent('travel-place-picker:loader-ready'));
             };
         </script>
-        <script async defer
-            src="https://maps.googleapis.com/maps/api/js?key=@Model.GoogleMapsApiKey&libraries=places&callback=travelPlacePickerReady"></script>
+        <script async
+            src="https://maps.googleapis.com/maps/api/js?key=@Model.GoogleMapsApiKey&loading=async&libraries=places&callback=travelPlacePickerReady"></script>
     }
 }
