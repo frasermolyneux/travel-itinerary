@@ -1,13 +1,13 @@
 resource "google_project_service" "maps_backend" {
   project            = var.gcp_project_id
   service            = "maps-backend.googleapis.com"
-  disable_on_destroy = false
+  disable_on_destroy = true
 }
 
 resource "google_project_service" "places_api" {
   project            = var.gcp_project_id
   service            = "places.googleapis.com"
-  disable_on_destroy = false
+  disable_on_destroy = true
 }
 
 resource "google_apikeys_key" "maps" {
