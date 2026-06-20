@@ -1,23 +1,3 @@
-resource "google_project_service" "maps_backend" {
-  project            = var.gcp_project_id
-  service            = "maps-backend.googleapis.com"
-  disable_on_destroy = true
-
-  lifecycle {
-    ignore_changes = all
-  }
-}
-
-resource "google_project_service" "places_api" {
-  project            = var.gcp_project_id
-  service            = "places.googleapis.com"
-  disable_on_destroy = true
-
-  lifecycle {
-    ignore_changes = all
-  }
-}
-
 resource "google_apikeys_key" "maps" {
   name         = format("maps-%s-%s", var.environment, random_id.maps_key.hex)
   display_name = format("Travel Itinerary Maps API Key - %s", var.environment)
@@ -38,11 +18,6 @@ resource "google_apikeys_key" "maps" {
       ]
     }
   }
-
-  depends_on = [
-    google_project_service.maps_backend,
-    google_project_service.places_api,
-  ]
 }
 
 resource "azurerm_key_vault_secret" "google_maps_api_key" {
