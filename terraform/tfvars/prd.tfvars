@@ -40,3 +40,7 @@ tags = {
 }
 
 gcp_project_id = "gcp-mx-io-travel-itinerary"
+
+google_maps_allowed_referrers = [
+  "https://travelplans.molyneux.me/*"
+]

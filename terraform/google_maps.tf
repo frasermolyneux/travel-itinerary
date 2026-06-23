@@ -11,7 +11,7 @@ resource "google_project_service" "places_api" {
 }
 
 resource "google_apikeys_key" "maps" {
-  name         = format("maps-%s-%s", var.environment, random_id.maps_key.hex)
+  name         = format("maps-%s-%s", var.environment, random_id.environment_id.hex)
   display_name = format("Travel Itinerary Maps API Key - %s", var.environment)
   project      = var.gcp_project_id
 
@@ -25,9 +25,7 @@ resource "google_apikeys_key" "maps" {
     }
 
     browser_key_restrictions {
-      allowed_referrers = [
-        "https://${var.dns.subdomain}.${var.dns.domain}/*",
-      ]
+      allowed_referrers = var.google_maps_allowed_referrers
     }
   }
 
