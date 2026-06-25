@@ -165,7 +165,7 @@ public sealed class IndexModel : PageModel
 
         public TripMutation ToMutation()
         {
-            var slugSource = string.IsNullOrWhiteSpace(Slug) ? Name : Slug!;
+            var slugSource = string.IsNullOrWhiteSpace(Slug) ? Name : Slug;
             var slug = GenerateSlug(slugSource);
             return new TripMutation(Name.Trim(), slug, StartDate, EndDate, Normalize(HomeTimeZone), NormalizeCurrency(DefaultCurrency));
         }
