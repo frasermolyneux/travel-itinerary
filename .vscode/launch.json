@@ -5,7 +5,7 @@
             "name": ".NET Launch Web",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "dotnet: build solution",
+            "preLaunchTask": "dotnet: build",
             "program": "${workspaceFolder}/src/MX.TravelItinerary.Web/bin/Debug/net9.0/MX.TravelItinerary.Web.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/MX.TravelItinerary.Web",

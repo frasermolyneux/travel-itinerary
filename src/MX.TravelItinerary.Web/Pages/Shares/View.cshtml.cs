@@ -109,7 +109,7 @@ public sealed class ViewModel : PageModel
             if (!string.IsNullOrWhiteSpace(userId))
             {
                 var savedLinks = await _repository.GetSavedShareLinksAsync(userId, cancellationToken);
-                IsAlreadySaved = savedLinks.Any(link => 
+                IsAlreadySaved = savedLinks.Any(link =>
                     string.Equals(link.ShareCode, ShareCode, StringComparison.OrdinalIgnoreCase));
             }
         }

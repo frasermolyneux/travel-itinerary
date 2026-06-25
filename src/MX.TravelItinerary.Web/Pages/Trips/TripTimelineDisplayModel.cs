@@ -32,7 +32,7 @@ public sealed class TripTimelineDisplayModel
             : emptyStateMessage;
         ShowBookingConfirmations = showBookingConfirmations;
         ShowBookingMetadata = showBookingMetadata;
-        
+
         // Determine if trip is in progress and should hide past days
         // Use the trip's home timezone to get the current date in that timezone
         DateOnly today;
@@ -57,8 +57,8 @@ public sealed class TripTimelineDisplayModel
             // Fall back to UTC if there are security restrictions
             today = DateOnly.FromDateTime(DateTime.UtcNow);
         }
-        
-        IsTripInProgress = trip.StartDate.HasValue && trip.EndDate.HasValue 
+
+        IsTripInProgress = trip.StartDate.HasValue && trip.EndDate.HasValue
             && today >= trip.StartDate.Value && today <= trip.EndDate.Value;
         CurrentDate = today;
     }
@@ -86,7 +86,7 @@ public sealed class TripTimelineDisplayModel
     public bool ShowBookingMetadata { get; }
 
     public bool IsTripInProgress { get; }
-    
+
     public DateOnly CurrentDate { get; }
 
     public Booking? GetBookingForEntry(string entryId)

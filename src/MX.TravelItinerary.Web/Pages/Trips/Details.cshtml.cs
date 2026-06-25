@@ -514,7 +514,7 @@ public sealed class DetailsModel : PageModel
 
         public ItineraryEntryMutation ToMutation()
         {
-            var normalizedPlaceId = DetailsModel.IsTravelItemType(ItemType) ? null : Normalize(GooglePlaceId);
+            var normalizedPlaceId = IsTravelItemType(ItemType) ? null : Normalize(GooglePlaceId);
             var normalizedDetails = string.IsNullOrWhiteSpace(Details) ? null : Details;
             var normalizedTitle = string.IsNullOrWhiteSpace(Title) ? "Untitled entry" : Title.Trim();
 
@@ -537,7 +537,7 @@ public sealed class DetailsModel : PageModel
             StayMetadata? stay = ItemType is TimelineItemType.Hotel or TimelineItemType.Flat or TimelineItemType.House
                 ? StayMetadata.ToDomain()
                 : null;
-            TravelSegmentMetadata? segment = DetailsModel.IsTravelItemType(ItemType)
+            TravelSegmentMetadata? segment = IsTravelItemType(ItemType)
                 ? TravelSegment.ToDomain()
                 : null;
 

@@ -2,13 +2,24 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "dotnet: build solution",
-            "type": "shell",
+            "label": "dotnet: clean",
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "clean",
+                "${workspaceFolder}/MX.TravelItinerary.sln"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "dotnet: build",
+            "type": "process",
             "command": "dotnet",
             "args": [
                 "build",
                 "${workspaceFolder}/MX.TravelItinerary.sln"
             ],
+            "dependsOn": "dotnet: clean",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -16,8 +27,35 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "dotnet: run web",
-            "type": "shell",
+            "label": "dotnet: test",
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "test",
+                "${workspaceFolder}/MX.TravelItinerary.sln",
+                "--filter",
+                "FullyQualifiedName!~IntegrationTests"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "dotnet: format",
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "format",
+                "${workspaceFolder}/MX.TravelItinerary.sln",
+                "--verify-no-changes"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "dotnet: run-web",
+            "type": "process",
             "command": "dotnet",
             "args": [
                 "run",
@@ -28,7 +66,7 @@
                 "kind": "build",
                 "isDefault": false
             },
-            "dependsOn": "dotnet: build solution",
+            "dependsOn": "dotnet: build",
             "problemMatcher": "$msCompile",
             "presentation": {
                 "reveal": "always",

@@ -16,7 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
 builder.Services.Configure<GoogleMapsOptions>(builder.Configuration.GetSection("GoogleMaps"));
 
-builder.Services.AddSingleton<TableServiceClient>(sp =>
+builder.Services.AddSingleton(sp =>
 {
     var storageOptions = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
     if (string.IsNullOrWhiteSpace(storageOptions.TableEndpoint))
@@ -48,11 +48,11 @@ builder.Services.ConfigureApplicationCookie(options =>
     // Extend the cookie expiration to 7 days to improve offline capability
     // Users will remain logged in even when they return to the app after a long period
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
-    
+
     // Enable sliding expiration so the timeout resets with each request
     // This means active users will stay logged in indefinitely
     options.SlidingExpiration = true;
-    
+
     // The cookie will be refreshed when more than half of the expiration period has elapsed on the next request
 });
 
