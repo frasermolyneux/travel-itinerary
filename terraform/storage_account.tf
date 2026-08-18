@@ -10,9 +10,9 @@ resource "azurerm_storage_account" "data" {
 }
 
 resource "azurerm_storage_table" "tables" {
-  for_each             = local.storage_table_names
-  name                 = each.value
-  storage_account_name = azurerm_storage_account.data.name
+  for_each           = local.storage_table_names
+  name               = each.value
+  storage_account_id = azurerm_storage_account.data.id
 }
 
 resource "azurerm_role_assignment" "web_table_data_contributor" {
