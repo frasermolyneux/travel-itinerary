@@ -4,7 +4,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Folder Name="/src/">
-    <Project Path="src/MX.TravelItinerary.Web/MX.TravelItinerary.Web.csproj" />
-  </Folder>
+  <Project Path="src/MX.TravelItinerary.Web/MX.TravelItinerary.Web.csproj" />
+  <Project Path="tests/MX.TravelItinerary.Web.Tests/MX.TravelItinerary.Web.Tests.csproj" />
 </Solution>

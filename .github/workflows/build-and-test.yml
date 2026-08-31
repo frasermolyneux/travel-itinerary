@@ -38,6 +38,7 @@ jobs:
           dotnet-version: 10.0.x
           src-folder: "src"
           skip-nuget-artifact-upload: "true"
+      - run: dotnet test MX.TravelItinerary.slnx
 
   terraform-plan-dev:
     needs: detect-changes
