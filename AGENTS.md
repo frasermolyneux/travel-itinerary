@@ -4,14 +4,14 @@ Execution brief for the GitHub Copilot coding agent (and any [agents.md](https:/
 
 ## Stack
 
-ASP.NET Core 9 Razor Pages app (`src/MX.TravelItinerary.Web`) for sharing travel itineraries. Entra ID auth (Microsoft.Identity.Web), Azure Table Storage (`DefaultAzureCredential`), Google Maps route views, a PWA service worker for offline access, and Terraform-managed Azure hosting.
+ASP.NET Core 10 Razor Pages app (`src/MX.TravelItinerary.Web`) for sharing travel itineraries. Entra ID auth (Microsoft.Identity.Web), Azure Table Storage (`DefaultAzureCredential`), Google Maps route views, a PWA service worker for offline access, and Terraform-managed Azure hosting.
 
 ## Build, test, format
 
 ```pwsh
-dotnet build MX.TravelItinerary.sln
+dotnet build MX.TravelItinerary.slnx
 dotnet run --project src/MX.TravelItinerary.Web/MX.TravelItinerary.Web.csproj
-dotnet format MX.TravelItinerary.sln --verify-no-changes
+dotnet format MX.TravelItinerary.slnx --verify-no-changes
 ```
 
 No automated test project exists; validate via manual UI/offline checks (see `docs/OFFLINE_SUPPORT.md`).
@@ -32,7 +32,7 @@ terraform -chdir=terraform plan -var-file=tfvars/dev.tfvars
 - **Vendored vs. maintained assets**: `wwwroot/lib/*` (bootstrap, jquery, jquery-validation, jquery-validation-unobtrusive) are vendored — do not hand-edit. Maintained app JS lives in `wwwroot/js/*.js` (`pwa.js`, `shared-trips.js`, `site.js`).
 - **Data/secrets**: Azure Table Storage via `DefaultAzureCredential`; no client secrets, connection strings, or hardcoded subscription IDs/GUIDs. Local config uses `appsettings.Development.json`/user-secrets; production uses Key Vault references set by Terraform.
 - **Terraform** (`terraform/`): App Service, Storage, DNS, Key Vault, Entra ID app registration, remote state from `platform-hosting`/`platform-monitoring`. `.terraform.lock.hcl` is gitignored and untracked — do not commit it.
-- **Runtime/deployment**: target `net9.0` (pinned via `global.json`); Azure Linux Web App runtime stack `dotnet_version = "9.0"`. Deployment is handled by `deploy-dev.yml`/`deploy-prd.yml` — out of scope unless that is the explicit task.
+- **Runtime/deployment**: target `net10.0` (pinned via `global.json`); Azure Linux Web App runtime stack `dotnet_version = "10.0"`. Deployment is handled by `deploy-dev.yml`/`deploy-prd.yml` — out of scope unless that is the explicit task.
 
 ## Do NOT
 

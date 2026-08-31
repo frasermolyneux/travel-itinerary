@@ -7,7 +7,7 @@
             "command": "dotnet",
             "args": [
                 "clean",
-                "${workspaceFolder}/MX.TravelItinerary.sln"
+                "${workspaceFolder}/MX.TravelItinerary.slnx"
             ],
             "problemMatcher": "$msCompile"
         },
@@ -17,7 +17,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/MX.TravelItinerary.sln"
+                "${workspaceFolder}/MX.TravelItinerary.slnx"
             ],
             "dependsOn": "dotnet: clean",
             "group": {
@@ -32,7 +32,7 @@
             "command": "dotnet",
             "args": [
                 "test",
-                "${workspaceFolder}/MX.TravelItinerary.sln",
+                "${workspaceFolder}/MX.TravelItinerary.slnx",
                 "--filter",
                 "FullyQualifiedName!~IntegrationTests"
             ],
@@ -48,7 +48,7 @@
             "command": "dotnet",
             "args": [
                 "format",
-                "${workspaceFolder}/MX.TravelItinerary.sln",
+                "${workspaceFolder}/MX.TravelItinerary.slnx",
                 "--verify-no-changes"
             ],
             "problemMatcher": "$msCompile"

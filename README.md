@@ -13,7 +13,7 @@
 * [Offline Support](/docs/OFFLINE_SUPPORT.md) - Progressive Web App behavior, caching strategy, and offline usage notes.
 
 ## Overview
-ASP.NET Core 9 Razor Pages app for sharing travel itineraries with companions. Editing is protected by Microsoft Entra ID via Microsoft.Identity.Web; anonymous share links allow read-only viewing. Azure Table Storage (via DefaultAzureCredential) stores trips, itinerary entries, bookings, and share links, with a PWA service worker providing offline access and manual sync. Terraform defines the Azure infrastructure and GitHub Actions handle build, quality checks, deployments, and environment teardown.
+ASP.NET Core 10 Razor Pages app for sharing travel itineraries with companions. Editing is protected by Microsoft Entra ID via Microsoft.Identity.Web; anonymous share links allow read-only viewing. Azure Table Storage (via DefaultAzureCredential) stores trips, itinerary entries, bookings, and share links, with a PWA service worker providing offline access and manual sync. Terraform defines the Azure infrastructure and GitHub Actions handle build, quality checks, deployments, and environment teardown.
 
 ## Contributing
 Please read the [contributing](CONTRIBUTING.md) guidance; this is a learning and development project.
