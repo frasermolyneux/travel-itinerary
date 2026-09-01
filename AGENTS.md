@@ -9,9 +9,9 @@ ASP.NET Core 10 Razor Pages app (`src/MX.TravelItinerary.Web`) for sharing trave
 ## Build, test, format
 
 ```pwsh
-dotnet build MX.TravelItinerary.slnx
+dotnet build src/MX.TravelItinerary.slnx
 dotnet run --project src/MX.TravelItinerary.Web/MX.TravelItinerary.Web.csproj
-dotnet format MX.TravelItinerary.slnx --verify-no-changes
+dotnet format src/MX.TravelItinerary.slnx --verify-no-changes
 ```
 
 No automated test project exists; validate via manual UI/offline checks (see `docs/OFFLINE_SUPPORT.md`).
