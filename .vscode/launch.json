@@ -6,7 +6,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "dotnet: build",
-            "program": "${workspaceFolder}/src/MX.TravelItinerary.Web/bin/Debug/net9.0/MX.TravelItinerary.Web.dll",
+            "program": "${workspaceFolder}/src/MX.TravelItinerary.Web/bin/Debug/net10.0/MX.TravelItinerary.Web.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/MX.TravelItinerary.Web",
             "stopAtEntry": false,
