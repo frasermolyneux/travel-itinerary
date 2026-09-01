@@ -14,7 +14,7 @@ dotnet run --project src/MX.TravelItinerary.Web/MX.TravelItinerary.Web.csproj
 dotnet format src/MX.TravelItinerary.slnx --verify-no-changes
 ```
 
-No automated test project exists; validate via manual UI/offline checks (see `docs/OFFLINE_SUPPORT.md`).
+The application startup smoke test runs with `dotnet test src/MX.TravelItinerary.slnx`; also validate manual UI/offline checks (see `docs/OFFLINE_SUPPORT.md`).
 
 ```pwsh
 terraform -chdir=terraform fmt -check -recursive
