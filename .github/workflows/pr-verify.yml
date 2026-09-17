@@ -12,7 +12,8 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Keep source updates together, but isolate label-triggered deployment and plan runs.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.label.name || 'source' }}-${{ github.event.action == 'unlabeled' && 'removed' || 'active' }}
   cancel-in-progress: true
 
 jobs:

@@ -12,9 +12,17 @@ updates:
       time: "03:45"
       timezone: "Etc/UTC"
     groups:
-      all-updates:
+      non-major-updates:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
     ignore:
       - dependency-name: "Microsoft.ApplicationInsights*"
         versions: [">=3.0.0"]
@@ -30,9 +38,17 @@ updates:
       time: "03:45"
       timezone: "Etc/UTC"
     groups:
-      all-updates:
+      non-major-updates:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
   - package-ecosystem: "github-actions"
     assignees: ["frasermolyneux"]
@@ -43,6 +59,14 @@ updates:
       time: "03:45"
       timezone: "Etc/UTC"
     groups:
-      all-updates:
+      non-major-updates:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
