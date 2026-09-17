@@ -1,4 +1,5 @@
 data "terraform_remote_state" "platform_hosting" {
+  count   = var.environment == "prd" ? 1 : 0
   backend = "azurerm"
 
   config = {
