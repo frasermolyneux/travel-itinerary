@@ -1,12 +1,22 @@
 locals {
-  resource_group_name               = "rg-${var.workload}-${var.environment}-${var.location}"
-  platform_hosting_app_service_plan = data.terraform_remote_state.platform_hosting.outputs.app_service_plans["default"]
-  platform_monitoring_workspace_id  = data.terraform_remote_state.platform_monitoring.outputs.log_analytics.id
-  web_app_name                      = "app-${var.workload}-${var.environment}-${var.location}-${random_id.environment_id.hex}"
-  key_vault_name                    = "kv-${random_id.environment_id.hex}"
-  app_insights_name                 = "ai-${var.workload}-${var.environment}-${var.location}"
-  public_hostname                   = "${var.dns.subdomain}.${var.dns.domain}"
-  entra_app_display_name            = "${var.workload}-${var.environment}-web"
+  resource_group_name              = "rg-${var.workload}-${var.environment}-${var.location}"
+  platform_monitoring_workspace_id = data.terraform_remote_state.platform_monitoring.outputs.log_analytics.id
+  web_app_name                     = "app-${var.workload}-${var.environment}-${var.location}-${random_id.environment_id.hex}"
+  key_vault_name                   = "kv-${random_id.environment_id.hex}"
+  app_insights_name                = "ai-${var.workload}-${var.environment}-${var.location}"
+  public_hostname                  = "${var.dns.subdomain}.${var.dns.domain}"
+  entra_app_display_name           = "${var.workload}-${var.environment}-web"
+
+  app_service_plan = var.environment == "dev" ? {
+    id                  = azurerm_service_plan.default[0].id
+    location            = azurerm_service_plan.default[0].location
+    resource_group_name = azurerm_service_plan.default[0].resource_group_name
+    } : {
+    id                  = data.terraform_remote_state.platform_hosting[0].outputs.app_service_plans["default"].id
+    location            = data.terraform_remote_state.platform_hosting[0].outputs.app_service_plans["default"].location
+    resource_group_name = data.terraform_remote_state.platform_hosting[0].outputs.app_service_plans["default"].resource_group_name
+  }
+
   entra_redirect_uris = distinct([
     "https://${local.public_hostname}/signin-oidc",
     "https://${local.web_app_name}.azurewebsites.net/signin-oidc",
